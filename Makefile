@@ -1,6 +1,7 @@
 # Project layout
 
 DIRSRC=./src
+DIRTEST=./test
 DIRBUILD=./build
 DIROBJ=$(DIRBUILD)/obj
 
@@ -21,6 +22,11 @@ all: build
 build: $(OFILES)
 	@mkdir -p $(DIRBUILD)
 	@$(CXX) $(CXXFLAGS) -o $(DIRBUILD)/$(TARGET) $(DIRSRC)/main.cc $(OFILES)
+
+.PHONY: test
+test: $(OFILES)
+	@mkdir -p $(DIRBUILD)
+	@$(CXX) $(CXXFLAGS) -Wall -g -o $(DIRBUILD)/test $(DIRTEST)/*.cc $(OFILES) -lgtest_main -lgtest -lpthread
 
 $(DIROBJ)/%.o: $(DIRSRC)/%.cc
 	@mkdir -p $(dir $@)
