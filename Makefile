@@ -24,10 +24,7 @@ build: $(OFILES)
 
 $(DIROBJ)/%.o: $(DIRSRC)/%.cc
 	@mkdir -p $(dir $@)
-	$(CXX) $(CXXFLAGS) -c -o $@ $^
-
-%.cc:
-	echo $@
+	@$(CXX) $(CXXFLAGS) -c -o $@ $^
 
 .PHONY: clean
 clean:
