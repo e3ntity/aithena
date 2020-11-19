@@ -1,18 +1,34 @@
-CXX=g++
-CFLAGS=
+# Project layout
 
 DIRSRC=./src
 DIRBUILD=./build
+DIROBJ=$(DIRBUILD)/obj
+
+OFILES=$(addprefix $(DIROBJ)/,$(patsubst src/%.cc,%.o,$(wildcard src/*/*.cc)))
 TARGET=aithena
 
-.PHONY: all clean
+# Compiler settings
 
-all:
+CXX=g++
+CXXFLAGS=--std=c++17 -I$(DIRSRC)
+
+# Rules
+
+.PHONY: all
+all: build
+
+.PHONY: build
+build: $(OFILES)
 	@mkdir -p $(DIRBUILD)
-	@$(CXX) $(CFLAGS) $(DIRSRC)/*.cc -o $(DIRBUILD)/$(TARGET)
+	@$(CXX) $(CXXFLAGS) -o $(DIRBUILD)/$(TARGET) $(DIRSRC)/main.cc $(OFILES)
 
-run: all
-	@$(DIRBUILD)/$(TARGET)
+$(DIROBJ)/%.o: $(DIRSRC)/%.cc
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXXFLAGS) -c -o $@ $^
 
+%.cc:
+	echo $@
+
+.PHONY: clean
 clean:
 	@rm -rf $(DIRBUILD)
