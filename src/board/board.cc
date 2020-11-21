@@ -3,7 +3,7 @@
 namespace aithena {
 
 BoardPlane::BoardPlane(std::size_t width, std::size_t height)
-  : width_{width}, height_{height}, plane_{width, height} {};
+  : width_{width}, height_{height}, plane_{width * height} {};
 
 BoardPlane::BoardPlane(const BoardPlane& other)
   : width_(other.width_), height_(other.height_), plane_(other.plane_) {};
@@ -39,22 +39,22 @@ BoardPlane& BoardPlane::operator^=(const BoardPlane& other) {
 }
 
 BoardPlane& BoardPlane::operator&(const BoardPlane& other) {
-  BoardPlane result(*this);
-  result = plane_ & other.plane_;
+  BoardPlane& result(*this);
+  result.plane_ = plane_ & other.plane_;
 
   return result;
 }
 
 BoardPlane& BoardPlane::operator|(const BoardPlane& other) {
-  BoardPlane result(*this);
-  result = plane_ | other.plane_;
+  BoardPlane& result(*this);
+  result.plane_ = plane_ | other.plane_;
 
   return result;
 }
 
 BoardPlane& BoardPlane::operator^(const BoardPlane& other) {
-  BoardPlane result(*this);
-  result = plane_ ^ other.plane_;
+  BoardPlane& result(*this);
+  result.plane_ = plane_ ^ other.plane_;
 
   return result;
 }
