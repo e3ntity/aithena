@@ -9,8 +9,9 @@
 namespace aithena {
 
 class Action {
- public:
+public:
   Action(State before, State after);
+  ~Action() = default;
 
   // Returns the "before" state.
   State GetPreviousState() const;
@@ -19,7 +20,7 @@ class Action {
 
   // Returns a canonical representation of the action.
   virtual std::string ToString() const;
- private:
+private:
   // The action is represented by the state before and the state after the
   // action.
   std::tuple <State, State> transition_;

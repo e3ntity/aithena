@@ -2,13 +2,14 @@
 
 int main() {
   // Play 4x4 chess
+  /*
   aithena::chess::Game::Options options = {
     {"board_width", 4},
     {"board_height", 4}
   };
 
   aithena::chess::Game game(options);
-
+  */
   //auto state = game.GetInitialState();
   //auto actions = game.GetLegalActions();
   //unsigned int user_action;
