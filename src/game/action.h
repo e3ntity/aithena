@@ -13,12 +13,12 @@ class Action {
   Action(State before, State after);
 
   // Returns the "before" state.
-  State GetPreviousState();
+  State GetPreviousState() const;
   // Returns the "after" state.
-  State GetNextState();
+  State GetNextState() const;
 
   // Returns a canonical representation of the action.
-  virtual std::string ToString();
+  virtual std::string ToString() const;
  private:
   // The action is represented by the state before and the state after the
   // action.

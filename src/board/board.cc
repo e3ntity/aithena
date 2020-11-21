@@ -5,8 +5,8 @@ namespace aithena {
 BoardPlane::BoardPlane(std::size_t width, std::size_t height)
   : width_{width}, height_{height}, plane_{width, height} {};
 
-BoardPlane::BoardPlane(std::size_t width, std::size_t height, boost::dynamic_bitset<> plane)
-  : width_{width}, height_{height}, plane_(plane) {};
+BoardPlane::BoardPlane(const BoardPlane& other)
+  : width_(other.width_), height_(other.height_), plane_(other.plane_) {};
 
 // Sets the bit of the board at the specified location.
 void BoardPlane::set(unsigned int x, unsigned int y) {
@@ -21,59 +21,50 @@ bool BoardPlane::get(unsigned int x, unsigned int y) const {
   return plane_[x + y * width_];
 }
 
-boost::dynamic_bitset<>& BoardPlane::operator&=(const BoardPlane& b) {
-  return plane_ &= b.plane_;
+// Overloaded operators go here
+
+BoardPlane& BoardPlane::operator&=(const BoardPlane& other) {
+  plane_ |= other.plane_;
+  return *this;
 }
 
-boost::dynamic_bitset<>& BoardPlane::operator|=(const BoardPlane& b) {
-  return plane_ |= b.plane_;
+BoardPlane& BoardPlane::operator|=(const BoardPlane& other) {
+  plane_ |= other.plane_;
+  return *this;
 }
 
-boost::dynamic_bitset<>& BoardPlane::operator^=(const BoardPlane& b) {
-  return plane_ ^= b.plane_;
+BoardPlane& BoardPlane::operator^=(const BoardPlane& other) {
+  plane_ ^= other.plane_;
+  return *this;
 }
 
-boost::dynamic_bitset<>& BoardPlane::operator-=(const BoardPlane& b) {
-  return plane_ -= b.plane_;
+BoardPlane& BoardPlane::operator&(const BoardPlane& other) {
+  BoardPlane result(*this);
+  result = plane_ & other.plane_;
+
+  return result;
 }
 
-bool BoardPlane::operator == (const BoardPlane& b) {
-  return plane_ == b.plane_;
+BoardPlane& BoardPlane::operator|(const BoardPlane& other) {
+  BoardPlane result(*this);
+  result = plane_ | other.plane_;
+
+  return result;
 }
 
-bool BoardPlane::operator!=(const BoardPlane& b) {
-  return plane_ != b.plane_;
+BoardPlane& BoardPlane::operator^(const BoardPlane& other) {
+  BoardPlane result(*this);
+  result = plane_ ^ other.plane_;
+
+  return result;
 }
 
-bool BoardPlane::operator<(const BoardPlane& b) {
-  return plane_ < b.plane_;
+bool BoardPlane::operator==(const BoardPlane& other) {
+  return plane_ == other.plane_;
 }
 
-bool BoardPlane::operator<=(const BoardPlane& b) {
-  return plane_ <= b.plane_;
+bool BoardPlane::operator!=(const BoardPlane& other) {
+  return plane_ != other.plane_;
 }
 
-bool BoardPlane::operator>(const BoardPlane& b) {
-  return plane_ > b.plane_;
-}
-
-bool BoardPlane::operator>=(const BoardPlane& b) {
-  return plane_ >= b.plane_;
-}
-
-boost::dynamic_bitset<> BoardPlane::operator&(const BoardPlane& b) {
-  return plane_ & b.plane_;
-}
-
-boost::dynamic_bitset<> BoardPlane::operator|(const BoardPlane& b) {
-  return plane_ | b.plane_;
-}
-
-boost::dynamic_bitset<> BoardPlane::operator^(const BoardPlane& b) {
-  return plane_ ^ b.plane_;
-}
-
-boost::dynamic_bitset<> BoardPlane::operator-(const BoardPlane& b) {
-  return plane_ - b.plane_;
-}
 }
