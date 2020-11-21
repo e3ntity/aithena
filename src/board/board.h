@@ -1,39 +1,43 @@
 #ifndef AITHENTA_BOARD_BOARD_H
 #define AITHENTA_BOARD_BOARD_H
 
-#include <array>
 #include <bitset>
+#include <vector>
+
+#include "boost/dynamic_bitset.hpp"
 
 namespace aithena {
 
-template <std::size_t Width, std::size_t Height>
 class BoardPlane {
  public:
-  BoardPlane() : plane_() {};
+  BoardPlane(std::size_t width, std::size_t height);
 
   // Sets the bit of the board at the specified location.
   void set(unsigned int x, unsigned int y) {
-    plane_[x + y * Width] = true;
+    plane_.set(x + y * width_);
   }
   // Clears the bit of the board at the specified location.
   void clear(unsigned int x, unsigned int y) {
-    plane_[x + y * Width] = false;
+    plane_.reset(x + y * width_);
   }
   // Returns the bit of the board at the specified location.
   bool get(unsigned int x, unsigned int y) const {
-    return plane_[x + y * Width];
+    return plane_[x + y * width_];
   }
 
  private:
+  const std::size_t width_, height_;
   // A 2D bit plane specified rows to columns.
   // Example:
-  //  plane_[5 + 2 * Width] // returns the fifth element of the second row
-  std::bitset<Width * Height> plane_;
+  //  plane_[5 + 2 * width_] // returns the fifth element of the second row
+  boost::dynamic_bitset<> plane_;
 };
 
 class Board {
  public:
-  Board(std::size_t width, std::size_t height); // TODO: include figure information.
+  Board(std::size_t width, std::size_t height);
+ private:
+  std::vector<BoardPlane> planes_;
 };
 
 }
