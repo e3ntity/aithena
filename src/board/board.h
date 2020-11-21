@@ -9,23 +9,34 @@
 namespace aithena {
 
 class BoardPlane {
- public:
+public:
   BoardPlane(std::size_t width, std::size_t height);
+  BoardPlane(std::size_t width, std::size_t height, boost::dynamic_bitset<> plane);
 
   // Sets the bit of the board at the specified location.
-  void set(unsigned int x, unsigned int y) {
-    plane_.set(x + y * width_);
-  }
+  void set(unsigned int x, unsigned int y);
   // Clears the bit of the board at the specified location.
-  void clear(unsigned int x, unsigned int y) {
-    plane_.reset(x + y * width_);
-  }
+  void clear(unsigned int x, unsigned int y);
   // Returns the bit of the board at the specified location.
-  bool get(unsigned int x, unsigned int y) const {
-    return plane_[x + y * width_];
-  }
+  bool get(unsigned int x, unsigned int y) const;
 
- private:
+  boost::dynamic_bitset<>& operator&=(const BoardPlane& b);
+  boost::dynamic_bitset<>& operator|=(const BoardPlane& b);
+  boost::dynamic_bitset<>& operator^=(const BoardPlane& b);
+  boost::dynamic_bitset<>& operator-=(const BoardPlane& b);
+  bool operator==(const BoardPlane& b);
+  bool operator!=(const BoardPlane& b);
+  bool operator<(const BoardPlane& b);
+  bool operator<=(const BoardPlane& b);
+  bool operator>(const BoardPlane& b);
+  bool operator>=(const BoardPlane& b);
+  boost::dynamic_bitset<> operator&(const BoardPlane& b);
+  boost::dynamic_bitset<> operator|(const BoardPlane& b);
+  boost::dynamic_bitset<> operator^(const BoardPlane& b);
+  boost::dynamic_bitset<> operator-(const BoardPlane& b);
+
+
+private:
   const std::size_t width_, height_;
   // A 2D bit plane specified rows to columns.
   // Example:
@@ -34,9 +45,9 @@ class BoardPlane {
 };
 
 class Board {
- public:
+public:
   Board(std::size_t width, std::size_t height);
- private:
+private:
   std::vector<BoardPlane> planes_;
 };
 
