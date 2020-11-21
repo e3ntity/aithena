@@ -1,4 +1,4 @@
-#include "game/chess.h"
+#include "chess/chess.h"
 
 int main() {
   // Play 4x4 chess
