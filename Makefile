@@ -11,7 +11,7 @@ TARGET=aithena
 # Compiler settings
 
 CXX=g++
-CXXFLAGS=--std=c++17 -I$(DIRSRC)
+CXXFLAGS=--std=c++17 -I$(DIRSRC) -g -Wall
 
 # Rules
 
