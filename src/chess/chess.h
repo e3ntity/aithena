@@ -8,21 +8,52 @@
 namespace aithena {
 namespace chess {
 
-enum class Figure : unsigned char {
+// Defines the figures used in chess. GhostPawn is used to keep track of
+// "en-passant".
+enum class Figure : unsigned {
   /*kKing, kQueen, kRook,
   kBishop, kKnight, */kPawn,
-  kCount
+  /*kGhostPawn, */kCount
 };
 
-enum class Player : unsigned char {kWhite, kBlack};
+enum class Player : unsigned {kWhite, kBlack};
 
 class State : public ::aithena::State {
  public:
-  State(std::size_t width, std::size_t height, unsigned char figure_count);
-  State(Board);
+  // Initializes to the chess starting state.
+  State(std::size_t width, std::size_t height, unsigned figure_count);
+  // Initializes to a give state.
   State(const State&);
 
+  State& operator=(const State&);
+
+  Player GetPlayer();
+  void SetPlayer(Player);
+
+  bool GetCastleQueen(Player);
+  bool GetCasteKing(Player);
+  void SetCastleQueen(Player);
+  void SetCastleKing(Player);
+
+  unsigned int GetMoveCount();
+  void IncMoveCount();
+
+  unsigned int GetNoProgressCount();
+  void ResetNoProgressCount();
+
   const std::string ToString() const override;
+ private:
+  // Indicates the player that has to make the next move.
+  Player player_;
+  // Indicates for each player whether queen-side castling is allowed.
+  std::array<bool, 2> castle_queen_;
+  // Indicates for each player whether king-side castling is allowed.
+  std::array<bool, 2> castle_king_;
+  // The count of moves made up until this state.
+  unsigned int move_count_;
+  // Counts the moves without progress (neither a pawn moved, nor a piece
+  // captured) up util this state.
+  unsigned int no_progress_count_;
 };
 
 class Action : public ::aithena::Action<State> {
