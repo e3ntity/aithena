@@ -1,6 +1,7 @@
 #ifndef AITHENTA_GAME_GAME_H
 #define AITHENTA_GAME_GAME_H
 
+#include <string>
 #include <unordered_map>
 #include <vector>
 
