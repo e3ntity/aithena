@@ -18,9 +18,7 @@ enum class Player : unsigned char {kWhite, kBlack};
 
 class State : public ::aithena::State {
  public:
-  State(Board);
-  State();
-  State(const State&);
+  using ::aithena::State::State;
 };
 
 class Action : public ::aithena::Action<State> {
