@@ -11,11 +11,11 @@ class Action {
   Action(State before, State after) : before_(before), after_(after) {}
 
   // Returns the "before" state.
-  State GetPreviousState() {
+  State& GetPreviousState() {
     return before_;
   }
   // Returns the "after" state.
-  State GetNextState() {
+  State& GetNextState() {
     return after_;
   }
 
