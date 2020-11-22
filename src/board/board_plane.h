@@ -11,6 +11,9 @@ class BoardPlane {
  public:
 	BoardPlane(std::size_t width, std::size_t height);
 
+	// Special constructor for chess.
+	BoardPlane(std::uint64_t);
+
 	// Sets the bit of the board at the specified location.
 	void set(unsigned int x, unsigned int y);
 	// Clears the bit of the board at the specified location.

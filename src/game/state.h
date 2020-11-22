@@ -11,11 +11,11 @@ class State {
  public:
   // Constructs the state with an empty board of given dimensions.
   State(std::size_t width, std::size_t height, unsigned char figure_count);
-  // Constructs the state with the given board.
-  State(Board);
   State(const State&);
 
   State& operator=(const State&);
+
+  Board GetBoard();
 
   // Returns a canoncial representation of the state.
   virtual const std::string ToString() const = 0;

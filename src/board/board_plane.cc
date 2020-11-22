@@ -5,7 +5,12 @@ namespace aithena {
 BoardPlane::BoardPlane(std::size_t width, std::size_t height)
   : width_{width},
     height_{height},
-    plane_{/*num_bits=*/ width * height, /*long value=*/ 0} {};
+    plane_{/*num_bits=*/ width * height, /*long value=*/ 0} {}
+
+BoardPlane::BoardPlane(std::uint64_t plane)
+  : width_{8}, height_{8}, plane_{64} {
+  for (int i = 0; i < 64; i++) plane_[i] = (plane << i);
+}
 
 // Sets the bit of the board at the specified location.
 void BoardPlane::set(unsigned int x, unsigned int y) {
