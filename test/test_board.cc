@@ -126,7 +126,7 @@ TEST(BoardPlane, EqualityOperatorsWorkCorrectly) {
 }
 
 class BoardTest : public ::testing::Test {
-protected:
+ protected:
   void SetUp() {
     for (unsigned int i = 0; i < 9; ++i) {
       board.SetPiece(i, i, {i % 8, i % 2});
@@ -137,6 +137,9 @@ protected:
 };
 
 TEST_F(BoardTest, InitializesBitfieldToCorrectSize) {
+  ASSERT_EQ(board.GetWidth(), 9);
+  ASSERT_EQ(board.GetHeight(), 9);
+
   for (unsigned int fig = 0; fig < 8; ++fig) {
     for (unsigned int player = 0; player < 2; ++player) {
       aithena::BoardPlane bp = board.GetPlane(fig, player);
