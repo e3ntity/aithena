@@ -128,8 +128,8 @@ TEST(BoardPlane, EqualityOperatorsWorkCorrectly) {
 class BoardTest : public ::testing::Test {
 protected:
   void SetUp() {
-    for (int i = 0; i < 9; ++i) {
-      board.SetPiece(i, i, i % 8, i % 2);
+    for (unsigned int i = 0; i < 9; ++i) {
+      board.SetPiece(i, i, {i % 8, i % 2});
     }
   }
 
@@ -137,8 +137,8 @@ protected:
 };
 
 TEST_F(BoardTest, InitializesBitfieldToCorrectSize) {
-  for (int fig = 0; fig < 8; ++fig) {
-    for (int player = 0; player < 2; ++player) {
+  for (unsigned int fig = 0; fig < 8; ++fig) {
+    for (unsigned int player = 0; player < 2; ++player) {
       aithena::BoardPlane bp = board.GetPlane(fig, player);
 
       bp.get(3, 3); // Should work
@@ -149,29 +149,25 @@ TEST_F(BoardTest, InitializesBitfieldToCorrectSize) {
   }
 }
 
-
 TEST_F(BoardTest, PieceSetCorrectly) {
-  for (int i = 0; i < 9; ++i) {
-    board.SetPiece(i, i, i % 8, i % 2);
-  }
-  for (int i = 0; i < 9; ++i) {
+  for (unsigned int i = 0; i < 9; ++i) {
     ASSERT_TRUE(board.GetPlane(i % 8, i % 2).get(i, i));
   }
 }
 
 TEST_F(BoardTest, GetPieceTest) {
-  std::tuple<signed, signed> piece;
+  aithena::Piece piece;
   // test along the filled diagonal
-  for (int i = 0; i < 9; ++i) {
+  for (unsigned int i = 0; i < 9; ++i) {
     piece = board.GetPiece(i, i);
-    ASSERT_EQ(std::get<0>(piece), i % 8);
-    ASSERT_EQ(std::get<1>(piece), i % 2);
+    ASSERT_EQ(piece.figure, i % 8);
+    ASSERT_EQ(piece.player, i % 2);
   }
 
   //test squares where there are no pieces
   piece = board.GetPiece(0, 8);
-  ASSERT_TRUE(std::get<0>(piece) == -1 && std::get<1>(piece) == -1);
+  ASSERT_TRUE(piece == aithena::kEmptyPiece);
 
   piece = board.GetPiece(4, 2);
-  ASSERT_TRUE(std::get<0>(piece) == -1 && std::get<1>(piece) == -1);
+  ASSERT_TRUE(piece == aithena::kEmptyPiece);
 }
