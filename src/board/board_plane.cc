@@ -26,7 +26,7 @@ void BoardPlane::clear(unsigned x, unsigned y) {
 
 // Returns the bit of the board at the specified location.
 bool BoardPlane::get(unsigned x, unsigned y) const {
-  assert(x >= width_ && y < height_);
+  assert(x < width_ && y < height_);
   return plane_[x + y * width_];
 }
 
