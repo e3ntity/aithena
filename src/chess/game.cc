@@ -4,14 +4,16 @@ namespace aithena {
 namespace chess {
 
 Game::Game() : Game{Options{}} {}
-/*
-Game::Game(Options options) : ::aithena::Game{options} {
+
+Game::Game(Options options) : ::aithena::Game<Action, State> {options} {
   DefaultOption("board_width", 8);
   DefaultOption("board_height", 8);
-}*/
+  DefaultOption("figure_count", static_cast<unsigned char>(Figure::kCount));
+}
 
 State Game::GetInitialState() {
-  return State();
+  return State(GetOption("board_width"), GetOption("board_height"),
+               GetOption("figure_count"));
 }
 
 Game::ActionList Game::GetLegalActions(State state) {
