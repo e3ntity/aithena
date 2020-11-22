@@ -1,11 +1,22 @@
 #ifndef AITHENTA_BOARD_BOARD_H
 #define AITHENTA_BOARD_BOARD_H
 
+#include <climits>
 #include <vector>
 
 #include "board/board_plane.h"
 
 namespace aithena {
+
+// Represents a piece (figure, player) on the chess board.
+struct Piece {
+  unsigned figure;
+  unsigned player;
+};
+
+const Piece kEmptyPiece = {UINT_MAX, UINT_MAX};
+
+bool operator==(const Piece&, const Piece&);
 
 // The class manages two board planes for each figure, one for each player,
 // that represent the state of a game's board.
@@ -20,10 +31,13 @@ class Board {
 
   Board& operator=(const Board&);
 
+  std::size_t GetWidth();
+  std::size_t GetHeight();
+
   BoardPlane GetPlane(unsigned figure, unsigned player);
-  void SetPiece(unsigned x, unsigned y, unsigned figure, unsigned player);
-  // Returns a tuple (figure, player)
-  std::tuple<unsigned, unsigned> GetPiece(unsigned x, unsigned y);
+  void SetPiece(unsigned x, unsigned y, Piece);
+  // Returns a tuple (figure, player) or (-1, -1) if the field is empty.
+  Piece GetPiece(unsigned x, unsigned y);
  private:
   std::size_t width_, height_;
   unsigned figure_count_;

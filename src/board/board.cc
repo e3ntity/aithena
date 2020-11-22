@@ -21,4 +21,20 @@ Board& Board::operator=(const Board& other) {
   return *this;
 };
 
+std::size_t Board::GetWidth() {return width_;}
+std::size_t Board::GetHeight() {return height_;}
+
+Piece Board::GetPiece(unsigned x, unsigned y) {
+  for (unsigned i = 0; i < planes_.size(); ++i) {
+    if (!planes_[i].get(x, y)) continue;
+    return Piece{i % figure_count_, unsigned(i / figure_count_)};
+  }
+
+  return kEmptyPiece;
+}
+
+bool operator==(const Piece& a, const Piece& b) {
+  return a.figure == b.figure && a.player == b.player;
+}
+
 }
