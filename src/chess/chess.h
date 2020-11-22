@@ -1,6 +1,7 @@
 #ifndef AITHENTA_GAME_CHESS_H
 #define AITHENTA_GAME_CHESS_H
 
+#include "board/board.h"
 #include "game/action.h"
 #include "game/game.h"
 #include "game/state.h"
@@ -41,7 +42,7 @@ class State : public ::aithena::State {
   unsigned int GetNoProgressCount();
   void ResetNoProgressCount();
 
-  const std::string ToString() const override;
+  std::string ToString() override;
  private:
   // Indicates the player that has to make the next move.
   Player player_;
@@ -60,7 +61,7 @@ class Action : public ::aithena::Action<State> {
  public:
   using ::aithena::Action<State>::Action;
 
-  const std::string ToString() const override;
+  std::string ToString() override;
 };
 
 class Game : public ::aithena::Game<Action, State> {
@@ -71,6 +72,8 @@ class Game : public ::aithena::Game<Action, State> {
   State GetInitialState() override;
   ActionList GetLegalActions(State) override;
 };
+
+Piece make_piece();
 
 }
 }

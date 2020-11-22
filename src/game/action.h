@@ -20,7 +20,7 @@ class Action {
   }
 
   // Returns a canonical representation of the action.
-  virtual const std::string ToString() const = 0;
+  virtual std::string ToString() = 0;
  private:
   // The action is represented by the state before and the state after the
   // action.

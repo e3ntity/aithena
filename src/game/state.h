@@ -18,7 +18,7 @@ class State {
   Board GetBoard();
 
   // Returns a canoncial representation of the state.
-  virtual const std::string ToString() const = 0;
+  virtual std::string ToString() = 0;
  protected:
   Board board_;
 };

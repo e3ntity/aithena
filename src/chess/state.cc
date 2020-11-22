@@ -1,5 +1,7 @@
 #include "chess/chess.h"
 
+#include <sstream>
+
 namespace aithena {
 namespace chess {
 
@@ -36,8 +38,22 @@ State& State::operator=(const State& other) {
   return *this;
 }
 
-const std::string State::ToString() const {
-  return "";
+// Prints out the state in the following format:
+// figure-player:x-y/...
+std::string State::ToString() {
+  std::ostringstream repr;
+  Piece piece;
+
+  for (int x = 0; x < board_.GetWidth(); ++x) {
+    for (int y = 0; y < board_.GetHeight(); ++y) {
+      piece = board_.GetPiece(x, y);
+      if (piece == kEmptyPiece) continue;
+      repr << piece.figure << "-" << piece.player << ":"
+           << x << "-" << y << "/";
+    }
+  }
+
+  return repr.str();
 };
 
 }
