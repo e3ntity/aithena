@@ -1,30 +1,30 @@
 #ifndef AITHENTA_GAME_GAME_H
 #define AITHENTA_GAME_GAME_H
 
-#include <array>
 #include <unordered_map>
 #include <vector>
 
-#include "game/action.h"
-#include "game/state.h"
-
 namespace aithena {
 
-template <
-  typename Figure,
-  std::size_t figure_count
-  >
+template <typename Action, typename State>
 class Game {
  public:
   using Options = std::unordered_map<std::string, unsigned int>;
+  using ActionList = std::vector<Action>;
 
-  Game(Options);
-  ~Game() = default;
+  Game();
+  Game(Options options);
 
-  virtual State GetInitialState() const;
-  virtual std::vector<Action> GetLegalActions(State) const;
+  // Dealing with game options
+  void DefaultOption(std::string option, unsigned int value);
+  bool HasOption(std::string option);
+  unsigned int GetOption(std::string option);
+  void SetOption(std::string option, unsigned int value);
+
+  virtual State GetInitialState() = 0;
+  virtual ActionList GetLegalActions(State) = 0;
  private:
-  static const std::array<Figure, figure_count> figures_;
+  Options options_;
 };
 
 }

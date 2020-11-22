@@ -2,28 +2,27 @@
 #define AITHENTA_GAME_ACTION
 
 #include <string>
-#include <tuple>
-
-#include "game/state.h"
 
 namespace aithena {
 
+template <typename State>
 class Action {
-public:
+ public:
   Action(State before, State after);
   ~Action() = default;
 
   // Returns the "before" state.
-  State GetPreviousState() const;
+  virtual State GetPreviousState();
   // Returns the "after" state.
-  State GetNextState() const;
+  virtual State GetNextState();
 
   // Returns a canonical representation of the action.
   virtual std::string ToString() const;
-private:
+ protected:
   // The action is represented by the state before and the state after the
   // action.
-  std::tuple <State, State> transition_;
+  State before_;
+  State after_;
 };
 
 }

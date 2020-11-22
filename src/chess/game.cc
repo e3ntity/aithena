@@ -3,8 +3,20 @@
 namespace aithena {
 namespace chess {
 
-// Initialize figures
-const std::array<Figure, 6> Game::figures_ = {Figure::king, Figure::queen, Figure::rook, Figure::bishop, Figure::knight, Figure::pawn};
+Game::Game() : Game{Options{}} {}
+/*
+Game::Game(Options options) : ::aithena::Game{options} {
+  DefaultOption("board_width", 8);
+  DefaultOption("board_height", 8);
+}*/
+
+State Game::GetInitialState() {
+  return State();
+}
+
+Game::ActionList Game::GetLegalActions(State state) {
+  return std::vector<Action>();
+};
 
 }
 }

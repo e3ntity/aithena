@@ -8,22 +8,38 @@
 namespace aithena {
 namespace chess {
 
-enum class Figure {king, queen, rook, bishop, knight, pawn};
-
-class Action : public ::aithena::Action {};
-
-class Game :
-  public ::aithena::Game<Figure, 6> {
- public:
-  Game(Options);
-
-  State GetInitialState() const override;
-  std::vector<Action> GetLegalActions(State);
- private:
-  static const std::array<Figure, 6> figures_;
+enum class Figure : unsigned char {
+  kKing, kQueen, kRook,
+  kBishop, kKnight, kPawn,
+  kCount
 };
 
-class State : public ::aithena::State {};
+class State : public ::aithena::State {
+ public:
+  State(Board);
+  State();
+  State(const State&);
+};
+
+class Action : public ::aithena::Action<State> {
+ public:
+  using ::aithena::Action<State>::Action;
+
+  State GetNextState();
+ private:
+  State before_;
+  State after_;
+};
+
+class Game : public ::aithena::Game<Action, State> {
+ public:
+  Game();
+  Game(Options);
+
+  State GetInitialState() override;
+  ActionList GetLegalActions(State) override;
+};
+
 }
 }
 

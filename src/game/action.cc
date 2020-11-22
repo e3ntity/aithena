@@ -1,19 +1,20 @@
-#include <stdexcept>
-
 #include "game/action.h"
 
-#include "game/state.h"
+#include <string>
 
 namespace aithena {
 
-Action::Action(State before, State after) : transition_{before, after} {}
+template <typename State>
+Action<State>::Action(State before, State after) : before_(before), after_(after) {}
 
-State Action::GetPreviousState() const {
-	return std::get<0>(transition_);
+template <typename State>
+State Action<State>::GetPreviousState() {
+  return before_;
 }
 
-State Action::GetNextState() const {
-	return std::get<1>(transition_);
+template <typename State>
+State Action<State>::GetNextState() {
+  return after_;
 }
 
 }

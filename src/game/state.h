@@ -8,14 +8,16 @@ namespace aithena {
 class State {
  public:
   // Constructs the state with the given board.
-  State(Board board);
+  State(Board);
   // Constructs the state with an empty board.
   State();
+  // Copy constructor.
+  State(const State&);
 
   // Returns a canoncial representation of the state.
   virtual std::string toString();
- private:
-  Board boards_;
+ protected:
+  Board board_;
 };
 
 }
