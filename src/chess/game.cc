@@ -15,17 +15,14 @@ Game::Game(Options options) : ::aithena::Game<Action, State> {options} {
   DefaultOption("board_height", 8);
   DefaultOption("figure_count", static_cast<unsigned>(Figure::kCount));
 
-  assert((
-    "Chess board can at most be 8x8",
-    GetOption("board_width") <= 8 && GetOption("board_height") <= 8
-  ));
+  assert(GetOption("board_width") <= 8 && GetOption("board_height") <= 8);
 }
 
 State Game::GetInitialState() {
   State state(GetOption("board_width"), GetOption("board_height"),
               GetOption("figure_count"));
 
-
+  return state;
 }
 
 Game::ActionList Game::GetLegalActions(State state) {
