@@ -10,7 +10,7 @@ namespace aithena {
 template <typename Action, typename State>
 class Game {
  public:
-  using Options = std::unordered_map<std::string, unsigned int>;
+  using Options = std::unordered_map<std::string, int>;
   using ActionList = std::vector<Action>;
 
   // Creates the game with default options.
@@ -23,9 +23,9 @@ class Game {
   bool HasOption(std::string option);
   // Returns the value of a given game option.
   // Take caution that the option is set!
-  unsigned int GetOption(std::string option);
+  int GetOption(std::string option);
   // Sets a game option.
-  void SetOption(std::string option, unsigned int value);
+  void SetOption(std::string option, int value);
 
   // Returns an initial state for the game start.
   virtual State GetInitialState() = 0;
@@ -34,7 +34,7 @@ class Game {
 
  protected:
   // Registers a new default option
-  void DefaultOption(std::string option, unsigned int value);
+  void DefaultOption(std::string option, int value);
 
  private:
   Options options_;

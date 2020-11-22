@@ -15,7 +15,7 @@ Game<Action, State>::Game(Options options) : options_{options} {};
 template <typename Action, typename State>
 void Game<Action, State>::DefaultOption(
   std::string option,
-  unsigned int value) {
+  int value) {
   if (HasOption(option))
     return;
   SetOption(option, value);
@@ -27,14 +27,14 @@ bool Game<Action, State>::HasOption(std::string option) {
 }
 
 template <typename Action, typename State>
-unsigned int Game<Action, State>::GetOption(std::string option) {
+int Game<Action, State>::GetOption(std::string option) {
   return options_[option];
 }
 
 template <typename Action, typename State>
 void Game<Action, State>::SetOption(
   std::string option,
-  unsigned int value) {
+  int value) {
   options_[option] = value;
 }
 
