@@ -11,11 +11,11 @@ class Action {
   Action(State before, State after) : before_(before), after_(after) {}
 
   // Returns the "before" state.
-  const State GetPreviousState() const {
+  State GetPreviousState() {
     return before_;
   }
   // Returns the "after" state.
-  const State GetNextState() const {
+  State GetNextState() {
     return after_;
   }
 
@@ -24,8 +24,8 @@ class Action {
  private:
   // The action is represented by the state before and the state after the
   // action.
-  const State before_;
-  const State after_;
+  State before_;
+  State after_;
 };
 
 }

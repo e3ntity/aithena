@@ -17,6 +17,8 @@ class Board {
   // each player (2).
   Board(std::size_t width, std::size_t height, unsigned char figure_count);
 
+  Board& operator=(const Board&);
+
   BoardPlane GetPlane(unsigned char figure, unsigned char player);
  private:
   std::size_t width_, height_;

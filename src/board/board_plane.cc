@@ -22,6 +22,16 @@ bool BoardPlane::get(unsigned int x, unsigned int y) const {
 
 // Overloaded operators go here
 
+BoardPlane& BoardPlane::operator=(const BoardPlane& other) {
+  if (&other == this) return *this;
+
+  width_ = other.width_;
+  height_ = other.height_;
+  plane_ = other.plane_;
+
+  return *this;
+}
+
 BoardPlane& BoardPlane::operator&=(const BoardPlane& other) {
   plane_ |= other.plane_;
   return *this;

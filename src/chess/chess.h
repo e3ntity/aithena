@@ -18,7 +18,9 @@ enum class Player : unsigned char {kWhite, kBlack};
 
 class State : public ::aithena::State {
  public:
-  using ::aithena::State::State;
+  State(std::size_t width, std::size_t height, unsigned char figure_count);
+  State(Board);
+  State(const State&);
 
   const std::string ToString() const override;
 };

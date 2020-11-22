@@ -18,6 +18,8 @@ class BoardPlane {
 	// Returns the bit of the board at the specified location.
 	bool get(unsigned int x, unsigned int y) const;
 
+	BoardPlane& operator=(const BoardPlane&);
+
 	BoardPlane& operator&=(const BoardPlane&);
 	BoardPlane& operator|=(const BoardPlane&);
 	BoardPlane& operator^=(const BoardPlane&);
@@ -30,7 +32,7 @@ class BoardPlane {
 	bool operator!=(const BoardPlane&);
 
  private:
-	const std::size_t width_, height_;
+	std::size_t width_, height_;
 	// A 2D bit plane specified rows to columns.
 	// Example:
 	//  plane_[5 + 2 * width_] // returns the fifth element of the second row
