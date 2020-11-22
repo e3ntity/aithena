@@ -1,6 +1,7 @@
 #include "game/state.h"
 
 #include <string>
+#include <sstream>
 
 namespace aithena {
 
@@ -17,6 +18,24 @@ State& State::operator=(const State& other) {
   return *this;
 }
 
-Board State::GetBoard() {return board_;}
+// Prints out the state in the following format:
+// figure-player:x-y/...
+std::string State::ToString() {
+  std::ostringstream repr;
+  Piece piece;
+
+  for (unsigned x = 0; x < board_.GetWidth(); ++x) {
+    for (unsigned y = 0; y < board_.GetHeight(); ++y) {
+      piece = board_.GetPiece(x, y);
+      if (piece == kEmptyPiece) continue;
+      repr << piece.figure << "-" << piece.player << ":"
+           << x << "-" << y << "/";
+    }
+  }
+
+  return repr.str();
+};
+
+Board& State::GetBoard() {return board_;}
 
 }

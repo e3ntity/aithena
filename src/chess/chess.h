@@ -41,8 +41,6 @@ class State : public ::aithena::State {
 
   unsigned int GetNoProgressCount();
   void ResetNoProgressCount();
-
-  std::string ToString() override;
  private:
   // Indicates the player that has to make the next move.
   Player player_;
@@ -73,7 +71,7 @@ class Game : public ::aithena::Game<Action, State> {
   ActionList GetLegalActions(State) override;
 };
 
-Piece make_piece();
+Piece make_piece(Figure, Player);
 
 }
 }

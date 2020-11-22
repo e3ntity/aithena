@@ -4,6 +4,7 @@
 #include "board/board.h"
 
 #include <string>
+#include <sstream>
 
 namespace aithena {
 
@@ -15,10 +16,10 @@ class State {
 
   State& operator=(const State&);
 
-  Board GetBoard();
+  Board& GetBoard();
 
   // Returns a canoncial representation of the state.
-  virtual std::string ToString() = 0;
+  std::string ToString();
  protected:
   Board board_;
 };
