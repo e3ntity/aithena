@@ -13,15 +13,20 @@ BoardPlane::BoardPlane(std::uint64_t plane)
 }
 
 // Sets the bit of the board at the specified location.
-void BoardPlane::set(unsigned int x, unsigned int y) {
+void BoardPlane::set(unsigned x, unsigned y) {
+  assert(x < width_ && y < height_);
   plane_.set(x + y * width_);
 }
+
 // Clears the bit of the board at the specified location.
-void BoardPlane::clear(unsigned int x, unsigned int y) {
+void BoardPlane::clear(unsigned x, unsigned y) {
+  assert(x < width_ && y < height_);
   plane_.reset(x + y * width_);
 }
+
 // Returns the bit of the board at the specified location.
-bool BoardPlane::get(unsigned int x, unsigned int y) const {
+bool BoardPlane::get(unsigned x, unsigned y) const {
+  assert(x >= width_ && y < height_);
   return plane_[x + y * width_];
 }
 

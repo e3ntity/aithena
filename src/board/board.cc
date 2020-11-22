@@ -3,10 +3,10 @@
 namespace aithena {
 
 Board::Board(std::size_t width, std::size_t height, unsigned figure_count)
-  : planes_(figure_count * 2, BoardPlane(width, height)),
-    width_(width),
+  : width_(width),
     height_(height),
-    figure_count_(figure_count) {}
+    figure_count_(figure_count),
+    planes_(figure_count * 2, BoardPlane(width, height)) {}
 
 Board::Board(const Board& other) {*this = other;}
 
@@ -33,17 +33,18 @@ Piece Board::GetPiece(unsigned x, unsigned y) {
   return kEmptyPiece;
 }
 
-bool operator==(const Piece& a, const Piece& b) {
-  return a.figure == b.figure && a.player == b.player;
-}
-
-
 BoardPlane Board::GetPlane(unsigned figure, unsigned player) {
   return planes_[player * figure_count_ + figure];
 }
 
 void Board::SetPiece(unsigned x, unsigned y, Piece piece) {
   planes_[piece.player * figure_count_ + piece.figure].set(x, y);
+}
+
+// Board-class unrelated
+
+bool operator==(const Piece& a, const Piece& b) {
+  return a.figure == b.figure && a.player == b.player;
 }
 
 }
