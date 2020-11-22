@@ -14,6 +14,8 @@ enum class Figure : unsigned char {
   kCount
 };
 
+enum class Player : unsigned char {kWhite, kBlack};
+
 class State : public ::aithena::State {
  public:
   State(Board);
