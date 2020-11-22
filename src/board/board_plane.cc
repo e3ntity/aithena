@@ -3,10 +3,9 @@
 namespace aithena {
 
 BoardPlane::BoardPlane(std::size_t width, std::size_t height)
-  : width_{width}, height_{height}, plane_{width * height} {};
-
-BoardPlane::BoardPlane(const BoardPlane& other)
-  : width_(other.width_), height_(other.height_), plane_(other.plane_) {};
+  : width_{width},
+    height_{height},
+    plane_{/*num_bits=*/ width * height, /*long value=*/ 0} {};
 
 // Sets the bit of the board at the specified location.
 void BoardPlane::set(unsigned int x, unsigned int y) {

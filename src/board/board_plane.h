@@ -10,7 +10,6 @@ namespace aithena {
 class BoardPlane {
  public:
 	BoardPlane(std::size_t width, std::size_t height);
-	BoardPlane(const BoardPlane&);
 
 	// Sets the bit of the board at the specified location.
 	void set(unsigned int x, unsigned int y);
