@@ -8,13 +8,16 @@ namespace aithena {
 template <typename State>
 class Action {
  public:
-  Action(State before, State after);
-  ~Action() = default;
+  Action(State before, State after) : before_(before), after_(after) {}
 
   // Returns the "before" state.
-  const State GetPreviousState() const ;
+  const State GetPreviousState() const {
+    return before_;
+  }
   // Returns the "after" state.
-  const State GetNextState() const;
+  const State GetNextState() const {
+    return after_;
+  }
 
   // Returns a canonical representation of the action.
   virtual const std::string ToString() const = 0;
