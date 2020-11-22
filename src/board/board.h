@@ -14,6 +14,7 @@ struct Piece {
   unsigned player;
 };
 
+// Piece value returned for a square without a piece.
 const Piece kEmptyPiece = {UINT_MAX, UINT_MAX};
 
 bool operator==(const Piece&, const Piece&);
@@ -23,7 +24,7 @@ bool operator==(const Piece&, const Piece&);
 // Player and Figure identifiers must be continuous series from zero up to
 // 2 and figure_count respectively.
 class Board {
-public:
+ public:
   // Creates a board plane of size width x height for each type of figure and
   // each player (2).
   Board(std::size_t width, std::size_t height, unsigned figure_count);
@@ -34,13 +35,18 @@ public:
   std::size_t GetWidth();
   std::size_t GetHeight();
 
-  BoardPlane GetPlane(unsigned figure, unsigned player);
+  BoardPlane& GetPlane(unsigned figure, unsigned player);
   void SetPiece(unsigned x, unsigned y, Piece);
-  // Returns a tuple (figure, player) or (-1, -1) if the field is empty.
   Piece GetPiece(unsigned x, unsigned y);
-private:
+
+ private:
+  // The width and height of the board and therefore of all board planes
+  // managed by the board.
   std::size_t width_, height_;
+  // The number of figures managed by the board.
   unsigned figure_count_;
+  // The board planes managed by the board, two for each piece (one for each
+  // player).
   std::vector<BoardPlane> planes_;
 };
 

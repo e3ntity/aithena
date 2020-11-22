@@ -2,12 +2,15 @@
 
 namespace aithena {
 
+bool operator==(const Piece& a, const Piece& b) {
+  return a.figure == b.figure && a.player == b.player;
+}
+
 Board::Board(std::size_t width, std::size_t height, unsigned figure_count)
   : width_(width),
     height_(height),
     figure_count_(figure_count),
     planes_(figure_count * 2, BoardPlane(width, height)) {}
-
 Board::Board(const Board& other) {*this = other;}
 
 Board& Board::operator=(const Board& other) {
@@ -24,6 +27,12 @@ Board& Board::operator=(const Board& other) {
 std::size_t Board::GetWidth() {return width_;}
 std::size_t Board::GetHeight() {return height_;}
 
+BoardPlane& Board::GetPlane(unsigned figure, unsigned player) {
+  return planes_[player * figure_count_ + figure];
+}
+void Board::SetPiece(unsigned x, unsigned y, Piece piece) {
+  planes_[piece.player * figure_count_ + piece.figure].set(x, y);
+}
 Piece Board::GetPiece(unsigned x, unsigned y) {
   for (unsigned i = 0; i < planes_.size(); ++i) {
     if (!planes_[i].get(x, y)) continue;
@@ -31,20 +40,6 @@ Piece Board::GetPiece(unsigned x, unsigned y) {
   }
 
   return kEmptyPiece;
-}
-
-BoardPlane Board::GetPlane(unsigned figure, unsigned player) {
-  return planes_[player * figure_count_ + figure];
-}
-
-void Board::SetPiece(unsigned x, unsigned y, Piece piece) {
-  planes_[piece.player * figure_count_ + piece.figure].set(x, y);
-}
-
-// Board-class unrelated
-
-bool operator==(const Piece& a, const Piece& b) {
-  return a.figure == b.figure && a.player == b.player;
 }
 
 }
