@@ -13,17 +13,29 @@ class Game {
   using Options = std::unordered_map<std::string, unsigned int>;
   using ActionList = std::vector<Action>;
 
+  // Creates the game with default options.
+  // Options can be added/overridden using the SetOption member function.
   Game();
+  // Creates the game with custom options.
   Game(Options options);
 
-  // Dealing with game options
-  void DefaultOption(std::string option, unsigned int value);
+  // Checks whether a given game option is set.
   bool HasOption(std::string option);
+  // Returns the value of a given game option.
+  // Take caution that the option is set!
   unsigned int GetOption(std::string option);
+  // Sets a game option.
   void SetOption(std::string option, unsigned int value);
 
+  // Returns an initial state for the game start.
   virtual State GetInitialState() = 0;
+  // Computes and reutrns all legal actions given a game state.
   virtual ActionList GetLegalActions(State) = 0;
+
+ protected:
+  // Registers a new default option
+  void DefaultOption(std::string option, unsigned int value);
+
  private:
   Options options_;
 };
