@@ -23,7 +23,7 @@ bool operator==(const Piece&, const Piece&);
 // Player and Figure identifiers must be continuous series from zero up to
 // 2 and figure_count respectively.
 class Board {
- public:
+public:
   // Creates a board plane of size width x height for each type of figure and
   // each player (2).
   Board(std::size_t width, std::size_t height, unsigned figure_count);
@@ -38,7 +38,7 @@ class Board {
   void SetPiece(unsigned x, unsigned y, Piece);
   // Returns a tuple (figure, player) or (-1, -1) if the field is empty.
   Piece GetPiece(unsigned x, unsigned y);
- private:
+private:
   std::size_t width_, height_;
   unsigned figure_count_;
   std::vector<BoardPlane> planes_;
