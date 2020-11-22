@@ -12,7 +12,7 @@ int main() {
   auto game = aithena::chess::Game(options);
   auto state = game.GetInitialState();
 
-  aithena::Board& board = state.GetBoard();
+  aithena::Board board& = state.GetBoard();
   auto black_pawn = aithena::chess::make_piece(
                       aithena::chess::Figure::kPawn,
                       aithena::chess::Player::kBlack);
