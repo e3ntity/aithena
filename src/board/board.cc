@@ -35,13 +35,15 @@ Piece Board::GetPiece(unsigned x, unsigned y) {
 
 bool operator==(const Piece& a, const Piece& b) {
   return a.figure == b.figure && a.player == b.player;
-  BoardPlane Board::GetPlane(unsigned figure, unsigned player) {
-    return planes_[player * figure_count_ + figure];
-  }
+}
 
-  void Board::SetPiece(unsigned x, unsigned y, Piece piece) {
-    planes_[piece.player * figure_count_ + piece.figure].set(x, y);
-  }
+
+BoardPlane Board::GetPlane(unsigned figure, unsigned player) {
+  return planes_[player * figure_count_ + figure];
+}
+
+void Board::SetPiece(unsigned x, unsigned y, Piece piece) {
+  planes_[piece.player * figure_count_ + piece.figure].set(x, y);
 }
 
 }
