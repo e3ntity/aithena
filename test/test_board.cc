@@ -124,3 +124,50 @@ TEST(BoardPlane, EqualityOperatorsWorkCorrectly) {
   ASSERT_TRUE(bp != bp3);
   ASSERT_TRUE(bp2 != bp3);
 }
+
+class BoardTest : public ::testing::Test {
+protected:
+  void SetUp() {
+    for (unsigned int i = 0; i < 9; ++i) {
+      board.SetPiece(i, i, {i % 8, i % 2});
+    }
+  }
+
+  aithena::Board board{9, 9, 8};
+};
+
+TEST_F(BoardTest, InitializesBitfieldToCorrectSize) {
+  for (unsigned int fig = 0; fig < 8; ++fig) {
+    for (unsigned int player = 0; player < 2; ++player) {
+      aithena::BoardPlane bp = board.GetPlane(fig, player);
+
+      bp.get(3, 3); // Should work
+      ASSERT_DEATH(bp.get(8, 9), ".*pos < m_num_bits.*");
+      ASSERT_DEATH(bp.get(9, 8), ".*pos < m_num_bits.*");
+      ASSERT_DEATH(bp.get(9, 9), ".*pos < m_num_bits.*");
+    }
+  }
+}
+
+TEST_F(BoardTest, PieceSetCorrectly) {
+  for (unsigned int i = 0; i < 9; ++i) {
+    ASSERT_TRUE(board.GetPlane(i % 8, i % 2).get(i, i));
+  }
+}
+
+TEST_F(BoardTest, GetPieceTest) {
+  aithena::Piece piece;
+  // test along the filled diagonal
+  for (unsigned int i = 0; i < 9; ++i) {
+    piece = board.GetPiece(i, i);
+    ASSERT_EQ(piece.figure, i % 8);
+    ASSERT_EQ(piece.player, i % 2);
+  }
+
+  //test squares where there are no pieces
+  piece = board.GetPiece(0, 8);
+  ASSERT_TRUE(piece == aithena::kEmptyPiece);
+
+  piece = board.GetPiece(4, 2);
+  ASSERT_TRUE(piece == aithena::kEmptyPiece);
+}
