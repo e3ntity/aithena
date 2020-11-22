@@ -3,16 +3,16 @@
 
 #include "board/board.h"
 
+#include <string>
+
 namespace aithena {
 
 class State {
  public:
+  // Constructs the state with an empty board of given dimensions.
+  State(std::size_t width, std::size_t height, unsigned char figure_count);
   // Constructs the state with the given board.
   State(Board);
-  // Constructs the state with an empty board.
-  State();
-  // Copy constructor.
-  State(const State&);
 
   // Returns a canoncial representation of the state.
   virtual std::string toString();
