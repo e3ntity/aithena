@@ -1,5 +1,7 @@
 #include "chess/chess.h"
 
+#include <assert.h>
+
 namespace aithena {
 namespace chess {
 
@@ -9,6 +11,11 @@ Game::Game(Options options) : ::aithena::Game<Action, State> {options} {
   DefaultOption("board_width", 8);
   DefaultOption("board_height", 8);
   DefaultOption("figure_count", static_cast<unsigned char>(Figure::kCount));
+
+  assert((
+    "Chess board can at most be 8x8",
+    GetOption("board_width") < 8 && GetOption("board_height") < 8
+  ));
 }
 
 State Game::GetInitialState() {
