@@ -9,8 +9,8 @@ namespace aithena {
 namespace chess {
 
 enum class Figure : unsigned char {
-  kKing, kQueen, kRook,
-  kBishop, kKnight, kPawn,
+  /*kKing, kQueen, kRook,
+  kBishop, kKnight, */kPawn,
   kCount
 };
 
