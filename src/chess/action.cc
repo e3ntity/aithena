@@ -5,8 +5,8 @@
 namespace aithena {
 namespace chess {
 
-State Action::GetNextState() {
-  return after_;
+const std::string Action::ToString() const {
+  return "";
 };
 
 }

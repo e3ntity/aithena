@@ -19,16 +19,15 @@ enum class Player : unsigned char {kWhite, kBlack};
 class State : public ::aithena::State {
  public:
   using ::aithena::State::State;
+
+  const std::string ToString() const override;
 };
 
 class Action : public ::aithena::Action<State> {
  public:
   using ::aithena::Action<State>::Action;
 
-  State GetNextState();
- private:
-  State before_;
-  State after_;
+  const std::string ToString() const override;
 };
 
 class Game : public ::aithena::Game<Action, State> {

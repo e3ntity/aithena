@@ -12,17 +12,17 @@ class Action {
   ~Action() = default;
 
   // Returns the "before" state.
-  virtual State GetPreviousState();
+  const State GetPreviousState() const ;
   // Returns the "after" state.
-  virtual State GetNextState();
+  const State GetNextState() const;
 
   // Returns a canonical representation of the action.
-  virtual std::string ToString() const;
- protected:
+  virtual const std::string ToString() const = 0;
+ private:
   // The action is represented by the state before and the state after the
   // action.
-  State before_;
-  State after_;
+  const State before_;
+  const State after_;
 };
 
 }
