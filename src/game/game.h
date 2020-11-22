@@ -15,17 +15,23 @@ class Game {
 
   // Creates the game with default options.
   // Options can be added/overridden using the SetOption member function.
-  Game();
+  Game() : options_{} {}
   // Creates the game with custom options.
-  Game(Options options);
+  Game(Options options) : options_{options} {}
 
   // Checks whether a given game option is set.
-  bool HasOption(std::string option);
+  bool HasOption(std::string option) {
+    return !(options_.find(option) == options_.end());
+  }
   // Returns the value of a given game option.
   // Take caution that the option is set!
-  int GetOption(std::string option);
+  int GetOption(std::string option) {
+    return options_[option];
+  }
   // Sets a game option.
-  void SetOption(std::string option, int value);
+  void SetOption(std::string option, int value) {
+    options_[option] = value;
+  }
 
   // Returns an initial state for the game start.
   virtual State GetInitialState() = 0;
@@ -34,7 +40,11 @@ class Game {
 
  protected:
   // Registers a new default option
-  void DefaultOption(std::string option, int value);
+  void DefaultOption(std::string option, int value) {
+    if (HasOption(option))
+      return;
+    SetOption(option, value);
+  }
 
  private:
   Options options_;
