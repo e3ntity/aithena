@@ -5,11 +5,7 @@
 namespace aithena {
 
 State::State(std::size_t width, std::size_t height, unsigned char figure_count)
-  : State(Board(width, height, figure_count)) {}
-
-State::State(const State& other) {
-  board_ = other.board_;
-}
+  : board_{width, height, figure_count} {}
 
 State& State::operator=(const State& other) {
   if (this == &other) return *this;
@@ -19,6 +15,6 @@ State& State::operator=(const State& other) {
   return *this;
 }
 
-State GetBoard() {return board_;}
+Board State::GetBoard() {return board_;}
 
 }
