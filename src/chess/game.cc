@@ -16,7 +16,11 @@ Game::Game(Options options) : ::aithena::Game<Action, State> {options} {
   DefaultOption("figure_count", static_cast<unsigned>(Figure::kCount));
 
   assert(GetOption("board_width") <= 8 && GetOption("board_height") <= 8);
+
+  InitializeMagic();
 }
+
+void Game::InitializeMagic() {}
 
 State Game::GetInitialState() {
   State state(GetOption("board_width"), GetOption("board_height"),
