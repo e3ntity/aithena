@@ -7,11 +7,10 @@
 
 namespace aithena {
 
-template <typename Action, typename State>
+template <typename State>
 class Game {
  public:
   using Options = std::unordered_map<std::string, int>;
-  using ActionList = std::vector<Action>;
 
   // Creates the game with default options.
   // Options can be added/overridden using the SetOption member function.
@@ -36,7 +35,7 @@ class Game {
   // Returns an initial state for the game start.
   virtual State GetInitialState() = 0;
   // Computes and reutrns all legal actions given a game state.
-  virtual ActionList GetLegalActions(State) = 0;
+  virtual std::vector<State> GetLegalActions(State) = 0;
 
  protected:
   // Registers a new default option

@@ -1,6 +1,7 @@
 #include "chess/chess.h"
 
 #include <assert.h>
+#include <iostream>
 
 #include "board/board.h"
 #include "chess/moves.h"
@@ -10,7 +11,7 @@ namespace chess {
 
 Game::Game() : Game{Options{}} {}
 
-Game::Game(Options options) : ::aithena::Game<Action, State> {options} {
+Game::Game(Options options) : ::aithena::Game<State> {options} {
   DefaultOption("board_width", 8);
   DefaultOption("board_height", 8);
   DefaultOption("figure_count", static_cast<unsigned>(Figure::kCount));
@@ -21,18 +22,21 @@ Game::Game(Options options) : ::aithena::Game<Action, State> {options} {
 }
 
 void Game::InitializeMagic() {
-  int width = GetOption("board_width");
-  int height = GetOption("board_height");
+  unsigned width = GetOption("board_width");
+  unsigned height = GetOption("board_height");
   unsigned fig_count = static_cast<unsigned>(Figure::kCount);
+
+  assert(width <= 8 && height <= 8);
 
   for (unsigned f = 0; f < fig_count; ++f) {
     magic_bit_planes_[f] = std::make_unique<BoardPlane[]>(width * height);
-    for (unsigned w = 0; w < width; ++w) {
-      for (unsigned h = 0; h < height; ++h) {
-        magic_bit_planes_[2 * f][h * width + w] =
-          BoardPlane(kPawnPushes[h * width + w]);
-        magic_bit_planes_[2 * f + 1][h * width + w] =
-          BoardPlane(kPawnPushes[h * width + w]);
+    magic_bit_planes_[f + 1] = std::make_unique<BoardPlane[]>(width * height);
+    for (unsigned x = 0; x < width; ++x) {
+      for (unsigned y = 0; y < height; ++y) {
+        magic_bit_planes_[2 * f][y * width + x] =
+          BoardPlane(kPawnPushes[y * 8 + x]);
+        magic_bit_planes_[2 * f + 1][y * width + x] =
+          BoardPlane(kPawnPushes[y * 8 + x]);
       }
     }
   }
@@ -64,16 +68,7 @@ State Game::GetInitialState() {
   return state;
 }
 
-Game::ActionList Game::GetLegalActions(State state) {
-  /*
-  Game::ActionList legal_moves{};
-
-  Game::ActionList pawn_moves = this->GenPawnMoves(state);
-  legal_moves.reserve(legal_moves.size() + pawn_moves.size());
-  legal_moves.insert(legal_moves.end(), pawn_moves.begin(), pawn_moves.end());
-
-  return legal_moves;
-  */
+std::vector<State> Game::GetLegalActions(State state) {
   return {};
 };
 
@@ -81,6 +76,58 @@ Piece make_piece(Figure figure, Player player) {
   return Piece{static_cast<unsigned>(figure), static_cast<unsigned>(player)};
 };
 
+std::vector<State> Game::GenPawnMoves(State state, unsigned x, unsigned y) {
+  Board board_before{state.GetBoard()};
+  std::size_t width{board_before.GetWidth()};
+  std::size_t height{board_before.GetHeight()};
+
+  std::vector<State> moves{}; // Return value
+
+  unsigned pawn = static_cast<unsigned>(Figure::kPawn);
+  unsigned player = static_cast<unsigned>(state.GetPlayer());
+  Piece piece = board_before.GetField(x, y);
+
+  // Make checks
+
+  if (piece == kEmptyPiece || piece.player != player || piece.figure != pawn)
+    return moves;
+
+  int direction = state.GetPlayer() == Player::kWhite ? 1 : -1;
+
+  if (y + direction >= height || y + direction < 0) {
+    // TODO: Add promotions
+    return moves;
+  }
+
+  // Generate moves
+
+  unsigned opponent = static_cast<unsigned>(
+                        state.GetPlayer() == Player::kWhite
+                        ? Player::kBlack : Player::kWhite);
+  BoardPlane figure_plane = board_before.GetCompletePlane();
+
+  // Generate pushes
+
+  if (!figure_plane.get(x, y + direction)) {
+    // Move forward once
+    moves.push_back(State{state});
+    moves.back().GetBoard().MoveField(x, y, x, y + direction);
+
+    if (y == (state.GetPlayer() == Player::kWhite ? 1 : height - 2)
+        && !figure_plane.get(x, y + 2 * direction)) {
+      // Move forward twice
+      moves.push_back(State{state});
+      moves.back().GetBoard().MoveField(x, y, x, y + direction * 2);
+    }
+  }
+
+  // Generate captures
+
+
+  return moves;
+}
+
+/*
 std::vector<State> Game::GenPawnMoves(State state, unsigned x, unsigned y) {
   Board curr_board = state.GetBoard();
   std::size_t width = curr_board.GetWidth();
@@ -95,7 +142,7 @@ std::vector<State> Game::GenPawnMoves(State state, unsigned x, unsigned y) {
   if (!(piece.figure == pawn
         && piece.player == curr_player)
       || y + direction >= height || y + direction < 0)
-    return {};
+    return {};  // TODO: promotions
 
   std::vector<State> result;
 
@@ -103,12 +150,12 @@ std::vector<State> Game::GenPawnMoves(State state, unsigned x, unsigned y) {
   Player enemy = state.GetPlayer() == Player::kWhite ?
                  Player::kBlack : Player::kWhite;
 
-  BoardPlane pushes = magic_bit_planes_[pawn][(int)(y * width + x)];
+  BoardPlane pushes = magic_bit_planes_[pawn][y * width + x];
   BoardPlane attacks = magic_bit_planes_[pawn + 1][y * width + x];
   Piece own_pawn{pawn, curr_player};
-  BoardPlane own_figures = curr_board.GetPlane(own_pawn);
+  BoardPlane own_figures = curr_board.GetPlayerPlane(own_pawn);
   Piece enemy_pawn{pawn, static_cast<unsigned>(enemy)};
-  BoardPlane enemy_figures = curr_board.GetPlane(enemy_pawn);
+  BoardPlane enemy_figures = curr_board.GetPlayerPlane(enemy_pawn);
 
   BoardPlane push_collisions = (own_figures | enemy_figures) & pushes;
   if (!push_collisions.get(x, y + direction)) {
@@ -134,8 +181,9 @@ std::vector<State> Game::GenPawnMoves(State state, unsigned x, unsigned y) {
   }
   return result;
 }
+*/
 
-std::vector<State> Game::GenMoves(State) {
+std::vector<State> Game::GenMoves(State state, unsigned x, unsigned y) {
   return {};
 }
 

@@ -20,7 +20,7 @@ enum class Figure : unsigned {
 enum class Player : unsigned {kWhite, kBlack};
 
 class State : public ::aithena::State {
-public:
+ public:
   // Initializes to the chess starting state.
   State(std::size_t width, std::size_t height, unsigned figure_count);
   // Initializes to a give state.
@@ -29,7 +29,7 @@ public:
   State& operator=(const State&);
 
   Player GetPlayer();
-  void SetPlayer(Player);
+  void SetPlayer(Player p);
 
   bool GetCastleQueen(Player);
   bool GetCasteKing(Player);
@@ -41,7 +41,7 @@ public:
 
   unsigned int GetNoProgressCount();
   void ResetNoProgressCount();
-private:
+ private:
   // Indicates the player that has to make the next move.
   Player player_;
   // Indicates for each player whether queen-side castling is allowed.
@@ -56,14 +56,14 @@ private:
 };
 
 class Action : public ::aithena::Action<State> {
-public:
+ public:
   using ::aithena::Action<State>::Action;
 
   std::string ToString() override;
 };
 
-class Game : public ::aithena::Game<Action, State> {
-public:
+class Game : public ::aithena::Game<State> {
+ public:
   Game();
   Game(Options);
 
@@ -72,14 +72,16 @@ public:
   void InitializeMagic();
 
   State GetInitialState() override;
-  ActionList GetLegalActions(State) override;
 
-  // Generates the next moves for a single pawn at field (x, y) for a given state.
+  std::vector<State> GetLegalActions(State) override;
+
+  // Generates all next moves for any piece at field (x, y) for a given state.
+  std::vector<State> GenMoves(State, unsigned x, unsigned y);
+
+  // Generates the next moves for a single pawn at field (x, y) for a given
+  // state.
   std::vector<State> GenPawnMoves(State, unsigned x, unsigned y);
-
-  // Generates all next moves for a given state.
-  std::vector<State> GenMoves(State);
-private:
+ private:
   // Stores the magic bit boards computed by InitializeMagic.
   // magic_bit_planes_[2*i + 0] thereby stores the push bit planes for figure i
   // whereas magic_bit_planes[2*i + 1] stores the capture bit planes
