@@ -20,7 +20,7 @@ enum class Figure : unsigned {
 enum class Player : unsigned {kWhite, kBlack};
 
 class State : public ::aithena::State {
- public:
+public:
   // Initializes to the chess starting state.
   State(std::size_t width, std::size_t height, unsigned figure_count);
   // Initializes to a give state.
@@ -41,7 +41,7 @@ class State : public ::aithena::State {
 
   unsigned int GetNoProgressCount();
   void ResetNoProgressCount();
- private:
+private:
   // Indicates the player that has to make the next move.
   Player player_;
   // Indicates for each player whether queen-side castling is allowed.
@@ -56,14 +56,14 @@ class State : public ::aithena::State {
 };
 
 class Action : public ::aithena::Action<State> {
- public:
+public:
   using ::aithena::Action<State>::Action;
 
   std::string ToString() override;
 };
 
 class Game : public ::aithena::Game<Action, State> {
- public:
+public:
   Game();
   Game(Options);
 
@@ -79,11 +79,11 @@ class Game : public ::aithena::Game<Action, State> {
 
   // Generates all next moves for a given state.
   std::vector<State> GenMoves(State);
- private:
+private:
   // Stores the magic bit boards computed by InitializeMagic.
   // magic_bit_planes_[2*i + 0] thereby stores the push bit planes for figure i
   // whereas magic_bit_planes[2*i + 1] stores the capture bit planes
-  std::array<std::unique_ptr<BoardPlane>,
+  std::array<std::unique_ptr<BoardPlane[]>,
       static_cast<unsigned>(Figure::kCount) * 2> magic_bit_planes_;
 };
 
