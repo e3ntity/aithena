@@ -36,5 +36,9 @@ State& State::operator=(const State& other) {
   return *this;
 }
 
+Player State::GetPlayer() {
+  return player_;
+}
+
 }
 }

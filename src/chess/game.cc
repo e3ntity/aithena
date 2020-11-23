@@ -66,18 +66,57 @@ Piece make_piece(Figure figure, Player player) {
 };
 
 std::vector<State> Game::GenPawnMoves(State state, unsigned x, unsigned y) {
-  /*Piece piece = state.GetBoard().GetPiece(x, y);
+  Board curr_board = state.GetBoard();
+  std::size_t width = curr_board.GetWidth();
+  std::size_t height = curr_board.GetHeight();
+
+  Piece piece = curr_board.GetField(x, y);
+  unsigned pawn = static_cast<unsigned>(Figure::kPawn);
+  unsigned curr_player = static_cast<unsigned>(state.GetPlayer());
+  signed direction = state.GetPlayer() == Player::kWhite ? 1 : -1;
 
   // Check if there is a pawn on the given (x, y) position.
-  unsigned pawn = static_cast<unsigned>(kFigure::Pawn);
   if (!(piece.figure == pawn
-        && piece.player == static_cast<unsigned>(state.GetPlayer())))
+        && piece.player == curr_player)
+      | y + direction >= height | y + direction < 0)
     return {};
 
-  // Get push bitboard
-  BoardPlane pushes = magic_bit_planes_[k];
-  */
-  return {};
+  std::vector<State> result;
+
+  // Get enemy player
+  Player enemy = state.GetPlayer() == Player::kWhite ?
+                 Player::kBlack : Player::kWhite;
+
+  BoardPlane pushes = magic_bit_planes_[pawn][(int)(y * width + x)];
+  BoardPlane attacks = magic_bit_planes_[pawn + 1][y * width + x];
+  Piece own_pawn{pawn, curr_player};
+  BoardPlane own_figures = curr_board.GetPlane(own_pawn);
+  Piece enemy_pawn{pawn, static_cast<unsigned>(enemy)};
+  BoardPlane enemy_figures = curr_board.GetPlane(enemy_pawn);
+
+  BoardPlane push_collisions = (own_figures | enemy_figures) & pushes;
+  if (!push_collisions.get(x, y + direction)) {
+    State new_state = state;
+    new_state.GetBoard().MoveField(x, y, x, y + direction);
+    result.push_back(new_state);
+  }
+
+  BoardPlane attackable = enemy_figures & attacks;
+  if (x + 1 < width) {
+    if (attackable.get(x + 1, y + direction)) {
+      State new_state = state;
+      new_state.GetBoard().MoveField(x, y, x + 1, y + direction);
+      result.push_back(new_state);
+    }
+  }
+  if (x - 1 < width) {
+    if (attacks.get(x + 1, y + direction)) {
+      State new_state = state;
+      new_state.GetBoard().MoveField(x, y, x - 1, y + direction);
+      result.push_back(new_state);
+    }
+  }
+  return result;
 }
 
 std::vector<State> Game::GenMoves(State) {
