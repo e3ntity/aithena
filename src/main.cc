@@ -25,7 +25,7 @@ std::string PrintMarkedBoard(aithena::chess::State state,
 
   for (int y = board.GetHeight() - 1; y >= 0; --y) {
     repr << std::endl << " " << std::string(board.GetWidth() * 4 + 1, '-')
-         << std::endl << y << "|";
+         << std::endl << y + 1 << "|";
     for (unsigned x = 0; x < board.GetWidth(); ++x) {
       piece = board.GetField(x, y);
       bool marked = marker.get(x, y);
@@ -62,7 +62,7 @@ std::tuple<unsigned, unsigned, bool> ParseField(std::string field) {
   else if (x > 64 && x < 91) x -= 65;
   else return std::make_tuple(0, 0, false);
 
-  if (y > 47 && y < 58) y -= 48;
+  if (y > 47 && y < 58) y -= 49;
   else return std::make_tuple(0, 0, false);
 
   return std::make_tuple(x, y, true);
@@ -107,8 +107,14 @@ State EvaluateUserInput(std::string input, Game& game, State& state) {
     }
 
     auto field = ParseField(input_parts[1]);
-    auto moves = game.GenPawnMoves(state, std::get<0>(field),
-                                   std::get<1>(field));
+    auto piece = board.GetField(std::get<0>(field), std::get<1>(field));
+
+    if (piece == aithena::kEmptyPiece) {
+      std::cout << "No piece at " << input_parts[1] << std::endl;
+      return state;
+    }
+
+    auto moves = game.GenPawnMoves(state, std::get<0>(field), std::get<1>(field));
     aithena::BoardPlane marker{board.GetWidth(), board.GetHeight()};
 
     for (auto move : moves)
