@@ -112,7 +112,7 @@ State EvaluateUserInput(std::string input, Game& game, State& state) {
     aithena::BoardPlane marker{board.GetWidth(), board.GetHeight()};
 
     for (auto move : moves)
-      marker |= move.GetBoard().GetCompletePlane();
+      marker |= BoardDifference(board, move.GetBoard()).GetCompletePlane();
 
     std::cout << PrintMarkedBoard(state, marker) << std::endl;
 
