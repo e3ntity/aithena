@@ -26,6 +26,7 @@ Board& Board::operator=(const Board& other) {
 
 std::size_t Board::GetWidth() {return width_;}
 std::size_t Board::GetHeight() {return height_;}
+unsigned Board::GetFigureCount() {return figure_count_;}
 
 BoardPlane& Board::GetPlane(Piece piece) {
   assert(piece.figure < figure_count_ && piece.player < 2);
@@ -89,6 +90,19 @@ void Board::MoveField(unsigned x, unsigned y, unsigned x_, unsigned y_) {
   Piece piece = GetField(x, y);
   ClearField(x, y);
   SetField(x_, y_, piece);
+}
+
+Board BoardDifference(Board& a, Board& b) {
+  assert(a.GetWidth() == b.GetWidth()
+         && a.GetHeight() == b.GetHeight()
+         && a.GetFigureCount() == b.GetFigureCount());
+
+  Board board{a.GetWidth(), a.GetHeight(), a.GetFigureCount()};
+
+  for (unsigned int i = 0; i < a.GetFigureCount() * 2; i++)
+    board.planes_[i] &= !b.planes_[i];
+
+  return board;
 }
 
 }
