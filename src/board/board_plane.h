@@ -8,11 +8,12 @@
 namespace aithena {
 
 class BoardPlane {
- public:
+public:
 	BoardPlane(std::size_t width, std::size_t height);
 
 	// Special constructor for chess.
 	BoardPlane(std::uint64_t);
+	BoardPlane() = default;
 
 	// Sets the bit of the board at the specified location.
 	void set(unsigned int x, unsigned int y);
@@ -35,7 +36,7 @@ class BoardPlane {
 	bool operator==(const BoardPlane&);
 	bool operator!=(const BoardPlane&);
 
- private:
+private:
 	std::size_t width_, height_;
 	// A 2D bit plane specified rows to columns.
 	// Example:

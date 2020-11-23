@@ -20,7 +20,23 @@ Game::Game(Options options) : ::aithena::Game<Action, State> {options} {
   InitializeMagic();
 }
 
-void Game::InitializeMagic() {}
+void Game::InitializeMagic() {
+  int width = GetOption("board_width");
+  int height = GetOption("board_height");
+  unsigned fig_count = static_cast<unsigned>(Figure::kCount);
+
+  for (unsigned f = 0; f < fig_count; ++f) {
+    magic_bit_planes_[f] = std::make_unique<BoardPlane[]>(width * height);
+    for (unsigned w = 0; w < width; ++w) {
+      for (unsigned h = 0; h < height; ++h) {
+        magic_bit_planes_[2 * f][h * width + w] =
+          BoardPlane(kPawnPushes[h * width + w]);
+        magic_bit_planes_[2 * f + 1][h * width + w] =
+          BoardPlane(kPawnPushes[h * width + w]);
+      }
+    }
+  }
+}
 
 State Game::GetInitialState() {
   State state(GetOption("board_width"), GetOption("board_height"),
