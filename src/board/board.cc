@@ -27,19 +27,46 @@ Board& Board::operator=(const Board& other) {
 std::size_t Board::GetWidth() {return width_;}
 std::size_t Board::GetHeight() {return height_;}
 
-BoardPlane& Board::GetPlane(unsigned figure, unsigned player) {
-  return planes_[player * figure_count_ + figure];
+BoardPlane& Board::GetPlane(Piece piece) {
+  assert(piece.figure < figure_count_ && piece.player < 2);
+  return planes_[piece.player * figure_count_ + piece.figure];
 }
-void Board::SetPiece(unsigned x, unsigned y, Piece piece) {
+
+void Board::SetField(unsigned x, unsigned y, Piece piece) {
+  assert(x < width_ && y < height_);
+
+  ClearField(x, y);
+
+  if (piece == kEmptyPiece)
+    return;
+
+  assert(piece.figure < figure_count_ && piece.player < 2);
+
   planes_[piece.player * figure_count_ + piece.figure].set(x, y);
 }
-Piece Board::GetPiece(unsigned x, unsigned y) {
+
+Piece Board::GetField(unsigned x, unsigned y) {
+  assert(x < width_ && y < height_);
+
   for (unsigned i = 0; i < planes_.size(); ++i) {
     if (!planes_[i].get(x, y)) continue;
     return Piece{i % figure_count_, unsigned(i / figure_count_)};
   }
 
   return kEmptyPiece;
+}
+
+void Board::ClearField(unsigned x, unsigned y) {
+  assert(x < width_ && y < height_);
+
+  for (unsigned i = 0; i < planes_.size(); ++i)
+    planes_[i].clear(x, y);
+}
+
+void Board::MoveField(unsigned x, unsigned y, unsigned x_, unsigned y_) {
+  Piece piece = GetField(x, y);
+  ClearField(x, y);
+  SetField(x_, y_, piece);
 }
 
 }
