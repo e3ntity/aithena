@@ -83,8 +83,11 @@ static const std::array<std::uint64_t, 64> kPawnCaptures = {
 	0x0000000000000000, 0x0000000000000000
 };
 
-std::vector<State> GenPawnMoves(State, Piece);
-Game::ActionList GenPawnMoves(State);
+// Generates the next moves for a single pawn at field (x, y) for a given state.
+std::vector<State> GenPawnMoves(State, unsigned x, unsigned y);
+
+// Generates all next moves for a given state.
+std::vector<State> GenMoves(State);
 
 }
 }

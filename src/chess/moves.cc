@@ -3,7 +3,7 @@
 namespace aithena {
 namespace chess {
 
-Game::ActionList GenPawnMoves(State) {
+std::vector<State> GenPawnMoves(State, unsigned x, unsigned y) {
 	Game::ActionList push_moves{};
 	Game::ActionList capture_moves{};
 
