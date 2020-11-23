@@ -30,6 +30,7 @@ class BoardPlane {
 	BoardPlane operator&(const BoardPlane&);
 	BoardPlane operator|(const BoardPlane&);
 	BoardPlane operator^(const BoardPlane&);
+	BoardPlane operator!();
 
 	bool operator==(const BoardPlane&);
 	bool operator!=(const BoardPlane&);

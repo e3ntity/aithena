@@ -78,6 +78,13 @@ BoardPlane BoardPlane::operator^(const BoardPlane& other) {
   return result;
 }
 
+BoardPlane BoardPlane::operator!() {
+  BoardPlane result(*this);
+  result.plane_ = plane_.flip();
+
+  return result;
+}
+
 bool BoardPlane::operator==(const BoardPlane& other) {
   return plane_ == other.plane_;
 }
