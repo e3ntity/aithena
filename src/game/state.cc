@@ -39,7 +39,7 @@ std::string State::ToString() {
 
 Board& State::GetBoard() {return board_;}
 
-std::string State::Print() {
+std::string State::PrintBoard() {
   std::ostringstream repr;
   Piece piece;
 

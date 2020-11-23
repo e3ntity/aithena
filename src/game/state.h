@@ -21,7 +21,7 @@ class State {
   // Returns a canoncial representation of the state.
   std::string ToString();
   // Todo: Remove as only for development
-  std::string Print();
+  std::string PrintBoard();
  protected:
   Board board_;
 };

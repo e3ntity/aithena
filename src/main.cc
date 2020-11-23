@@ -19,7 +19,7 @@ State EvaluateUserInput(std::string input, Game game, State& state) {
   if (input.compare("start") == 0) {
     aithena::chess::State new_state = game.GetInitialState();
 
-    std::cout << state.Print() << std::endl;
+    std::cout << state.PrintBoard() << std::endl;
 
     return new_state;
   } else if (input.compare("info") == 0) {
