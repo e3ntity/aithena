@@ -49,18 +49,40 @@ State Game::GetInitialState() {
 }
 
 Game::ActionList Game::GetLegalActions(State state) {
+  /*
   Game::ActionList legal_moves{};
 
-  Game::ActionList pawn_moves = GenPawnMoves(state);
+  Game::ActionList pawn_moves = this->GenPawnMoves(state);
   legal_moves.reserve(legal_moves.size() + pawn_moves.size());
   legal_moves.insert(legal_moves.end(), pawn_moves.begin(), pawn_moves.end());
 
   return legal_moves;
+  */
+  return {};
 };
 
 Piece make_piece(Figure figure, Player player) {
   return Piece{static_cast<unsigned>(figure), static_cast<unsigned>(player)};
 };
+
+std::vector<State> Game::GenPawnMoves(State state, unsigned x, unsigned y) {
+  /*Piece piece = state.GetBoard().GetPiece(x, y);
+
+  // Check if there is a pawn on the given (x, y) position.
+  unsigned pawn = static_cast<unsigned>(kFigure::Pawn);
+  if (!(piece.figure == pawn
+        && piece.player == static_cast<unsigned>(state.GetPlayer())))
+    return {};
+
+  // Get push bitboard
+  BoardPlane pushes = magic_bit_planes_[k];
+  */
+  return {};
+}
+
+std::vector<State> Game::GenMoves(State) {
+  return {};
+}
 
 }  // namespace chess
 }  // namespace aithena
