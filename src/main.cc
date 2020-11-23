@@ -2,41 +2,54 @@
 
 #include "chess/chess.h"
 
+template <typename Game, typename State>
+State EvaluateUserInput(std::string input, Game game, State& state) {
+  if (input.compare("help") == 0) {
+    std::cout << "Possible actions:" << std::endl;
+    std::cout << "  start                - Starts a new game." << std::endl;
+    std::cout << "  help                 - Displays this menu." << std::endl;
+    std::cout << "  info <field>         - Show possible moves for a piece."
+              << std::endl;
+    std::cout << "  move <field> <field> - Move a piece from the first to the second field."
+              << std::endl;
+
+    return state;
+  }
+
+  if (input.compare("start") == 0) {
+    aithena::chess::State new_state = game.GetInitialState();
+
+    std::cout << state.Print() << std::endl;
+
+    return new_state;
+  } else if (input.compare("info") == 0) {
+
+  } else if (input.compare("move") == 0) {
+
+  }
+
+  return state;
+}
+
 int main() {
-  // Play 4x4 chess
   aithena::chess::Game::Options options = {
-    {"board_width", 4},
-    {"board_height", 4}
+    {"board_width", 8},
+    {"board_height", 8}
   };
 
-  auto game = aithena::chess::Game(options);
-  auto state = game.GetInitialState();
+  aithena::chess::Game game = aithena::chess::Game(options);
+  aithena::chess::State state = game.GetInitialState();
 
-  aithena::Board& board = state.GetBoard();
-  auto black_pawn = aithena::chess::make_piece(
-                      aithena::chess::Figure::kPawn,
-                      aithena::chess::Player::kBlack);
-  board.SetPiece(0, 1, black_pawn);
-  board.SetPiece(1, 1, black_pawn);
-  board.SetPiece(3, 1, black_pawn);
+  std::string user_input;
 
-  std::cout << "Initial State: " << state.ToString() << std::endl;
+  while (true) {
+    // Have user select an action
+    std::cout << "aithena > ";
+    getline(std::cin, user_input);
 
-  /*
-  auto actions = game.GetLegalActions(state);
-  unsigned int user_action;
-
-  //while (true) {
-  // Update screen
-
-  // Have user select an action
-  user_action = 5;
-
-  // Perform action
-  state = actions[user_action].GetNextState();
-  actions = game.GetLegalActions(state);
-  //}
-  */
+    // Perform action
+    state = EvaluateUserInput(user_input, game, state);
+  }
 
   return 0;
 }
