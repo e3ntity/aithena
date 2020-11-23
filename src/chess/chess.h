@@ -26,10 +26,6 @@ class State : public ::aithena::State {
   // Initializes to a give state.
   State(const State&);
 
-  // Crops bitboards to the specified size of the board.
-  // Bitboards are later used for legal move generation.
-  void InitializeMagic();
-
   State& operator=(const State&);
 
   Player GetPlayer();
@@ -57,9 +53,6 @@ class State : public ::aithena::State {
   // Counts the moves without progress (neither a pawn moved, nor a piece
   // captured) up util this state.
   unsigned int no_progress_count_;
-  // Stores the magic bit boards computed by InitializeMagic.
-  std::array<std::unique_ptr<BoardPlane>,
-      static_cast<unsigned>(Figure::kCount)> magic_bit_planes_;
 };
 
 class Action : public ::aithena::Action<State> {
@@ -74,8 +67,18 @@ class Game : public ::aithena::Game<Action, State> {
   Game();
   Game(Options);
 
+  // Crops bitboards to the specified size of the board.
+  // Bitboards are later used for legal move generation.
+  void InitializeMagic();
+
   State GetInitialState() override;
   ActionList GetLegalActions(State) override;
+ private:
+  // Stores the magic bit boards computed by InitializeMagic.
+  // magic_bit_planes_[2*i + 0] thereby stores the push bit planes for figure i
+  // whereas magic_bit_planes[2*i + 1] stores the capture bit planes
+  std::array<std::unique_ptr<BoardPlane>,
+      static_cast<unsigned>(Figure::kCount) * 2> magic_bit_planes_;
 };
 
 Piece make_piece(Figure, Player);
