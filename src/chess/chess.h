@@ -73,6 +73,12 @@ class Game : public ::aithena::Game<Action, State> {
 
   State GetInitialState() override;
   ActionList GetLegalActions(State) override;
+
+  // Generates the next moves for a single pawn at field (x, y) for a given state.
+  std::vector<State> GenPawnMoves(State, unsigned x, unsigned y);
+
+  // Generates all next moves for a given state.
+  std::vector<State> GenMoves(State);
  private:
   // Stores the magic bit boards computed by InitializeMagic.
   // magic_bit_planes_[2*i + 0] thereby stores the push bit planes for figure i
