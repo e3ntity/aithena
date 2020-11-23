@@ -2,6 +2,7 @@
 
 #include <string>
 #include <sstream>
+#include <iostream>
 
 namespace aithena {
 
@@ -26,7 +27,7 @@ std::string State::ToString() {
 
   for (unsigned x = 0; x < board_.GetWidth(); ++x) {
     for (unsigned y = 0; y < board_.GetHeight(); ++y) {
-      piece = board_.GetPiece(x, y);
+      piece = board_.GetField(x, y);
       if (piece == kEmptyPiece) continue;
       repr << piece.figure << "-" << piece.player << ":"
            << x << "-" << y << "/";
@@ -37,5 +38,25 @@ std::string State::ToString() {
 };
 
 Board& State::GetBoard() {return board_;}
+
+std::string State::Print() {
+  std::ostringstream repr;
+  Piece piece;
+
+  for (int y = board_.GetHeight() - 1; y >= 0; --y) {
+    repr << std::endl << " " << std::string(board_.GetWidth() * 4 + 1, '-')
+         << std::endl << y << "|";
+    for (unsigned x = 0; x < board_.GetWidth(); ++x) {
+      piece = board_.GetField(x, y);
+
+      if (piece == kEmptyPiece) repr << "   |";
+      else repr << " " << piece.figure << " |";
+    }
+  }
+  repr << std::endl << " " << std::string(board_.GetWidth() * 4 + 1, '-')
+       << std::endl << "   A   B   C   D   E   F   G   H" << std::endl;
+
+  return repr.str();
+}
 
 }
