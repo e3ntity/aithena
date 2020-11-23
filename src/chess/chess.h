@@ -58,7 +58,8 @@ class State : public ::aithena::State {
   // captured) up util this state.
   unsigned int no_progress_count_;
   // Stores the magic bit boards computed by InitializeMagic.
-  std::unique_ptr<BoardPlane> magic_bit_planes_;
+  std::array<std::unique_ptr<BoardPlane>,
+      static_cast<unsigned>(Figure::kCount)> magic_bit_planes_;
 };
 
 class Action : public ::aithena::Action<State> {
