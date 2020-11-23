@@ -3,11 +3,12 @@
 #include "chess/chess.h"
 
 template <typename Game, typename State>
-State EvaluateUserInput(std::string input, Game game, State& state) {
+State EvaluateUserInput(std::string input, Game& game, State& state) {
   if (input.compare("help") == 0) {
     std::cout << "Possible actions:" << std::endl;
     std::cout << "  start                - Starts a new game." << std::endl;
     std::cout << "  help                 - Displays this menu." << std::endl;
+    std::cout << "  show                 - Displays the board." << std::endl;
     std::cout << "  info <field>         - Show possible moves for a piece."
               << std::endl;
     std::cout << "  move <field> <field> - Move a piece from the first to the second field."
@@ -22,6 +23,8 @@ State EvaluateUserInput(std::string input, Game game, State& state) {
     std::cout << state.PrintBoard() << std::endl;
 
     return new_state;
+  } else if (input.compare("show") == 0) {
+    std::cout << state.PrintBoard() << std::endl;
   } else if (input.compare("info") == 0) {
 
   } else if (input.compare("move") == 0) {
