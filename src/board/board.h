@@ -37,6 +37,11 @@ class Board {
 
   // Returns the BoardPlane for a given piece.
   BoardPlane& GetPlane(Piece);
+  // Returns the BoardPlane for a given figure (OR'd over players)
+  BoardPlane GetFigurePlane(unsigned);
+  // Returns the BoardPlane for a given player (OR'd over figures)
+  BoardPlane GetPlayerPlane(unsigned);
+  BoardPlane GetCompletePlane();
 
   // Sets the piece of field (x, y). If piece is kEmptyPiece, the field is
   // simply cleared.

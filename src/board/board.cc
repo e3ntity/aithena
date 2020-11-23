@@ -32,6 +32,28 @@ BoardPlane& Board::GetPlane(Piece piece) {
   return planes_[piece.player * figure_count_ + piece.figure];
 }
 
+BoardPlane Board::GetFigurePlane(unsigned figure) {
+  return planes_[figure] | planes_[figure_count_ + figure];
+}
+
+BoardPlane Board::GetPlayerPlane(unsigned player) {
+  BoardPlane plane{width_, height_};
+
+  for (unsigned i = player * figure_count_; i < planes_.size(); ++i)
+    plane |= planes_[i];
+
+  return plane;
+}
+
+BoardPlane Board::GetCompletePlane() {
+  BoardPlane plane{width_, height_};
+
+  for (auto plane_ : planes_)
+    plane |= plane_;
+
+  return plane;
+}
+
 void Board::SetField(unsigned x, unsigned y, Piece piece) {
   assert(x < width_ && y < height_);
 
