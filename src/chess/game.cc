@@ -78,7 +78,7 @@ std::vector<State> Game::GenPawnMoves(State state, unsigned x, unsigned y) {
   // Check if there is a pawn on the given (x, y) position.
   if (!(piece.figure == pawn
         && piece.player == curr_player)
-      | y + direction >= height | y + direction < 0)
+      || y + direction >= height || y + direction < 0)
     return {};
 
   std::vector<State> result;
