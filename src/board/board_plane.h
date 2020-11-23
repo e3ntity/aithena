@@ -21,9 +21,6 @@ class BoardPlane {
 	// Returns the bit of the board at the specified location.
 	bool get(unsigned int x, unsigned int y) const;
 
-	// Turns the board 180 degrees.
-	void turn();
-
 	BoardPlane& operator=(const BoardPlane&);
 
 	BoardPlane& operator&=(const BoardPlane&);
