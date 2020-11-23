@@ -79,8 +79,8 @@ BoardPlane BoardPlane::operator^(const BoardPlane& other) {
 }
 
 BoardPlane BoardPlane::operator!() {
-  BoardPlane result(*this);
-  result.plane_ = plane_.flip();
+  BoardPlane result{width_, height_};
+  result.plane_ = ~plane_;
 
   return result;
 }
