@@ -78,7 +78,7 @@ Piece make_piece(Figure figure, Player player) {
 
 std::vector<State> Game::GenPawnMoves(State state, unsigned x, unsigned y) {
   Board board_before{state.GetBoard()};
-  std::size_t width{board_before.GetWidth()};
+  //std::size_t width{board_before.GetWidth()};
   std::size_t height{board_before.GetHeight()};
 
   std::vector<State> moves{}; // Return value
@@ -101,9 +101,9 @@ std::vector<State> Game::GenPawnMoves(State state, unsigned x, unsigned y) {
 
   // Generate moves
 
-  unsigned opponent = static_cast<unsigned>(
+  /*unsigned opponent = static_cast<unsigned>(
                         state.GetPlayer() == Player::kWhite
-                        ? Player::kBlack : Player::kWhite);
+                        ? Player::kBlack : Player::kWhite);*/
   BoardPlane figure_plane = board_before.GetCompletePlane();
 
   // Generate pushes
