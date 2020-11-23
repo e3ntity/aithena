@@ -92,17 +92,4 @@ void Board::MoveField(unsigned x, unsigned y, unsigned x_, unsigned y_) {
   SetField(x_, y_, piece);
 }
 
-Board BoardDifference(Board& a, Board& b) {
-  assert(a.GetWidth() == b.GetWidth()
-         && a.GetHeight() == b.GetHeight()
-         && a.GetFigureCount() == b.GetFigureCount());
-
-  Board board{a.GetWidth(), a.GetHeight(), a.GetFigureCount()};
-
-  for (unsigned int i = 0; i < a.GetFigureCount() * 2; i++)
-    board.planes_[i] &= !b.planes_[i];
-
-  return board;
-}
-
 }

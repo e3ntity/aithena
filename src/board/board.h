@@ -55,8 +55,6 @@ class Board {
   // overriding a piece on the destination position.
   void MoveField(unsigned x, unsigned y, unsigned x_, unsigned y_);
 
-  friend Board BoardDifference(Board&, Board&);
-
  private:
   // The width and height of the board and therefore of all board planes
   // managed by the board.

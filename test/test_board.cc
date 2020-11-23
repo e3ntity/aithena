@@ -116,6 +116,22 @@ TEST(BoardPlane, XorOperatorWorksCorrectly) {
   }
 }
 
+// Tests the overloaded NOT "!" operator.
+TEST(BoardPlane, NotOperatorWorksCorrectly) {
+  aithena::BoardPlane bp(4, 4);
+
+  bp.set(2, 2);
+  bp.set(3, 1);
+
+  aithena::BoardPlane bp2{!bp};
+
+  for (int y = 0; y < 4; y++) {
+    for (int x = 0; x < 4; x++) {
+      ASSERT_NE(bp.get(x, y), bp2.get(x, y));
+    }
+  }
+}
+
 // Tests the overloaded equality "==" and inequality "!=" operators.
 TEST(BoardPlane, EqualityOperatorsWorkCorrectly) {
   aithena::BoardPlane bp(4, 4);
