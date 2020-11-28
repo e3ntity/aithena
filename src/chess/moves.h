@@ -6,6 +6,24 @@
 namespace aithena {
 namespace chess {
 
+struct Direction {
+	signed x;
+	signed y;
+};
+
+
+
+const Direction up{0, 1};
+const Direction down{0, -1};
+const Direction left{ -1, 0};
+const Direction right{1, 0};
+
+Direction operator+(Direction d1, Direction d2);
+
+std::vector<State> GenDirectionalMoves(State state, unsigned x, unsigned y,
+                                       std::vector<Direction> directions,
+                                       unsigned range);
+
 // Move patterns define how a piece may move starting from a given position.
 // Each entry in the array gives the pattern for the starting position at the
 // index. Fields are counted from 1) left to right, 2) bottom to top.
