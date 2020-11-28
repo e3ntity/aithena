@@ -22,10 +22,10 @@ class State : public ::aithena::State {
 	bool operator!=(const State&);
 
 	Player GetPlayer();
-	void SetPlayer(Player p);
+	void SetPlayer(Player);
 
 	bool GetCastleQueen(Player);
-	bool GetCasteKing(Player);
+	bool GetCastleKing(Player);
 	void SetCastleQueen(Player);
 	void SetCastleKing(Player);
 
@@ -33,6 +33,7 @@ class State : public ::aithena::State {
 	void IncMoveCount();
 
 	unsigned int GetNoProgressCount();
+	void IncNoProgressCount();
 	void ResetNoProgressCount();
  private:
 	// Indicates the player that has to make the next move.

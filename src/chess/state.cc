@@ -51,9 +51,28 @@ bool State::operator!=(const State& other) {
   return !operator==(other);
 }
 
-Player State::GetPlayer() {
-  return player_;
+Player State::GetPlayer() { return player_; }
+void State::SetPlayer(Player p) { player_ = p; }
+
+bool State::GetCastleQueen(Player p) {
+  return castle_queen_[static_cast<unsigned>(p)];
 }
+bool State::GetCastleKing(Player p) {
+  return castle_king_[static_cast<unsigned>(p)];
+}
+void State::SetCastleQueen(Player p) {
+  castle_queen_[static_cast<unsigned>(p)] = true;
+}
+void State::SetCastleKing(Player p) {
+  castle_king_[static_cast<unsigned>(p)] = true;
+}
+
+unsigned State::GetMoveCount() { return move_count_; }
+void State::IncMoveCount() { ++move_count_; }
+
+unsigned State::GetNoProgressCount() { return no_progress_count_; }
+void State::IncNoProgressCount() { ++no_progress_count_; }
+void State::ResetNoProgressCount() { no_progress_count_ = 0; }
 
 }
 }
