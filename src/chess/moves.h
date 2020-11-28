@@ -6,18 +6,23 @@
 namespace aithena {
 namespace chess {
 
+// struct that express a direction on the board
 struct Direction {
 	signed x;
 	signed y;
 };
+
 
 const Direction up{0, 1};
 const Direction down{0, -1};
 const Direction left{ -1, 0};
 const Direction right{1, 0};
 
+// Adds two Direction to generate direction that would be the additive result
+// of the two Direction vectors
 Direction operator+(Direction d1, Direction d2);
 
+// Generate pseudo moves in the given directions
 std::vector<State> GenDirectionalMoves(State state, unsigned x, unsigned y,
                                        std::vector<Direction> directions,
                                        unsigned range);
