@@ -78,7 +78,7 @@ Piece make_piece(Figure figure, Player player) {
 
 std::vector<State> Game::GenPawnMoves(State state, unsigned x, unsigned y) {
   Board board_before{state.GetBoard()};
-  //std::size_t width{board_before.GetWidth()};
+  std::size_t width{board_before.GetWidth()};
   std::size_t height{board_before.GetHeight()};
 
   std::vector<State> moves{}; // Return value
@@ -100,10 +100,6 @@ std::vector<State> Game::GenPawnMoves(State state, unsigned x, unsigned y) {
   }
 
   // Generate moves
-
-  /*unsigned opponent = static_cast<unsigned>(
-                        state.GetPlayer() == Player::kWhite
-                        ? Player::kBlack : Player::kWhite);*/
   BoardPlane figure_plane = board_before.GetCompletePlane();
 
   // Generate pushes
@@ -122,69 +118,112 @@ std::vector<State> Game::GenPawnMoves(State state, unsigned x, unsigned y) {
   }
 
   // Generate captures
+  auto opponent = state.GetPlayer() == Player::kWhite
+                  ? Player::kBlack : Player::kWhite;
+  BoardPlane enemy_figures = board_before.GetPlayerPlane(
+                               static_cast<unsigned>(opponent)
+                             );
+
+  if (x + 1 < width && enemy_figures.get(x + 1, y + direction)) {
+    moves.push_back(State{state});
+    moves.back().GetBoard().MoveField(x, y, x + 1, y + direction);
+  }
+
+  if (x - 1 < width && enemy_figures.get(x - 1, y + direction)) {
+    moves.push_back(State{state});
+    moves.back().GetBoard().MoveField(x, y, x - 1, y + direction);
+  }
+
 
 
   return moves;
 }
 
-/*
-std::vector<State> Game::GenPawnMoves(State state, unsigned x, unsigned y) {
-  Board curr_board = state.GetBoard();
-  std::size_t width = curr_board.GetWidth();
-  std::size_t height = curr_board.GetHeight();
+std::vector<State> Game::GenRookMoves(State state, unsigned x, unsigned y) {
+  Board board_before{state.GetBoard()};
+  std::size_t width{board_before.GetWidth()};
 
-  Piece piece = curr_board.GetField(x, y);
-  unsigned pawn = static_cast<unsigned>(Figure::kPawn);
-  unsigned curr_player = static_cast<unsigned>(state.GetPlayer());
-  signed direction = state.GetPlayer() == Player::kWhite ? 1 : -1;
+  std::vector<State> moves{}; // Return value
 
-  // Check if there is a pawn on the given (x, y) position.
-  if (!(piece.figure == pawn
-        && piece.player == curr_player)
-      || y + direction >= height || y + direction < 0)
-    return {};  // TODO: promotions
+  unsigned rook = static_cast<unsigned>(Figure::kRook);
+  unsigned player = static_cast<unsigned>(state.GetPlayer());
+  Piece piece = board_before.GetField(x, y);
 
-  std::vector<State> result;
+  // Make checks
 
-  // Get enemy player
-  Player enemy = state.GetPlayer() == Player::kWhite ?
-                 Player::kBlack : Player::kWhite;
+  if (piece == kEmptyPiece || piece.player != player || piece.figure != rook)
+    return moves;
 
-  BoardPlane pushes = magic_bit_planes_[pawn][y * width + x];
-  BoardPlane attacks = magic_bit_planes_[pawn + 1][y * width + x];
-  Piece own_pawn{pawn, curr_player};
-  BoardPlane own_figures = curr_board.GetPlayerPlane(own_pawn);
-  Piece enemy_pawn{pawn, static_cast<unsigned>(enemy)};
-  BoardPlane enemy_figures = curr_board.GetPlayerPlane(enemy_pawn);
+  // Generate moves
+  auto opponent = state.GetPlayer() == Player::kWhite
+                  ? static_cast<unsigned>(Player::kBlack)
+                  : static_cast<unsigned>(Player::kWhite);
 
-  BoardPlane push_collisions = (own_figures | enemy_figures) & pushes;
-  if (!push_collisions.get(x, y + direction)) {
-    State new_state = state;
-    new_state.GetBoard().MoveField(x, y, x, y + direction);
-    result.push_back(new_state);
-  }
+  BoardPlane own_figures = board_before.GetPlayerPlane(player);
+  BoardPlane enemy_figures = board_before.GetPlayerPlane(opponent);
 
-  BoardPlane attackable = enemy_figures & attacks;
-  if (x + 1 < width) {
-    if (attackable.get(x + 1, y + direction)) {
-      State new_state = state;
-      new_state.GetBoard().MoveField(x, y, x + 1, y + direction);
-      result.push_back(new_state);
+  // directions in which search is still active (L, R, U, D)
+  unsigned char dirs = 0b1111;
+  for (unsigned i = 1; dirs; ++i) {
+    // if own figure stands in the way abort search
+    if (i < width - x && own_figures.get(x + i, y))
+      dirs &= 0b0111;
+    if (i <= x && own_figures.get(x - i, y))
+      dirs &= 0b1011;
+    if (i < width - x && own_figures.get(x, y + i))
+      dirs &= 0b1101;
+    if (i < width - x && own_figures.get(x, y - i))
+      dirs &= 0b1110;
+
+    // otherwise move is possible even if an enemy stands in the way(capture)
+    if (dirs & 0b1000) {
+      moves.push_back(State{state});
+      moves.back().GetBoard().MoveField(x, y, x + i, y);
     }
-  }
-  if (x - 1 < width) {
-    if (attacks.get(x + 1, y + direction)) {
-      State new_state = state;
-      new_state.GetBoard().MoveField(x, y, x - 1, y + direction);
-      result.push_back(new_state);
+    if (dirs & 0b0100) {
+      moves.push_back(State{state});
+      moves.back().GetBoard().MoveField(x, y, x - i, y );
     }
+    if (dirs & 0b0010) {
+      moves.push_back(State{state});
+      moves.back().GetBoard().MoveField(x, y, x, y + i);
+    }
+    if (dirs & 0b0001) {
+      moves.push_back(State{state});
+      moves.back().GetBoard().MoveField(x, y, x, y - i);
+    }
+
+    // if own figure stands in the way abort search
+    if (i < width - x && enemy_figures.get(x + i, y))
+      dirs &= 0b0111;
+    if (i <= x && enemy_figures.get(x - i, y))
+      dirs &= 0b1011;
+    if (i < width - x && enemy_figures.get(x, y + i))
+      dirs &= 0b1101;
+    if (i < width - x && enemy_figures.get(x, y - i))
+      dirs &= 0b1110;
   }
-  return result;
+
+  return moves;
 }
-*/
 
 std::vector<State> Game::GenMoves(State state, unsigned x, unsigned y) {
-  return {};
+  Piece piece = state.GetBoard().GetField(x, y);
+  std::vector<State> moves;
+
+  switch (piece.figure) {
+  case static_cast<unsigned>(Figure::kPawn):
+    moves = GenPawnMoves(state, x, y);
+    break;
+  case kEmptyPiece.figure:
+    break;
+  default:
+    assert(false);
+  }
+
+  std::for_each(moves.begin(), moves.end(), [](State & s) {s.IncMoveCount();});
+
+  return moves;
 }
 
 }  // namespace chess
