@@ -39,17 +39,18 @@ State& State::operator=(const State& other) {
 }
 
 // TODO: implement
-/*
+
 bool State::operator==(const State& other) {
-  return this.board_ == other.board_
-         && this.player_ == other.player_
-         && this.castle_queen_ == other.castle_queen_;
+  return ::aithena::State::operator==(other)
+         && player_ == other.player_
+         && castle_queen_ == other.castle_queen_
+         && castle_king_ == other.castle_king_;
 }
 
-bool State::operator!=(const State&) {
-
+bool State::operator!=(const State& other) {
+  return !operator==(other);
 }
-*/
+
 Player State::GetPlayer() {
   return player_;
 }

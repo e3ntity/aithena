@@ -15,6 +15,9 @@ class State : public ::aithena::State {
 	State(const State&);
 
 	State& operator=(const State&);
+
+	// Checks whether both states have the same board, it is the same player's
+	// turn and the same castling moves are still allowed.
 	bool operator==(const State&);
 	bool operator!=(const State&);
 
