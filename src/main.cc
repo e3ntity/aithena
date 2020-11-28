@@ -145,26 +145,25 @@ State EvaluateUserInput(std::string input, Game& game, State& state) {
       return state;
     }
 
-    auto move_state = aithena::chess::State(state);
-    auto move_board = move_state.GetBoard();
+    auto move_board = state.GetBoard();
     move_board.MoveField(std::get<0>(source), std::get<1>(source),
                          std::get<0>(target), std::get<1>(target));
 
-    auto moves = game.GenPawnMoves(state, std::get<0>(source), std::get<1>(target));
-    bool legal_move = false;
+    auto moves = game.GenPawnMoves(state, std::get<0>(source), std::get<1>(source));
+    unsigned i;
 
-    for (auto legal : moves) {
-      if (move_state != legal) continue;
-      legal_move = true;
-      break;
+    for (i = 0; i < moves.size(); ++i) {
+      if (move_board == moves[i].GetBoard()) break;
     }
 
-    if (!legal_move) {
+    if (i >= moves.size()) {
       std::cout << "Illegal move" << std:: endl;
       return state;
     }
 
-    return move_state;
+    std::cout << PrintBoard(moves[i]) << std::endl;
+
+    return moves[i];
   }
 
   return state;
