@@ -15,7 +15,7 @@ struct Piece {
 };
 
 // Piece value returned for a square without a piece.
-const Piece kEmptyPiece = {UINT_MAX, UINT_MAX};
+constexpr Piece kEmptyPiece = {UINT_MAX, UINT_MAX};
 
 bool operator==(const Piece&, const Piece&);
 
@@ -24,7 +24,7 @@ bool operator==(const Piece&, const Piece&);
 // Player and Figure identifiers must be continuous series from zero up to
 // 2 and figure_count respectively.
 class Board {
- public:
+public:
   // Creates a board plane of size width x height for each type of figure and
   // each player (2).
   Board(std::size_t width, std::size_t height, unsigned figure_count);
@@ -60,7 +60,7 @@ class Board {
   // overriding a piece on the destination position.
   void MoveField(unsigned x, unsigned y, unsigned x_, unsigned y_);
 
- private:
+private:
   // The width and height of the board and therefore of all board planes
   // managed by the board.
   std::size_t width_, height_;
