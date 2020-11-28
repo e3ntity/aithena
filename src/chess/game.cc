@@ -18,7 +18,7 @@ Game::Game(Options options) : ::aithena::Game<State> {options} {
 
   assert(GetOption("board_width") <= 8 && GetOption("board_height") <= 8);
 
-  InitializeMagic();
+  //InitializeMagic();
 }
 
 void Game::InitializeMagic() {
