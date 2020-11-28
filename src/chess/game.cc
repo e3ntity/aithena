@@ -140,6 +140,7 @@ std::vector<State> Game::GenPawnMoves(State state, unsigned x, unsigned y) {
 std::vector<State> Game::GenRookMoves(State state, unsigned x, unsigned y) {
   Board board_before{state.GetBoard()};
   std::size_t width{board_before.GetWidth()};
+  std::size_t height{board_before.GetHeight()};
 
   std::vector<State> moves{}; // Return value
 
@@ -168,9 +169,9 @@ std::vector<State> Game::GenRookMoves(State state, unsigned x, unsigned y) {
       dirs &= 0b0111;
     if (i <= x && own_figures.get(x - i, y))
       dirs &= 0b1011;
-    if (i < width - x && own_figures.get(x, y + i))
+    if (i < height - y && own_figures.get(x, y + i))
       dirs &= 0b1101;
-    if (i < width - x && own_figures.get(x, y - i))
+    if (i <= y && own_figures.get(x, y - i))
       dirs &= 0b1110;
 
     // otherwise move is possible even if an enemy stands in the way(capture)
@@ -192,13 +193,13 @@ std::vector<State> Game::GenRookMoves(State state, unsigned x, unsigned y) {
     }
 
     // if own figure stands in the way abort search
-    if (i < width - x && enemy_figures.get(x + i, y))
+    if (dirs & 0b1000 && enemy_figures.get(x + i, y))
       dirs &= 0b0111;
-    if (i <= x && enemy_figures.get(x - i, y))
+    if (dirs & 0b0100 && enemy_figures.get(x - i, y))
       dirs &= 0b1011;
-    if (i < width - x && enemy_figures.get(x, y + i))
+    if (dirs & 0b0010 && enemy_figures.get(x, y + i))
       dirs &= 0b1101;
-    if (i < width - x && enemy_figures.get(x, y - i))
+    if (dirs & 0b0001 && enemy_figures.get(x, y - i))
       dirs &= 0b1110;
   }
 
