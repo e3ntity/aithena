@@ -132,7 +132,7 @@ std::vector<State> Game::GenPawnMoves(State state, unsigned x, unsigned y) {
     moves.back().GetBoard().MoveField(x, y, x + 1, y + direction);
   }
 
-  if (x - 1 >= 0 && enemy_figures.get(x - 1, y + direction)) {
+  if (x >= 1 && enemy_figures.get(x - 1, y + direction)) {
     moves.push_back(State{state});
     moves.back().GetBoard().MoveField(x, y, x - 1, y + direction);
   }
@@ -153,8 +153,6 @@ std::vector<State> Game::GenMoves(State state, unsigned x, unsigned y) {
   Piece piece = state.GetBoard().GetField(x, y);
   std::vector<State> moves;
 
-  if (piece.player != static_cast<unsigned>(state.GetPlayer()))
-    return {};
   switch (piece.figure) {
   case static_cast<unsigned>(Figure::kPawn):
     moves = GenPawnMoves(state, x, y);
