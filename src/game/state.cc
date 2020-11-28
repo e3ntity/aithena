@@ -11,6 +11,20 @@ State::State(std::size_t width, std::size_t height, unsigned char figure_count)
 
 State::State(const State& other) : board_(other.board_) {}
 
+State& State::operator=(const State& other) {
+  board_ = other.board_;
+
+  return *this;
+}
+
+bool State::operator==(const State& other) {
+  return board_ == other.board_;
+}
+
+bool State::operator!=(const State& other) {
+  return !operator==(other);
+}
+
 // Prints out the state in the following format:
 // figure-player:x-y/...
 std::string State::ToString() {
