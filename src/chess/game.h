@@ -21,6 +21,7 @@ enum class Player : unsigned {kWhite, kBlack};
 
 // Needs to be imported here as state needs Figure & Player
 #include "chess/state.h"
+#include "chess/moves.h"
 
 namespace aithena {
 namespace chess {

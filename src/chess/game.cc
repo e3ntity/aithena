@@ -56,7 +56,9 @@ State Game::GetInitialState() {
                       aithena::chess::Figure::kPawn,
                       aithena::chess::Player::kBlack);
 
-  board.SetField(1, 1, white_pawn);
+  board.SetField(1, 1, aithena::chess::make_piece(
+                   aithena::chess::Figure::kBishop,
+                   aithena::chess::Player::kWhite));
   board.SetField(2, 1, white_pawn);
   board.SetField(5, 1, white_pawn);
   board.SetField(6, 1, white_pawn);
@@ -138,141 +140,12 @@ std::vector<State> Game::GenPawnMoves(State state, unsigned x, unsigned y) {
 }
 
 std::vector<State> Game::GenRookMoves(State state, unsigned x, unsigned y) {
-  Board board_before{state.GetBoard()};
-  std::size_t width{board_before.GetWidth()};
-  std::size_t height{board_before.GetHeight()};
-
-  std::vector<State> moves{}; // Return value
-
-  unsigned rook = static_cast<unsigned>(Figure::kRook);
-  unsigned player = static_cast<unsigned>(state.GetPlayer());
-  Piece piece = board_before.GetField(x, y);
-
-  // Make checks
-
-  if (piece == kEmptyPiece || piece.player != player || piece.figure != rook)
-    return moves;
-
-  // Generate moves
-  auto opponent = state.GetPlayer() == Player::kWhite
-                  ? static_cast<unsigned>(Player::kBlack)
-                  : static_cast<unsigned>(Player::kWhite);
-
-  BoardPlane own_figures = board_before.GetPlayerPlane(player);
-  BoardPlane enemy_figures = board_before.GetPlayerPlane(opponent);
-
-  // directions in which search is still active (L, R, U, D)
-  unsigned char dirs = 0b1111;
-  for (unsigned i = 1; dirs; ++i) {
-    // if own figure stands in the way abort search
-    if (i < width - x && own_figures.get(x + i, y))
-      dirs &= 0b0111;
-    if (i <= x && own_figures.get(x - i, y))
-      dirs &= 0b1011;
-    if (i < height - y && own_figures.get(x, y + i))
-      dirs &= 0b1101;
-    if (i <= y && own_figures.get(x, y - i))
-      dirs &= 0b1110;
-
-    // otherwise move is possible even if an enemy stands in the way(capture)
-    if (dirs & 0b1000) {
-      moves.push_back(State{state});
-      moves.back().GetBoard().MoveField(x, y, x + i, y);
-    }
-    if (dirs & 0b0100) {
-      moves.push_back(State{state});
-      moves.back().GetBoard().MoveField(x, y, x - i, y);
-    }
-    if (dirs & 0b0010) {
-      moves.push_back(State{state});
-      moves.back().GetBoard().MoveField(x, y, x, y + i);
-    }
-    if (dirs & 0b0001) {
-      moves.push_back(State{state});
-      moves.back().GetBoard().MoveField(x, y, x, y - i);
-    }
-
-    // if own figure stands in the way abort search
-    if (dirs & 0b1000 && enemy_figures.get(x + i, y))
-      dirs &= 0b0111;
-    if (dirs & 0b0100 && enemy_figures.get(x - i, y))
-      dirs &= 0b1011;
-    if (dirs & 0b0010 && enemy_figures.get(x, y + i))
-      dirs &= 0b1101;
-    if (dirs & 0b0001 && enemy_figures.get(x, y - i))
-      dirs &= 0b1110;
-  }
-
-  return moves;
+  return aithena::chess::GenDirectionalMoves(state, x, y, {up, down, left, right}, 8);
 }
 
 std::vector<State> Game::GenBishopMoves(State state, unsigned x, unsigned y) {
-  Board board_before{state.GetBoard()};
-  std::size_t width{board_before.GetWidth()};
-  std::size_t height{board_before.GetHeight()};
-
-  std::vector<State> moves{}; // Return value
-
-  unsigned bishop = static_cast<unsigned>(Figure::kBishop);
-  unsigned player = static_cast<unsigned>(state.GetPlayer());
-  Piece piece = board_before.GetField(x, y);
-
-  // Make checks
-
-  if (piece == kEmptyPiece || piece.player != player || piece.figure != bishop)
-    return moves;
-
-  // Generate moves
-  auto opponent = state.GetPlayer() == Player::kWhite
-                  ? static_cast<unsigned>(Player::kBlack)
-                  : static_cast<unsigned>(Player::kWhite);
-
-  BoardPlane own_figures = board_before.GetPlayerPlane(player);
-  BoardPlane enemy_figures = board_before.GetPlayerPlane(opponent);
-
-  // directions in which search is still active (UL, UR, DL, DR)
-  unsigned char dirs = 0b1111;
-  for (unsigned i = 1; dirs; ++i) {
-    // if own figure stands in the way abort search
-    if (i < width - x && i < height - y  && own_figures.get(x + i, y + i))
-      dirs &= 0b0111;
-    if (i <= x && i < height - y  && own_figures.get(x - i, y + i))
-      dirs &= 0b1011;
-    if (i < width - x && i <= y && own_figures.get(x + i , y - i))
-      dirs &= 0b1101;
-    if (i <= x && i <= y && own_figures.get(x - i, y - i))
-      dirs &= 0b1110;
-
-    // otherwise move is possible even if an enemy stands in the way(capture)
-    if (dirs & 0b1000) {
-      moves.push_back(State{state});
-      moves.back().GetBoard().MoveField(x, y, x + i, y + i);
-    }
-    if (dirs & 0b0100) {
-      moves.push_back(State{state});
-      moves.back().GetBoard().MoveField(x, y, x - i, y + i);
-    }
-    if (dirs & 0b0010) {
-      moves.push_back(State{state});
-      moves.back().GetBoard().MoveField(x, y, x + i, y - i);
-    }
-    if (dirs & 0b0001) {
-      moves.push_back(State{state});
-      moves.back().GetBoard().MoveField(x, y, x - i, y - i);
-    }
-
-    // if own figure stands in the way abort search
-    if (dirs & 0b1000 && enemy_figures.get(x + i, y + i))
-      dirs &= 0b0111;
-    if (dirs & 0b0100 && enemy_figures.get(x - i, y + i))
-      dirs &= 0b1011;
-    if (dirs & 0b0010 && enemy_figures.get(x + i, y - i))
-      dirs &= 0b1101;
-    if (dirs & 0b0001 && enemy_figures.get(x + i, y - i))
-      dirs &= 0b1110;
-  }
-
-  return moves;
+  return aithena::chess::GenDirectionalMoves(state, x, y,
+  {up + left, up + right, down + left, down + right}, 8);
 }
 
 std::vector<State> Game::GenMoves(State state, unsigned x, unsigned y) {
@@ -282,6 +155,12 @@ std::vector<State> Game::GenMoves(State state, unsigned x, unsigned y) {
   switch (piece.figure) {
   case static_cast<unsigned>(Figure::kPawn):
     moves = GenPawnMoves(state, x, y);
+    break;
+  case static_cast<unsigned>(Figure::kRook):
+    moves = GenRookMoves(state, x, y);
+    break;
+  case static_cast<unsigned>(Figure::kBishop):
+    moves = GenBishopMoves(state, x, y);
     break;
   case kEmptyPiece.figure:
     break;
