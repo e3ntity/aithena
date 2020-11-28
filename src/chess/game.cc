@@ -289,7 +289,14 @@ std::vector<State> Game::GenMoves(State state, unsigned x, unsigned y) {
     assert(false);
   }
 
-  std::for_each(moves.begin(), moves.end(), [](State & s) {s.IncMoveCount();});
+  Player next_player = piece.player == static_cast<unsigned>(Player::kWhite)
+                       ? Player::kBlack
+                       : Player::kWhite;
+
+  std::for_each(
+    moves.begin(),
+    moves.end(),
+  [&next_player](State & s) { s.IncMoveCount(); s.SetPlayer(next_player); });
 
   return moves;
 }
