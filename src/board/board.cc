@@ -67,7 +67,7 @@ BoardPlane Board::GetFigurePlane(unsigned figure) {
 BoardPlane Board::GetPlayerPlane(unsigned player) {
   BoardPlane plane{width_, height_};
 
-  for (unsigned i = player * figure_count_; i < planes_.size(); ++i)
+  for (unsigned i = player * figure_count_; i < (player + 1) * figure_count_; ++i)
     plane |= planes_[i];
 
   return plane;
