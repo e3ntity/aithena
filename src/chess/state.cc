@@ -1,4 +1,6 @@
-#include "chess/chess.h"
+#include "chess/state.h"
+
+#include "chess/game.h"
 
 namespace aithena {
 namespace chess {
@@ -36,6 +38,18 @@ State& State::operator=(const State& other) {
   return *this;
 }
 
+// TODO: implement
+/*
+bool State::operator==(const State& other) {
+  return this.board_ == other.board_
+         && this.player_ == other.player_
+         && this.castle_queen_ == other.castle_queen_;
+}
+
+bool State::operator!=(const State&) {
+
+}
+*/
 Player State::GetPlayer() {
   return player_;
 }

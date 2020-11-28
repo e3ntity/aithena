@@ -1,4 +1,4 @@
-#include "chess/chess.h"
+#include "chess/game.h"
 
 #include <assert.h>
 #include <iostream>

@@ -15,6 +15,8 @@ class State {
   State(const State&);
 
   State& operator=(const State&);
+  bool operator==(const State&);
+  bool operator!=(const State&);
 
   Board& GetBoard();
 

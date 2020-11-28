@@ -1,7 +1,7 @@
 #ifndef AITHENA_CHESS_MOVES_H
 #define AITHENA_CHESS_MOVES_H
 
-#include "chess/chess.h"
+#include "chess/game.h"
 
 namespace aithena {
 namespace chess {

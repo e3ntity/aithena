@@ -3,7 +3,7 @@
 
 #include <boost/algorithm/string.hpp>
 
-#include "chess/chess.h"
+#include "chess/game.h"
 
 void PrintHelp() {
   std::cout << "Possible actions:" << std::endl;
@@ -103,6 +103,7 @@ State EvaluateUserInput(std::string input, Game& game, State& state) {
     if (input_parts.size() != 2) {
       std::cout << "Incorrect usage of \"info\"" << std::endl;
       PrintHelp();
+
       return state;
     }
 
@@ -127,7 +128,43 @@ State EvaluateUserInput(std::string input, Game& game, State& state) {
   }
   // Move command
   else if (input_parts[0].compare("move") == 0) {
+    if (input_parts.size() != 3) {
+      std::cout << "Incorrect usage of \"move\"" << std::endl;
+      PrintHelp();
 
+      return state;
+    }
+
+    auto source = ParseField(input_parts[1]);
+    auto target = ParseField(input_parts[2]);
+
+    auto piece = board.GetField(std::get<0>(source), std::get<1>(source));
+
+    if (piece == aithena::kEmptyPiece) {
+      std::cout << "No piece at " << input_parts[1] << std::endl;
+      return state;
+    }
+
+    auto move_state = aithena::chess::State(state);
+    auto move_board = move_state.GetBoard();
+    move_board.MoveField(std::get<0>(source), std::get<1>(source),
+                         std::get<0>(target), std::get<1>(target));
+
+    auto moves = game.GenPawnMoves(state, std::get<0>(source), std::get<1>(target));
+    bool legal_move = false;
+
+    for (auto legal : moves) {
+      if (move_state != legal) continue;
+      legal_move = true;
+      break;
+    }
+
+    if (!legal_move) {
+      std::cout << "Illegal move" << std:: endl;
+      return state;
+    }
+
+    return move_state;
   }
 
   return state;
