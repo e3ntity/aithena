@@ -129,12 +129,10 @@ std::vector<State> Game::GenPawnMoves(State state, unsigned x, unsigned y) {
     moves.back().GetBoard().MoveField(x, y, x + 1, y + direction);
   }
 
-  if (x - 1 < width && enemy_figures.get(x - 1, y + direction)) {
+  if (x - 1 >= 0 && enemy_figures.get(x - 1, y + direction)) {
     moves.push_back(State{state});
     moves.back().GetBoard().MoveField(x, y, x - 1, y + direction);
   }
-
-
 
   return moves;
 }
