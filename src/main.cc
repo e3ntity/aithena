@@ -144,7 +144,6 @@ State EvaluateUserInput(std::string input, Game& game, State& state) {
     aithena::BoardPlane marker{board.GetWidth(), board.GetHeight()};
 
     for (auto move : moves) {
-      std::cout << PrintBoard(move);
       // TODO: somehow, black moves are not marked
       marker |= aithena::GetNewFields(board, move.GetBoard());
     }
