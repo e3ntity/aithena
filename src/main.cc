@@ -48,6 +48,12 @@ std::string PrintMarkedBoard(aithena::chess::State state,
       case static_cast<unsigned>(aithena::chess::Figure::kPawn):
         s_piece += "P";
         break;
+      case static_cast<unsigned>(aithena::chess::Figure::kRook):
+        s_piece += "R";
+        break;
+      case static_cast<unsigned>(aithena::chess::Figure::kBishop):
+        s_piece += "B";
+        break;
       default:
         s_piece += std::to_string(piece.figure);
         break;

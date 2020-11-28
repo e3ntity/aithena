@@ -49,23 +49,24 @@ State Game::GetInitialState() {
   assert(GetOption("board_width") == 8 && GetOption("board_height") == 8);
 
   Board& board = state.GetBoard();
-  auto white_pawn = aithena::chess::make_piece(
-                      aithena::chess::Figure::kPawn,
-                      aithena::chess::Player::kWhite);
-  auto black_pawn = aithena::chess::make_piece(
-                      aithena::chess::Figure::kPawn,
-                      aithena::chess::Player::kBlack);
 
-  board.SetField(1, 1, aithena::chess::make_piece(
-                   aithena::chess::Figure::kBishop,
-                   aithena::chess::Player::kWhite));
-  board.SetField(2, 1, white_pawn);
-  board.SetField(5, 1, white_pawn);
-  board.SetField(6, 1, white_pawn);
-  board.SetField(1, 6, black_pawn);
-  board.SetField(2, 6, black_pawn);
-  board.SetField(5, 6, black_pawn);
-  board.SetField(6, 6, black_pawn);
+  // Pawns
+  for (int i = 0; i < 8; ++i) {
+    board.SetField(i, 1, make_piece(Figure::kPawn, Player::kWhite));
+    board.SetField(i, 6, make_piece(Figure::kPawn, Player::kBlack));
+  }
+
+  // Rooks
+  board.SetField(0, 0, make_piece(Figure::kRook, Player::kWhite));
+  board.SetField(7, 0, make_piece(Figure::kRook, Player::kWhite));
+  board.SetField(0, 7, make_piece(Figure::kRook, Player::kBlack));
+  board.SetField(7, 7, make_piece(Figure::kRook, Player::kBlack));
+
+  // Bishops
+  board.SetField(2, 0, make_piece(Figure::kBishop, Player::kWhite));
+  board.SetField(5, 0, make_piece(Figure::kBishop, Player::kWhite));
+  board.SetField(2, 7, make_piece(Figure::kBishop, Player::kBlack));
+  board.SetField(5, 7, make_piece(Figure::kBishop, Player::kBlack));
 
   return state;
 }
