@@ -24,7 +24,7 @@ bool operator==(const Piece&, const Piece&);
 // Player and Figure identifiers must be continuous series from zero up to
 // 2 and figure_count respectively.
 class Board {
-public:
+ public:
   // Creates a board plane of size width x height for each type of figure and
   // each player (2).
   Board(std::size_t width, std::size_t height, unsigned figure_count);
@@ -60,7 +60,9 @@ public:
   // overriding a piece on the destination position.
   void MoveField(unsigned x, unsigned y, unsigned x_, unsigned y_);
 
-private:
+  friend BoardPlane GetNewFields(Board&, Board&);
+
+ private:
   // The width and height of the board and therefore of all board planes
   // managed by the board.
   std::size_t width_, height_;
@@ -70,6 +72,11 @@ private:
   // player).
   std::vector<BoardPlane> planes_;
 };
+
+// Returns a board plane highlighting all fields that contain a different
+// figure in the after board than they did in the before board.
+// If a figure was removed and is not kEmptyPiece, no indication is given.
+BoardPlane GetNewFields(Board& before, Board& after);
 
 }
 

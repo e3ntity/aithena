@@ -2,6 +2,22 @@
 
 namespace aithena {
 
+BoardPlane GetNewFields(Board& before, Board& after) {
+  assert(before.width_ == after.width_
+         && before.height_ == after.height_
+         && before.figure_count_ == after.figure_count_);
+
+  BoardPlane difference(before.width_, before.height_);
+
+  for (unsigned plane = 0; plane < before.figure_count_; ++plane) {
+    difference |= ((!before.planes_[plane]) & after.planes_[plane]);
+  }
+
+  return difference;
+}
+
+// Board class member functions go here
+
 bool operator==(const Piece& a, const Piece& b) {
   return a.figure == b.figure && a.player == b.player;
 }
