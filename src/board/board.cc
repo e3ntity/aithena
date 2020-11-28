@@ -9,7 +9,7 @@ BoardPlane GetNewFields(Board& before, Board& after) {
 
   BoardPlane difference(before.width_, before.height_);
 
-  for (unsigned plane = 0; plane < before.figure_count_; ++plane) {
+  for (unsigned plane = 0; plane < before.planes_.size(); ++plane) {
     difference |= ((!before.planes_[plane]) & after.planes_[plane]);
   }
 
