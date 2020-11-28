@@ -85,11 +85,11 @@ BoardPlane BoardPlane::operator!() {
   return result;
 }
 
-bool BoardPlane::operator==(const BoardPlane& other) {
+bool BoardPlane::operator==(const BoardPlane& other) const {
   return plane_ == other.plane_;
 }
 
-bool BoardPlane::operator!=(const BoardPlane& other) {
+bool BoardPlane::operator!=(const BoardPlane& other) const {
   return plane_ != other.plane_;
 }
 
