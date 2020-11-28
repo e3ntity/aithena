@@ -32,6 +32,11 @@ class Board {
 
   Board& operator=(const Board&);
 
+  // Checks that both boards have the same dimension, number of figures and
+  // whether the plane for each figure is the same.
+  bool operator==(const Board&) const;
+  bool operator!=(const Board&) const;
+
   std::size_t GetWidth();
   std::size_t GetHeight();
   unsigned GetFigureCount();

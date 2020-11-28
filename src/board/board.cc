@@ -24,6 +24,17 @@ Board& Board::operator=(const Board& other) {
   return *this;
 };
 
+bool Board::operator==(const Board& other) const {
+  return width_ == other.width_
+         && height_ == other.height_
+         && figure_count_ == other.figure_count_
+         && planes_ == other.planes_;
+}
+
+bool Board::operator!=(const Board& other) const {
+  return !(*this == other);
+}
+
 std::size_t Board::GetWidth() {return width_;}
 std::size_t Board::GetHeight() {return height_;}
 unsigned Board::GetFigureCount() {return figure_count_;}
