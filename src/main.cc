@@ -23,22 +23,47 @@ std::string PrintMarkedBoard(aithena::chess::State state,
   std::ostringstream repr;
   aithena::Piece piece;
 
+  std::string turn = state.GetPlayer() == aithena::chess::Player::kWhite
+                     ? "White" : "Black";
+
+  repr << turn << "'s move:";
+
   for (int y = board.GetHeight() - 1; y >= 0; --y) {
-    repr << std::endl << " " << std::string(board.GetWidth() * 4 + 1, '-')
-         << std::endl << y + 1 << "|";
+    repr << std::endl << y + 1 << " ";
     for (unsigned x = 0; x < board.GetWidth(); ++x) {
+      // field color
+      std::string s_color = ((x + y) % 2 == 0)
+                            ? "\033[47m\033[1;30m"
+                            : "\033[40m\033[1;37m";
+
       piece = board.GetField(x, y);
+
+      // Player indication
+      std::string s_piece = piece.player == static_cast<unsigned>(aithena::chess::Player::kWhite)
+                            ? "\033[4m"
+                            : "";
+
+      // Figure icon
+      switch (piece.figure) {
+      case static_cast<unsigned>(aithena::chess::Figure::kPawn):
+        s_piece += "P";
+        break;
+      default:
+        s_piece += std::to_string(piece.figure);
+        break;
+      }
+
       bool marked = marker.get(x, y);
 
       if (piece == aithena::kEmptyPiece) {
-        repr << (marked ? "- -|" : "   |");
+        repr << s_color << (marked ? "\033[31m- -" : "   ") << "\033[0m";
       } else {
-        repr << (marked ? "-" : " ") << piece.figure << (marked ? "-|" : " |");
+        repr << s_color << (marked ? "\033[31m-" : " ") << s_color << s_piece
+             << "\033[24m" << (marked ? "\033[31m-" : " ") << "\033[0m";
       }
     }
   }
-  repr << std::endl << " " << std::string(board.GetWidth() * 4 + 1, '-')
-       << std::endl << "   A   B   C   D   E   F   G   H" << std::endl;
+  repr << std::endl << "   A  B  C  D  E  F  G  H" << std::endl;
 
   return repr.str();
 }
@@ -115,11 +140,14 @@ State EvaluateUserInput(std::string input, Game& game, State& state) {
       return state;
     }
 
-    auto moves = game.GenPawnMoves(state, std::get<0>(field), std::get<1>(field));
+    auto moves = game.GenMoves(state, std::get<0>(field), std::get<1>(field));
     aithena::BoardPlane marker{board.GetWidth(), board.GetHeight()};
 
-    for (auto move : moves)
-      marker |= (board.GetCompletePlane() ^ move.GetBoard().GetCompletePlane());
+    for (auto move : moves) {
+      std::cout << PrintBoard(move);
+      // TODO: somehow, black moves are not marked
+      marker |= aithena::GetNewFields(board, move.GetBoard());
+    }
     marker.clear(std::get<0>(field), std::get<1>(field));
 
     std::cout << PrintMarkedBoard(state, marker) << std::endl;
@@ -149,7 +177,7 @@ State EvaluateUserInput(std::string input, Game& game, State& state) {
     move_board.MoveField(std::get<0>(source), std::get<1>(source),
                          std::get<0>(target), std::get<1>(target));
 
-    auto moves = game.GenPawnMoves(state, std::get<0>(source), std::get<1>(source));
+    auto moves = game.GenMoves(state, std::get<0>(source), std::get<1>(source));
     unsigned i;
 
     for (i = 0; i < moves.size(); ++i) {
