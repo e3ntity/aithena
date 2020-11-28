@@ -11,8 +11,6 @@ struct Direction {
 	signed y;
 };
 
-
-
 const Direction up{0, 1};
 const Direction down{0, -1};
 const Direction left{ -1, 0};

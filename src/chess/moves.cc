@@ -2,6 +2,7 @@
 
 namespace aithena {
 namespace chess {
+
 Direction operator+(Direction d1, Direction d2) {
 	return {d1.x + d2.x, d1.y + d2.y};
 }
@@ -27,11 +28,11 @@ std::vector<State> GenDirectionalMoves(State state, unsigned x, unsigned y,
 
 	for (unsigned dist = 1; directions.size() && dist <= range; ++dist) {
 		for (unsigned direction = 0;
-		        direction < static_cast<unsigned>(directions.size()); ++direction) {
+		     direction < static_cast<unsigned>(directions.size()); ++direction) {
 			unsigned new_x = x + dist * directions[direction].x;
 			unsigned new_y = y + dist * directions[direction].y;
 			if (new_x >= width || new_x < 0 || new_y >= height || new_y < 0
-			        || own_figures.get(new_x, new_y)) {
+			    || own_figures.get(new_x, new_y)) {
 				directions.erase(directions.begin() + direction);
 				--direction;
 				continue;
@@ -46,5 +47,6 @@ std::vector<State> GenDirectionalMoves(State state, unsigned x, unsigned y,
 
 	return moves;
 }
+
 }
 }
