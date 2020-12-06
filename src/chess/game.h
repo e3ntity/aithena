@@ -29,7 +29,7 @@ namespace chess {
 Piece make_piece(Figure, Player);
 
 class Game : public ::aithena::Game<State> {
-  public:
+ public:
 	Game();
 	Game(Options);
 
@@ -46,16 +46,26 @@ class Game : public ::aithena::Game<State> {
 
 	// Generates the next moves for a single pawn at field (x, y) for a given
 	// state.
+	// * Assumes that there is a pawn of the player who's turn it is at
+	// field (x, y).
+	// * Does not switch the player turn.
 	std::vector<State> GenPawnMoves(State, unsigned x, unsigned y);
 
 	// Generates the next moves for a single rook at field (x, y) for a given
 	// state.
+	// * Assumes that there is a pawn of the player who's turn it is at
+	// field (x, y).
+	// * Does not switch the player turn.
 	std::vector<State> GenRookMoves(State state, unsigned x, unsigned y);
 
 	// Generates the next moves for a single bishop at field (x, y) for a given
 	// state.
+	// * Assumes that there is a pawn of the player who's turn it is at
+	// field (x, y).
+	// * Does not switch the player turn.
 	std::vector<State> GenBishopMoves(State state, unsigned x, unsigned y);
-  private:
+
+ private:
 	// Stores the magic bit boards computed by InitializeMagic.
 	// magic_bit_planes_[2*i + 0] thereby stores the push bit planes for figure i
 	// whereas magic_bit_planes[2*i + 1] stores the capture bit planes

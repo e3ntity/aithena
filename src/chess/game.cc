@@ -90,11 +90,6 @@ std::vector<State> Game::GenPawnMoves(State state, unsigned x, unsigned y) {
   unsigned player = static_cast<unsigned>(state.GetPlayer());
   Piece piece = board_before.GetField(x, y);
 
-  // Make checks
-
-  if (piece == kEmptyPiece || piece.player != player || piece.figure != pawn)
-    return moves;
-
   int direction = state.GetPlayer() == Player::kWhite ? 1 : -1;
 
   if (y + direction >= height || y + direction < 0) {
@@ -152,6 +147,10 @@ std::vector<State> Game::GenBishopMoves(State state, unsigned x, unsigned y) {
 std::vector<State> Game::GenMoves(State state, unsigned x, unsigned y) {
   Piece piece = state.GetBoard().GetField(x, y);
   std::vector<State> moves;
+
+  if (piece.player != static_cast<unsigned>(state.GetPlayer())
+      || piece == kEmptyPiece)
+    return moves;
 
   switch (piece.figure) {
   case static_cast<unsigned>(Figure::kPawn):
