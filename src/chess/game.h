@@ -8,13 +8,13 @@ namespace chess {
 
 // Defines the figures used in chess. GhostPawn is used to keep track of
 // "en-passant".
-enum class Figure : unsigned {
-	/*kKing, kQueen, */kRook,
+enum Figure : unsigned {
+	kKing, /*kQueen, */kRook,
 	kBishop, /*kKnight, */kPawn,
 	/*kGhostPawn, */kCount
 };
 
-enum class Player : unsigned {kWhite, kBlack};
+enum Player : unsigned {kWhite, kBlack};
 
 } // namespace chess
 } // namespace aithena
@@ -41,8 +41,14 @@ class Game : public ::aithena::Game<State> {
 
 	std::vector<State> GetLegalActions(State) override;
 
+	// Generates all enxt moves for all pieces for a given state.
+	// The pseudo parameter indicates whether to only generate pseudo moves.
+	std::vector<State> GenMoves(State, bool pseudo = false);
+
 	// Generates all next moves for any piece at field (x, y) for a given state.
-	std::vector<State> GenMoves(State, unsigned x, unsigned y);
+	// The pseudo parameter indicates whether to only generate pseudo moves.
+	std::vector<State> GenMoves(State, unsigned x, unsigned y,
+	                            bool pseudo = false);
 
 	// Generates the next moves for a single pawn at field (x, y) for a given
 	// state.
@@ -64,6 +70,9 @@ class Game : public ::aithena::Game<State> {
 	// field (x, y).
 	// * Does not switch the player turn.
 	std::vector<State> GenBishopMoves(State state, unsigned x, unsigned y);
+
+	// Returns whether the player's king is in check.
+	bool KingInCheck(State state, Player player);
 
  private:
 	// Stores the magic bit boards computed by InitializeMagic.
