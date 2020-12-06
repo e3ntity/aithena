@@ -36,6 +36,9 @@ class BoardPlane {
 	bool operator==(const BoardPlane&) const;
 	bool operator!=(const BoardPlane&) const;
 
+	// Returns true if no bits are set, otherwise false.
+	bool empty() const;
+
  private:
 	std::size_t width_, height_;
 	// A 2D bit plane specified rows to columns.

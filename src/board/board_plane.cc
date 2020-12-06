@@ -93,4 +93,8 @@ bool BoardPlane::operator!=(const BoardPlane& other) const {
   return plane_ != other.plane_;
 }
 
+bool BoardPlane::empty() const {
+  return plane_.none();
+}
+
 }
