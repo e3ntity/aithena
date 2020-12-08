@@ -32,7 +32,7 @@ std::string PrintMarkedBoard(aithena::chess::State state,
     repr << std::endl << y + 1 << " ";
     for (unsigned x = 0; x < board.GetWidth(); ++x) {
       // field color
-      std::string s_color = ((x + y) % 2 == 0)
+      std::string s_color = ((x + y) % 2 == 1)
                             ? "\033[47m\033[1;30m"
                             : "\033[40m\033[1;37m";
 
@@ -53,6 +53,9 @@ std::string PrintMarkedBoard(aithena::chess::State state,
         break;
       case static_cast<unsigned>(aithena::chess::Figure::kBishop):
         s_piece += "B";
+        break;
+      case static_cast<unsigned>(aithena::chess::Figure::kKing):
+        s_piece += "K";
         break;
       default:
         s_piece += std::to_string(piece.figure);
