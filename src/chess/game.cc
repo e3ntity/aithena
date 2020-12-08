@@ -68,6 +68,13 @@ State Game::GetInitialState() {
   board.SetField(2, 7, make_piece(Figure::kBishop, Player::kBlack));
   board.SetField(5, 7, make_piece(Figure::kBishop, Player::kBlack));
 
+  // Kings
+  board.SetField(3, 0, make_piece(Figure::kKing, Player::kWhite));
+  board.SetField(3, 7, make_piece(Figure::kKing, Player::kBlack));
+
+  // Queens
+  board.SetField(4, 0, make_piece(Figure::kQueen, Player::kWhite));
+  board.SetField(4, 7, make_piece(Figure::kQueen, Player::kBlack));
   return state;
 }
 
@@ -149,9 +156,22 @@ std::vector<State> Game::GenBishopMoves(State state, unsigned x, unsigned y) {
   {up + left, up + right, down + left, down + right}, 8);
 }
 
+std::vector<State> Game::GenQueenMoves(State state, unsigned x, unsigned y) {
+  return aithena::chess::GenDirectionalMoves(state, x, y,
+  {up + left, up + right, down + left, down + right, up, down, left, right}, 8);
+}
+
+std::vector<State> Game::GenKingMoves(State state, unsigned x, unsigned y) {
+  return aithena::chess::GenDirectionalMoves(state, x, y,
+  {up + left, up + right, down + left, down + right, up, down, left, right}, 1);
+}
+
 std::vector<State> Game::GenMoves(State state, unsigned x, unsigned y) {
   Piece piece = state.GetBoard().GetField(x, y);
   std::vector<State> moves;
+
+  if (piece.player != static_cast<unsigned>(state.GetPlayer()))
+    return {};
 
   switch (piece.figure) {
   case static_cast<unsigned>(Figure::kPawn):
@@ -162,6 +182,12 @@ std::vector<State> Game::GenMoves(State state, unsigned x, unsigned y) {
     break;
   case static_cast<unsigned>(Figure::kBishop):
     moves = GenBishopMoves(state, x, y);
+    break;
+  case static_cast<unsigned>(Figure::kQueen):
+    moves = GenQueenMoves(state, x, y);
+    break;
+  case static_cast<unsigned>(Figure::kKing):
+    moves = GenKingMoves(state, x, y);
     break;
   case kEmptyPiece.figure:
     break;
