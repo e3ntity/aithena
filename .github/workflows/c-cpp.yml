@@ -14,7 +14,9 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Install boost library
-      run: sudo apt-get install libboost-all-dev
+      run: sudo apt-get install -y libboost-all-dev
+    - name: Install googletest library
+      run: sudo apt-get install -y googletest
     - name: make
       run: make
     - name: make test
