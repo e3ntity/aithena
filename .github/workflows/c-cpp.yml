@@ -13,6 +13,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+    - name: Install boost library
+      run: sudo apt-get install libboost-all-dev
     - name: make
       run: make
     - name: make test
