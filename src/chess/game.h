@@ -10,7 +10,7 @@ namespace chess {
 // "en-passant".
 enum class Figure : unsigned {
 	kKing, kQueen, kRook,
-	kBishop, /*kKnight, */kPawn,
+	kBishop, kKnight, kPawn,
 	/*kGhostPawn, */kCount
 };
 
@@ -66,15 +66,23 @@ class Game : public ::aithena::Game<State> {
 
 	// Generates the next moves for a single bishop at field (x, y) for a given
 	// state.
-	// * Assumes that there is a pawn of the player who's turn it is at
+	// * Assumes that there is a rook of the player who's turn it is at
 	// field (x, y).
 	// * Does not switch the player turn.
 	std::vector<State> GenBishopMoves(State state, unsigned x, unsigned y);
-	// Generates the next moves for a single bishop at field (x, y) for a given
+
+	// Generates the next moves for a single knight at field (x, y) for a given
+	// state.
+	// * Assumes that there is a knight of the player who's turn it is at
+	// field (x, y).
+	// * Does not switch the player turn.
+	std::vector<State> GenKnightMoves(State state, unsigned x, unsigned y);
+
+	// Generates the next moves for a single queen at field (x, y) for a given
 	// state.
 	std::vector<State> GenQueenMoves(State state, unsigned x, unsigned y);
 
-	// Generates the next moves for a single bishop at field (x, y) for a given
+	// Generates the next moves for a single king at field (x, y) for a given
 	// state.
 	std::vector<State> GenKingMoves(State state, unsigned x, unsigned y);
   private:

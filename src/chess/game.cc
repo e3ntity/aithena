@@ -68,6 +68,12 @@ State Game::GetInitialState() {
   board.SetField(2, 7, make_piece(Figure::kBishop, Player::kBlack));
   board.SetField(5, 7, make_piece(Figure::kBishop, Player::kBlack));
 
+  // Knights
+  board.SetField(1, 0, make_piece(Figure::kKnight, Player::kWhite));
+  board.SetField(6, 0, make_piece(Figure::kKnight, Player::kWhite));
+  board.SetField(1, 7, make_piece(Figure::kKnight, Player::kBlack));
+  board.SetField(6, 7, make_piece(Figure::kKnight, Player::kBlack));
+
   // Kings
   board.SetField(3, 0, make_piece(Figure::kKing, Player::kWhite));
   board.SetField(3, 7, make_piece(Figure::kKing, Player::kBlack));
@@ -147,15 +153,24 @@ std::vector<State> Game::GenBishopMoves(State state, unsigned x, unsigned y) {
   {up + left, up + right, down + left, down + right}, 8);
 }
 
+std::vector<State> Game::GenKingMoves(State state, unsigned x, unsigned y) {
+  return aithena::chess::GenDirectionalMoves(state, x, y,
+  {up + up + left, up + up + right, down + down + left, down + down + right},
+  1);
+}
+
 std::vector<State> Game::GenQueenMoves(State state, unsigned x, unsigned y) {
   return aithena::chess::GenDirectionalMoves(state, x, y,
   {up + left, up + right, down + left, down + right, up, down, left, right}, 8);
 }
 
-std::vector<State> Game::GenKingMoves(State state, unsigned x, unsigned y) {
-  return aithena::chess::GenDirectionalMoves(state, x, y,
-  {up + left, up + right, down + left, down + right, up, down, left, right}, 1);
+std::vector<State> Game::GenKnightMoves(State state, unsigned x, unsigned y) {
+  return aithena::chess::GenDirectionalMoves(state, x, y, {
+    up + up + left, up + up + right, down + down + left,
+    down + down + right, up, down, left, right
+  }, 1);
 }
+
 std::vector<State> Game::GenMoves(State state, bool pseudo) {
   Board board = state.GetBoard();
   unsigned width = board.GetWidth();
@@ -199,6 +214,9 @@ std::vector<State> Game::GenMoves(State state, unsigned x, unsigned y,
     break;
   case static_cast<unsigned>(Figure::kQueen):
     moves = GenQueenMoves(state, x, y);
+    break;
+  case static_cast<unsigned>(Figure::kKnight):
+    moves = GenKnightMoves(state, x, y);
     break;
   case static_cast<unsigned>(Figure::kKing):
     moves = GenKingMoves(state, x, y);
