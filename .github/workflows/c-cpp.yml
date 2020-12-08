@@ -1,0 +1,25 @@
+name: C/C++ CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install boost library
+      run: sudo apt-get install -y libboost-all-dev
+    - name: Install googletest library
+      run: sudo apt-get install -y googletest
+    - name: make
+      run: make
+    - name: make test
+      run: make test
+    - name: test
+      run: build/test
