@@ -8,7 +8,6 @@ namespace chess {
 
 // Defines the figures used in chess. GhostPawn is used to keep track of
 // "en-passant".
-<<< <<< < HEAD
 enum class Figure : unsigned {
 	kKing, kQueen, kRook,
 	kBishop, /*kKnight, */kPawn,
@@ -71,8 +70,6 @@ class Game : public ::aithena::Game<State> {
 	// field (x, y).
 	// * Does not switch the player turn.
 	std::vector<State> GenBishopMoves(State state, unsigned x, unsigned y);
-
-	<<< <<< < HEAD
 	// Generates the next moves for a single bishop at field (x, y) for a given
 	// state.
 	std::vector<State> GenQueenMoves(State state, unsigned x, unsigned y);
@@ -81,12 +78,10 @@ class Game : public ::aithena::Game<State> {
 	// state.
 	std::vector<State> GenKingMoves(State state, unsigned x, unsigned y);
   private:
-	== == == =
-	    // Returns whether the player's king is in check.
-	    bool KingInCheck(State state, Player player);
+	// Returns whether the player's king is in check.
+	bool KingInCheck(State state, Player player);
 
   private:
-	>>> >>> > 0e84be187fce0682e1c6450848370361355fe68e
 	// Stores the magic bit boards computed by InitializeMagic.
 	// magic_bit_planes_[2*i + 0] thereby stores the push bit planes for figure i
 	// whereas magic_bit_planes[2*i + 1] stores the capture bit planes

@@ -147,7 +147,6 @@ std::vector<State> Game::GenBishopMoves(State state, unsigned x, unsigned y) {
   {up + left, up + right, down + left, down + right}, 8);
 }
 
-<<< <<< < HEAD
 std::vector<State> Game::GenQueenMoves(State state, unsigned x, unsigned y) {
   return aithena::chess::GenDirectionalMoves(state, x, y,
   {up + left, up + right, down + left, down + right, up, down, left, right}, 8);
@@ -157,112 +156,99 @@ std::vector<State> Game::GenKingMoves(State state, unsigned x, unsigned y) {
   return aithena::chess::GenDirectionalMoves(state, x, y,
   {up + left, up + right, down + left, down + right, up, down, left, right}, 1);
 }
+std::vector<State> Game::GenMoves(State state, bool pseudo) {
+  Board board = state.GetBoard();
+  unsigned width = board.GetWidth();
+  unsigned height = board.GetHeight();
 
-std::vector<State> Game::GenMoves(State state, unsigned x, unsigned y) {
+  std::vector<State> moves;
+
+  for (unsigned y = 0; y < height; ++y) {
+    for (unsigned x = 0; x < width; ++x) {
+      std::vector<State> piece_moves = GenMoves(state, x, y, pseudo);
+      moves.reserve(moves.size() + piece_moves.size());
+      moves.insert(moves.end(), piece_moves.begin(), piece_moves.end());
+    }
+  }
+
+  return moves;
+}
+
+std::vector<State> Game::GenMoves(State state, unsigned x, unsigned y,
+                                  bool pseudo) {
   Piece piece = state.GetBoard().GetField(x, y);
   std::vector<State> moves;
 
-  if (piece.player != static_cast<unsigned>(state.GetPlayer()))
-    return {};
-  == == == =
-  std::vector<State> Game::GenMoves(State state, bool pseudo) {
-    Board board = state.GetBoard();
-    unsigned width = board.GetWidth();
-    unsigned height = board.GetHeight();
+  // Make checks
 
-    std::vector<State> moves;
-
-    for (unsigned y = 0; y < height; ++y) {
-      for (unsigned x = 0; x < width; ++x) {
-        std::vector<State> piece_moves = GenMoves(state, x, y, pseudo);
-        moves.reserve(moves.size() + piece_moves.size());
-        moves.insert(moves.end(), piece_moves.begin(), piece_moves.end());
-      }
-    }
-
+  if (piece.player != static_cast<unsigned>(state.GetPlayer())
+      || piece == kEmptyPiece)
     return moves;
+
+  // Generate pseudo-moves
+
+  switch (piece.figure) {
+  case static_cast<unsigned>(Figure::kPawn):
+    moves = GenPawnMoves(state, x, y);
+    break;
+  case static_cast<unsigned>(Figure::kRook):
+    moves = GenRookMoves(state, x, y);
+    break;
+  case static_cast<unsigned>(Figure::kBishop):
+    moves = GenBishopMoves(state, x, y);
+    break;
+  case static_cast<unsigned>(Figure::kQueen):
+    moves = GenQueenMoves(state, x, y);
+    break;
+  case static_cast<unsigned>(Figure::kKing):
+    moves = GenKingMoves(state, x, y);
+    // TODO: generate king moves.
+    break;
+  case kEmptyPiece.figure:
+    break;
+  default:
+    assert(false);
   }
 
-  std::vector<State> Game::GenMoves(State state, unsigned x, unsigned y,
-                                    bool pseudo) {
-    Piece piece = state.GetBoard().GetField(x, y);
-    std::vector<State> moves;
+  // Update player turn
 
-    // Make checks
+  Player next_player = piece.player == static_cast<unsigned>(Player::kWhite)
+                       ? Player::kBlack
+                       : Player::kWhite;
 
-    if (piece.player != static_cast<unsigned>(state.GetPlayer())
-        || piece == kEmptyPiece)
-      return moves;
+  std::for_each(
+    moves.begin(),
+    moves.end(),
+  [&next_player](State & s) { s.IncMoveCount(); s.SetPlayer(next_player); });
 
-    // Generate pseudo-moves
-    >>> >>> > 0e84be187fce0682e1c6450848370361355fe68e
+  if (pseudo) return moves;
 
-    switch (piece.figure) {
-    case static_cast<unsigned>(Figure::kPawn):
-      moves = GenPawnMoves(state, x, y);
-      break;
-    case static_cast<unsigned>(Figure::kRook):
-      moves = GenRookMoves(state, x, y);
-      break;
-    case static_cast<unsigned>(Figure::kBishop):
-      moves = GenBishopMoves(state, x, y);
-      break;
-      <<< <<< < HEAD
-    case static_cast<unsigned>(Figure::kQueen):
-      moves = GenQueenMoves(state, x, y);
-      break;
-    case static_cast<unsigned>(Figure::kKing):
-      moves = GenKingMoves(state, x, y);
-      == == == =
-      case static_cast<unsigned>(Figure::kKing):
-      // TODO: generate king moves.
-      >>> >>> > 0e84be187fce0682e1c6450848370361355fe68e
-      break;
-    case kEmptyPiece.figure:
-      break;
-    default:
-      assert(false);
-    }
-
-    // Update player turn
-
-    Player next_player = piece.player == static_cast<unsigned>(Player::kWhite)
-                         ? Player::kBlack
-                         : Player::kWhite;
-
-    std::for_each(
-      moves.begin(),
-      moves.end(),
-    [&next_player](State & s) { s.IncMoveCount(); s.SetPlayer(next_player); });
-
-    if (pseudo) return moves;
-
-    // Remove moves with king checked
-    auto move = std::begin(moves);
-    while (move != std::end(moves)) {
-      if (KingInCheck(*move, state.GetPlayer()))
-        move = moves.erase(move);
-      else
-        ++move;
-    }
-
-    return moves;
+  // Remove moves with king checked
+  auto move = std::begin(moves);
+  while (move != std::end(moves)) {
+    if (KingInCheck(*move, state.GetPlayer()))
+      move = moves.erase(move);
+    else
+      ++move;
   }
 
-  bool Game::KingInCheck(State state, Player player) {
-    Board board = state.GetBoard();
-    BoardPlane king_plane = board.GetPlane(make_piece(Figure::kKing, player));
-    Player opponent = player == Player::kWhite ? Player::kBlack : Player::kWhite;
-    std::vector<State> next_states = GenMoves(state, /*pseudo=*/ true);
+  return moves;
+}
 
-    for (auto next_state : next_states) {
-      if ((king_plane & next_state.GetBoard().GetPlayerPlane(opponent)).empty())
-        continue;
-      return true;
-    }
+bool Game::KingInCheck(State state, Player player) {
+  Board board = state.GetBoard();
+  BoardPlane king_plane = board.GetPlane(make_piece(Figure::kKing, player));
+  Player opponent = player == Player::kWhite ? Player::kBlack : Player::kWhite;
+  std::vector<State> next_states = GenMoves(state, /*pseudo=*/ true);
 
-    return false;
+  for (auto next_state : next_states) {
+    if ((king_plane & next_state.GetBoard().GetPlayerPlane(opponent)).empty())
+      continue;
+    return true;
   }
+
+  return false;
+}
 
 }  // namespace chess
 }  // namespace aithena
