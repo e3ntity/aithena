@@ -7,13 +7,15 @@
 
 void PrintHelp() {
   std::cout << "Possible actions:" << std::endl;
-  std::cout << "  start                - Starts a new game." << std::endl;
-  std::cout << "  help                 - Displays this menu." << std::endl;
-  std::cout << "  exit                 - Exits AIthena." << std::endl;
-  std::cout << "  show                 - Displays the board." << std::endl;
-  std::cout << "  info <field>         - Show possible moves for a piece."
+  std::cout << "  start                 - Starts a new game." << std::endl;
+  std::cout << "  help                  - Displays this menu." << std::endl;
+  std::cout << "  exit                  - Exits AIthena." << std::endl;
+  std::cout << "  show                  - Displays the board." << std::endl;
+  std::cout << "  info <field>          - Show possible moves for a piece."
             << std::endl;
-  std::cout << "  move <field> <field> - Move a piece from the first to the second field."
+  std::cout << "  move <field> <field>  - Move a piece from the first to the second field."
+            << std::endl;
+  std::cout << "  promote <field> <fig> - Promotes a pawn on field to figure fig."
             << std::endl;
 }
 
@@ -33,29 +35,34 @@ std::string PrintMarkedBoard(aithena::chess::State state,
     for (unsigned x = 0; x < board.GetWidth(); ++x) {
       // field color
       std::string s_color = ((x + y) % 2 == 1)
-                            ? "\033[47m\033[1;30m"
-                            : "\033[40m\033[1;37m";
+                            ? "\033[1;47m"
+                            : "\033[1;45m";
 
       piece = board.GetField(x, y);
 
       // Player indication
-      std::string s_piece = piece.player == static_cast<unsigned>(aithena::chess::Player::kWhite)
-                            ? "\033[4m"
-                            : "";
+      bool white = piece.player == static_cast<unsigned>(aithena::chess::Player::kWhite);
+      std::string s_piece;
 
       // Figure icon
       switch (piece.figure) {
-      case static_cast<unsigned>(aithena::chess::Figure::kPawn):
-        s_piece += "P";
+      case static_cast<unsigned>(aithena::chess::Figure::kKing):
+        s_piece = white ? "♔" : "♚";
+        break;
+      case static_cast<unsigned>(aithena::chess::Figure::kQueen):
+        s_piece = white ? "♕" : "♛";
         break;
       case static_cast<unsigned>(aithena::chess::Figure::kRook):
-        s_piece += "R";
+        s_piece = white ? "♖" : "♜";
         break;
       case static_cast<unsigned>(aithena::chess::Figure::kBishop):
-        s_piece += "B";
+        s_piece = white ? "♗" : "♝";
         break;
-      case static_cast<unsigned>(aithena::chess::Figure::kKing):
-        s_piece += "K";
+      case static_cast<unsigned>(aithena::chess::Figure::kKnight):
+        s_piece = white ? "♘" : "♞";
+        break;
+      case static_cast<unsigned>(aithena::chess::Figure::kPawn):
+        s_piece = white ? "♙" : "♟︎";
         break;
       default:
         s_piece += std::to_string(piece.figure);
@@ -200,6 +207,22 @@ State EvaluateUserInput(std::string input, Game& game, State& state) {
     std::cout << PrintBoard(moves[i]) << std::endl;
 
     return moves[i];
+  }
+  // Promote command
+  else if (input_parts[0].compare("promote") == 0) {
+    if (input_parts.size() != 3) {
+      std::cout << "Incorrect usage of \"promote\"" << std::endl;
+      PrintHelp();
+
+      return state;
+    }
+
+    auto field = ParseField(input_parts[1]);
+    auto piece = board.GetField(std::get<0>(field), std::get<1>(field));
+
+    if (piece.figure != static_cast<unsigned>(aithena::chess::Figure::kPawn)) {
+      std::cout << "No pawn at " << input_parts[1] << std::endl;
+    }
   }
 
   return state;
