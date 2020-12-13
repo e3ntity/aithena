@@ -200,7 +200,7 @@ State EvaluateUserInput(std::string input, Game& game, State& state) {
     }
 
     if (i >= moves.size()) {
-      std::cout << "Illegal move" << std:: endl;
+      std::cout << "Illegal move" << std::endl;
       return state;
     }
 
@@ -223,6 +223,45 @@ State EvaluateUserInput(std::string input, Game& game, State& state) {
     if (piece.figure != static_cast<unsigned>(aithena::chess::Figure::kPawn)) {
       std::cout << "No pawn at " << input_parts[1] << std::endl;
     }
+
+    aithena::chess::Figure next_figure;
+
+    switch (std::tolower(input_parts[2].front())) {
+    case 'q':
+      next_figure = aithena::chess::Figure::kQueen;
+      break;
+    case 'r':
+      next_figure = aithena::chess::Figure::kRook;
+      break;
+    case 'n':
+      next_figure = aithena::chess::Figure::kKnight;
+      break;
+    case 'b':
+      next_figure = aithena::chess::Figure::kBishop;
+      break;
+    default:
+      std::cout << "Invalid figure \"" << input_parts[2] << "\"" << std::endl;
+      return state;
+    }
+
+    aithena::Piece next_piece = make_piece(next_figure, state.GetPlayer());
+    aithena::Board next_board = state.GetBoard();
+
+    next_board.SetField(std::get<0>(field), std::get<1>(field), next_piece);
+
+    auto moves = game.GenMoves(state, std::get<0>(field), std::get<1>(field));
+    unsigned i;
+
+    for (i = 0; i < moves.size(); ++i) {
+      if (next_board == moves[i].GetBoard()) break;
+    }
+
+    if (i >= moves.size()) {
+      std::cout << "Illegal promotion" << std::endl;
+      return state;
+    }
+
+    return moves[i];
   }
 
   return state;
