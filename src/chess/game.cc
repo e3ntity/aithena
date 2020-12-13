@@ -101,6 +101,11 @@ std::vector<State> Game::GenPawnMoves(State state, unsigned x, unsigned y) {
 
   int direction = state.GetPlayer() == Player::kWhite ? 1 : -1;
 
+  signed tmp_dobule_push_pawn_x = state.double_push_pawn_x;
+  signed tmp_dobule_push_pawn_y = state.double_push_pawn_y;
+  state.double_push_pawn_x = -1;
+  state.double_push_pawn_y = -1;
+
   if (y + direction >= height || y + direction < 0) {
     // Generate promotions
     for (auto figure : Game::figures) {
@@ -112,6 +117,8 @@ std::vector<State> Game::GenPawnMoves(State state, unsigned x, unsigned y) {
       moves.push_back(s);
     }
 
+    state.double_push_pawn_x = tmp_dobule_push_pawn_x;
+    state.double_push_pawn_y = tmp_dobule_push_pawn_y;
     return moves;
   }
 
@@ -128,8 +135,13 @@ std::vector<State> Game::GenPawnMoves(State state, unsigned x, unsigned y) {
     if (y == (state.GetPlayer() == Player::kWhite ? 1 : height - 2)
         && !figure_plane.get(x, y + 2 * direction)) {
       // Move forward twice
-      moves.push_back(State{state});
-      moves.back().GetBoard().MoveField(x, y, x, y + direction * 2);
+      State new_state = state;
+      new_state.GetBoard().MoveField(x, y, x, y + direction * 2);
+      new_state.double_push_pawn_x = static_cast<signed>(x);
+      new_state.double_push_pawn_y = static_cast<signed>(y + direction)
+                                     | static_cast<signed>(y + direction * 2)
+                                     << 3;
+      moves.push_back(new_state);
     }
   }
 
@@ -149,7 +161,24 @@ std::vector<State> Game::GenPawnMoves(State state, unsigned x, unsigned y) {
     moves.push_back(State{state});
     moves.back().GetBoard().MoveField(x, y, x - 1, y + direction);
   }
+  // en passant
+  if (static_cast<unsigned>(tmp_dobule_push_pawn_y % 8) == y + direction) {
+    if (static_cast<unsigned>(tmp_dobule_push_pawn_x) == x - 1) {
+      State new_state = State{state};
+      new_state.GetBoard().MoveField(x, y, x - 1, y + direction);
+      new_state.GetBoard().ClearField(x - 1, y);
+      moves.push_back(new_state);
+    } else if (static_cast<unsigned>(tmp_dobule_push_pawn_x) == x + 1) {
 
+      State new_state = State{state};
+      new_state.GetBoard().MoveField(x, y, x + 1, y + direction);
+      new_state.GetBoard().ClearField(x + 1, y);
+      moves.push_back(new_state);
+    }
+  }
+
+  state.double_push_pawn_x = tmp_dobule_push_pawn_x;
+  state.double_push_pawn_y = tmp_dobule_push_pawn_y;
   return moves;
 }
 

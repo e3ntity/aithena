@@ -14,7 +14,9 @@ State::State(
     castle_queen_{false, false},
     castle_king_{false, false},
     move_count_{0},
-    no_progress_count_{0} {}
+    no_progress_count_{0},
+    double_push_pawn_x{ -1},
+    double_push_pawn_y{ -1} {}
 
 State::State(const State& other)
   : ::aithena::State(other),
@@ -22,7 +24,9 @@ State::State(const State& other)
     castle_queen_{other.castle_queen_},
     castle_king_{other.castle_king_},
     move_count_{other.move_count_},
-    no_progress_count_{other.no_progress_count_} {}
+    no_progress_count_{other.no_progress_count_},
+    double_push_pawn_x{other.double_push_pawn_x},
+    double_push_pawn_y{other.double_push_pawn_y} {}
 
 State& State::operator=(const State& other) {
   if (this == &other) return *this;
@@ -34,6 +38,8 @@ State& State::operator=(const State& other) {
   castle_king_ = other.castle_king_;
   move_count_ = other.move_count_;
   no_progress_count_ = other.no_progress_count_;
+  double_push_pawn_x = other.double_push_pawn_x;
+  double_push_pawn_y = other.double_push_pawn_y;
 
   return *this;
 }
