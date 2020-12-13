@@ -10,7 +10,7 @@ namespace chess {
 // "en-passant".
 enum class Figure : unsigned {
 	kKing, kQueen, kRook,
-	kBishop, kKnight, kPawn,
+	kKnight, kBishop, kPawn,
 	/*kGhostPawn, */kCount
 };
 
@@ -29,7 +29,7 @@ namespace chess {
 Piece make_piece(Figure, Player);
 
 class Game : public ::aithena::Game<State> {
-  public:
+ public:
 	Game();
 	Game(Options);
 
@@ -85,11 +85,19 @@ class Game : public ::aithena::Game<State> {
 	// Generates the next moves for a single king at field (x, y) for a given
 	// state.
 	std::vector<State> GenKingMoves(State state, unsigned x, unsigned y);
-  private:
+
+	// An array of all figures.
+	constexpr static std::array<Figure, 6> figures{
+		Figure::kKing, Figure::kQueen, Figure::kRook,
+		Figure::kKnight, Figure::kBishop, Figure::kPawn
+	};
+
+	// An array of all players.
+	constexpr static std::array<Player, 2> players{Player::kWhite, Player::kBlack};
+ private:
 	// Returns whether the player's king is in check.
 	bool KingInCheck(State state, Player player);
 
-  private:
 	// Stores the magic bit boards computed by InitializeMagic.
 	// magic_bit_planes_[2*i + 0] thereby stores the push bit planes for figure i
 	// whereas magic_bit_planes[2*i + 1] stores the capture bit planes
