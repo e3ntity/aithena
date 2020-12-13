@@ -228,6 +228,21 @@ State EvaluateUserInput(std::string input, Game& game, State& state) {
   return state;
 }
 
+template <typename Game, typename State>
+bool CheckWinner(Game& game, State& state) {
+  auto next_moves = game.GenMoves(state);
+
+  if (next_moves.size() > 0) return false;
+
+  std::string winner = state.GetPlayer() == aithena::chess::Player::kWhite
+                       ? "Black" : "White";
+
+  std::cout << std::endl << std::endl << std::endl << winner
+            << " is victorious!" << std::endl << std::endl << std::endl;
+
+  return true;
+}
+
 int main() {
   aithena::chess::Game::Options options = {
     {"board_width", 8},
@@ -246,6 +261,7 @@ int main() {
 
     // Perform action
     state = EvaluateUserInput(user_input, game, state);
+    CheckWinner(game, state);
   }
 
   return 0;
