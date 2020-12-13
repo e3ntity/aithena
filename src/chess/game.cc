@@ -155,7 +155,7 @@ std::vector<State> Game::GenBishopMoves(State state, unsigned x, unsigned y) {
 
 std::vector<State> Game::GenKingMoves(State state, unsigned x, unsigned y) {
   return aithena::chess::GenDirectionalMoves(state, x, y,
-  {up + up + left, up + up + right, down + down + left, down + down + right},
+  {up, right, down, left, up + right, up + left, down + right, down + left},
   1);
 }
 
@@ -166,8 +166,8 @@ std::vector<State> Game::GenQueenMoves(State state, unsigned x, unsigned y) {
 
 std::vector<State> Game::GenKnightMoves(State state, unsigned x, unsigned y) {
   return aithena::chess::GenDirectionalMoves(state, x, y, {
-    up + up + left, up + up + right, down + down + left,
-    down + down + right, up, down, left, right
+    up + up + left, up + up + right, down + down + left, down + down + right,
+    up + left + left, up + right + right, down + left + left, down + right + right
   }, 1);
 }
 
