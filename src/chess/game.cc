@@ -102,7 +102,16 @@ std::vector<State> Game::GenPawnMoves(State state, unsigned x, unsigned y) {
   int direction = state.GetPlayer() == Player::kWhite ? 1 : -1;
 
   if (y + direction >= height || y + direction < 0) {
-    // TODO: Add promotions
+    // Generate promotions
+    for (auto figure : Game::figures) {
+      if ((figure == Figure::kPawn) || figure == Figure::kKing) continue;
+
+      State s = State{state};
+      s.GetBoard().SetField(x, y, make_piece(figure, state.GetPlayer()));
+
+      moves.push_back(s);
+    }
+
     return moves;
   }
 
@@ -242,6 +251,7 @@ std::vector<State> Game::GenMoves(State state, unsigned x, unsigned y,
   if (pseudo) return moves;
 
   // Remove moves with king checked
+
   auto move = std::begin(moves);
   while (move != std::end(moves)) {
     if (KingInCheck(*move, state.GetPlayer()))
