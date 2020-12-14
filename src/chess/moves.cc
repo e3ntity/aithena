@@ -41,8 +41,11 @@ std::vector<State> GenDirectionalMoves(State state, unsigned x, unsigned y,
 			}
 
 			// if not blocked by ally generate move
-			moves.push_back(State{state});
-			moves.back().GetBoard().MoveField(x, y, new_x, new_y);
+			State new_state = State{state};
+			new_state.double_push_pawn_x = -1;
+			new_state.double_push_pawn_y = -1;
+			new_state.GetBoard().MoveField(x, y, new_x, new_y);
+			moves.push_back(new_state);
 
 			// blocked by enemy(enemy capturable)
 			if (enemy_figures.get(new_x, new_y)) {
