@@ -194,14 +194,14 @@ State EvaluateUserInput(std::string input, Game& game, State& state) {
 
     if (piece.figure == static_cast<unsigned>(aithena::chess::Figure::kPawn)) {
       if (
-        static_cast<unsigned>(state.double_push_pawn_x) == std::get<0>(target)
+        static_cast<unsigned>(state.GetDPushPawnX()) == std::get<0>(target)
         && (
-          static_cast<unsigned>(state.double_push_pawn_y % 8)
+          static_cast<unsigned>(state.GetDPushPawnY() % 8)
           == std::get<1>(target))) {
 
         move_board.ClearField(
           std::get<0>(target),
-          static_cast<unsigned>(state.double_push_pawn_y / 8)
+          static_cast<unsigned>(state.GetDPushPawnY() / 8)
         );
       }
     }

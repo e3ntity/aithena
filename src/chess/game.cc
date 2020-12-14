@@ -101,10 +101,10 @@ std::vector<State> Game::GenPawnMoves(State state, unsigned x, unsigned y) {
 
   int direction = state.GetPlayer() == Player::kWhite ? 1 : -1;
 
-  signed tmp_dobule_push_pawn_x = state.double_push_pawn_x;
-  signed tmp_dobule_push_pawn_y = state.double_push_pawn_y;
-  state.double_push_pawn_x = -1;
-  state.double_push_pawn_y = -1;
+  signed tmp_dobule_push_pawn_x = state.GetDPushPawnX();
+  signed tmp_dobule_push_pawn_y = state.GetDPushPawnY();
+  state.SetDPushPawnX(-1);
+  state.SetDPushPawnY(-1);
 
   if (y + direction >= height || y + direction < 0) {
     // Generate promotions
@@ -117,8 +117,8 @@ std::vector<State> Game::GenPawnMoves(State state, unsigned x, unsigned y) {
       moves.push_back(s);
     }
 
-    state.double_push_pawn_x = tmp_dobule_push_pawn_x;
-    state.double_push_pawn_y = tmp_dobule_push_pawn_y;
+    state.SetDPushPawnX(tmp_dobule_push_pawn_x);
+    state.SetDPushPawnY(tmp_dobule_push_pawn_y);
     return moves;
   }
 
@@ -137,10 +137,9 @@ std::vector<State> Game::GenPawnMoves(State state, unsigned x, unsigned y) {
       // Move forward twice
       State new_state = state;
       new_state.GetBoard().MoveField(x, y, x, y + direction * 2);
-      new_state.double_push_pawn_x = static_cast<signed>(x);
-      new_state.double_push_pawn_y = static_cast<signed>(y + direction)
-                                     | static_cast<signed>(y + direction * 2)
-                                     << 3;
+      new_state.SetDPushPawnX(static_cast<signed>(x));
+      new_state.SetDPushPawnY(static_cast<signed>(y + direction)
+                              | (static_cast<signed>(y + direction * 2) << 3));
       moves.push_back(new_state);
     }
   }
@@ -177,13 +176,14 @@ std::vector<State> Game::GenPawnMoves(State state, unsigned x, unsigned y) {
     }
   }
 
-  state.double_push_pawn_x = tmp_dobule_push_pawn_x;
-  state.double_push_pawn_y = tmp_dobule_push_pawn_y;
+  state.SetDPushPawnX(tmp_dobule_push_pawn_x);
+  state.SetDPushPawnY(tmp_dobule_push_pawn_y);
   return moves;
 }
 
 std::vector<State> Game::GenRookMoves(State state, unsigned x, unsigned y) {
-  return aithena::chess::GenDirectionalMoves(state, x, y, {up, down, left, right}, 8);
+  return aithena::chess::GenDirectionalMoves(state, x,
+         y, {up, down, left, right}, 8);
 }
 
 std::vector<State> Game::GenBishopMoves(State state, unsigned x, unsigned y) {
@@ -204,8 +204,10 @@ std::vector<State> Game::GenQueenMoves(State state, unsigned x, unsigned y) {
 
 std::vector<State> Game::GenKnightMoves(State state, unsigned x, unsigned y) {
   return aithena::chess::GenDirectionalMoves(state, x, y, {
-    up + up + left, up + up + right, down + down + left, down + down + right,
-    up + left + left, up + right + right, down + left + left, down + right + right
+    up + up + left, up + up + right,
+    down + down + left, down + down + right,
+    up + left + left, up + right + right,
+    down + left + left, down + right + right
   }, 1);
 }
 

@@ -9,8 +9,6 @@ namespace chess {
 
 class State : public ::aithena::State {
   public:
-	signed double_push_pawn_x;
-	signed double_push_pawn_y;
 	// Initializes to the chess starting state.
 	State(std::size_t width, std::size_t height, unsigned figure_count);
 	// Initializes to a give state.
@@ -37,6 +35,11 @@ class State : public ::aithena::State {
 	unsigned int GetNoProgressCount();
 	void IncNoProgressCount();
 	void ResetNoProgressCount();
+
+	unsigned GetDPushPawnX();
+	unsigned GetDPushPawnY();
+	void SetDPushPawnX(unsigned);
+	void SetDPushPawnY(unsigned);
   private:
 	// Indicates the player that has to make the next move.
 	Player player_;
@@ -49,6 +52,8 @@ class State : public ::aithena::State {
 	// Counts the moves without progress (neither a pawn moved, nor a piece
 	// captured) up util this state.
 	unsigned int no_progress_count_;
+	signed double_push_pawn_x;
+	signed double_push_pawn_y;
 };
 
 }	// namespace chess

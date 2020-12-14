@@ -80,5 +80,14 @@ unsigned State::GetNoProgressCount() { return no_progress_count_; }
 void State::IncNoProgressCount() { ++no_progress_count_; }
 void State::ResetNoProgressCount() { no_progress_count_ = 0; }
 
+
+unsigned State::GetDPushPawnX() { return double_push_pawn_x; }
+
+unsigned State::GetDPushPawnY() { return double_push_pawn_y; }
+
+void State::SetDPushPawnX(unsigned x) { double_push_pawn_x = x; }
+
+void State::SetDPushPawnY(unsigned y) { double_push_pawn_y = y; }
+
 }
 }
