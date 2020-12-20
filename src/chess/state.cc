@@ -50,7 +50,9 @@ bool State::operator==(const State& other) {
   return ::aithena::State::operator==(other)
          && player_ == other.player_
          && castle_queen_ == other.castle_queen_
-         && castle_king_ == other.castle_king_;
+         && castle_king_ == other.castle_king_
+         && double_push_pawn_x == other.double_push_pawn_x
+         && double_push_pawn_y == other.double_push_pawn_y;
 }
 
 bool State::operator!=(const State& other) {
