@@ -32,14 +32,19 @@ class Game : public ::aithena::Game<State> {
  public:
 	Game();
 	Game(Options);
+	Game(const Game&);
+
+	Game& operator=(const Game&);
 
 	// Crops bitboards to the specified size of the board.
 	// Bitboards are later used for legal move generation.
 	void InitializeMagic();
 
 	State GetInitialState() override;
-
 	std::vector<State> GetLegalActions(State) override;
+
+	bool IsTerminalState(State&) override;
+	int GetStateResult(State&) override;
 
 	// Generates all enxt moves for all pieces for a given state.
 	// The pseudo parameter indicates whether to only generate pseudo moves.
@@ -100,6 +105,8 @@ class Game : public ::aithena::Game<State> {
 	// whereas magic_bit_planes[2*i + 1] stores the capture bit planes
 	std::array<std::unique_ptr<BoardPlane[]>,
 	    static_cast<unsigned>(Figure::kCount) * 2> magic_bit_planes_;
+	// For faster access to GetOption("max_no_progress")
+	unsigned int max_no_progress_;
 };
 
 }	// namespace chess
