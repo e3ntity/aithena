@@ -149,9 +149,16 @@ bool Game::IsTerminalState(State& state) {
 
 int Game::GetStateResult(State& state) {
   assert(IsTerminalState(state));
-  assert(false);  // TODO: implement
 
-  return 0;
+  // Check for a draw
+  if (state.GetNoProgressCount() > max_no_progress_)
+    return 0;
+
+  // Check if we are unable to move
+  if (GetLegalActions(state).size() == 0)
+    return -1;
+
+  assert(false); // should never reach here (terminal but can move and not draw)
 }
 
 // Move generation
