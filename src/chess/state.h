@@ -8,7 +8,7 @@ namespace aithena {
 namespace chess {
 
 class State : public ::aithena::State {
-  public:
+ public:
 	// Initializes to the chess starting state.
 	State(std::size_t width, std::size_t height, unsigned figure_count);
 	// Initializes to a give state.
@@ -40,7 +40,7 @@ class State : public ::aithena::State {
 	unsigned GetDPushPawnY();
 	void SetDPushPawnX(unsigned);
 	void SetDPushPawnY(unsigned);
-  private:
+ private:
 	// Indicates the player that has to make the next move.
 	Player player_;
 	// Indicates for each player whether queen-side castling is allowed.
