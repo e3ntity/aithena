@@ -11,6 +11,7 @@ template <typename State>
 class Game {
  public:
   using Options = std::unordered_map<std::string, int>;
+  using GameState = State;
 
   // Creates the game with default options.
   // Options can be added/overridden using the SetOption member function.
