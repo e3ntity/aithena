@@ -64,4 +64,19 @@ bool MCTSNode<Game>::IsTerminal() {
   return game_.IsTerminalState(state_);
 }
 
+template <typename Game>
+unsigned MCTSNode<Game>::GetWins() {
+  return wins_;
+}
+
+template <typename Game>
+unsigned MCTSNode<Game>::GetDraws() {
+  return draws_;
+}
+
+template <typename Game>
+unsigned MCTSNode<Game>::GetVisits() {
+  return visits_;
+}
+
 }

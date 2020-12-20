@@ -48,9 +48,9 @@ class MCTSNode {
 	// Whether this node has all possible child nodes in children_.
 	bool expanded_{false};
 
-	unsigned wins{0};
-	unsigned draws{0};
-	unsigned visits{0};
+	unsigned wins_{0};
+	unsigned draws_{0};
+	unsigned visits_{0};
 };
 
 template class MCTSNode<::aithena::chess::Game>;
