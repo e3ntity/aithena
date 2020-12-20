@@ -18,6 +18,16 @@ class Game {
   Game() : options_{} {}
   // Creates the game with custom options.
   Game(Options options) : options_{options} {}
+  // Copy constructor
+  Game(const Game<State>& other) {
+    options_ = other.options_;
+  };
+
+  Game& operator=(const Game& other) {
+    options_ = other.options_;
+
+    return *this;
+  }
 
   // Checks whether a given game option is set.
   bool HasOption(std::string option) {
@@ -35,8 +45,14 @@ class Game {
 
   // Returns an initial state for the game start.
   virtual State GetInitialState() = 0;
-  // Computes and reutrns all legal actions given a game state.
+  // Computes and returns all legal actions given a game state.
   virtual std::vector<State> GetLegalActions(State) = 0;
+
+  // Returns whether the state is a terminal state.
+  virtual bool IsTerminalState(State&) = 0;
+  // Returns the result of the state. This value will be invalid if not a
+  // terminal state (check via Game::IsTerminalState).
+  virtual int GetStateResult(State&) = 0;
 
  protected:
   // Registers a new default option
