@@ -1,5 +1,5 @@
-#ifndef AITHENTA_MCTS_TREE_H
-#define AITHENTA_MCTS_TREE_H
+#ifndef AITHENTA_MCTS_NODE_H
+#define AITHENTA_MCTS_NODE_H
 
 #include <memory>
 
@@ -48,4 +48,4 @@ template class MCTSNode<::aithena::chess::Game>;
 
 }
 
-#endif // AITHENTA_MCTS_TREE_H
+#endif // AITHENTA_MCTS_NODE_H

@@ -1,4 +1,4 @@
-#include "mcts/tree.h"
+#include "mcts/node.h"
 
 #include <memory>
 
