@@ -13,7 +13,7 @@ class MCTSNodeTest : public ::testing::Test {
 		srand((unsigned)time(NULL));
 	}
 
-	using MCTSNode = aithena::MCTSNode<aithena::chess::Game >;
+	using MCTSNode = aithena::MCTSNode<aithena::chess::Game>;
 
 	void SetUp() {
 		root_ = MCTSNode(game_);
