@@ -9,6 +9,14 @@
 namespace aithena {
 namespace chess {
 
+// Functions
+
+Piece make_piece(Figure figure, Player player) {
+  return Piece{static_cast<unsigned>(figure), static_cast<unsigned>(player)};
+};
+
+// Constructors
+
 Game::Game() : Game{Options{}} {}
 
 Game::Game(Options options) : ::aithena::Game<State> {options} {
@@ -20,6 +28,17 @@ Game::Game(Options options) : ::aithena::Game<State> {options} {
 
   //InitializeMagic();
 }
+
+// Static attributes
+
+const std::array<Figure, 6> Game::figures{
+  Figure::kKing, Figure::kQueen, Figure::kRook,
+  Figure::kKnight, Figure::kBishop, Figure::kPawn
+};
+
+const std::array<Player, 2> Game::players{Player::kWhite, Player::kBlack};
+
+// Chess methods
 
 void Game::InitializeMagic() {
   unsigned width = GetOption("board_width");
@@ -84,12 +103,25 @@ State Game::GetInitialState() {
   return state;
 }
 
+bool Game::KingInCheck(State state, Player player) {
+  Board board = state.GetBoard();
+  BoardPlane king_plane = board.GetPlane(make_piece(Figure::kKing, player));
+  Player opponent = player == Player::kWhite ? Player::kBlack : Player::kWhite;
+  std::vector<State> next_states = GenMoves(state, /*pseudo=*/ true);
+
+  for (auto next_state : next_states) {
+    if ((king_plane & next_state.GetBoard().GetPlayerPlane(opponent)).empty())
+      continue;
+    return true;
+  }
+
+  return false;
+}
+
+// Move generation
+
 std::vector<State> Game::GetLegalActions(State state) {
   return {};
-};
-
-Piece make_piece(Figure figure, Player player) {
-  return Piece{static_cast<unsigned>(figure), static_cast<unsigned>(player)};
 };
 
 std::vector<State> Game::GenPawnMoves(State state, unsigned x, unsigned y) {
@@ -292,21 +324,6 @@ std::vector<State> Game::GenMoves(State state, unsigned x, unsigned y,
   }
 
   return moves;
-}
-
-bool Game::KingInCheck(State state, Player player) {
-  Board board = state.GetBoard();
-  BoardPlane king_plane = board.GetPlane(make_piece(Figure::kKing, player));
-  Player opponent = player == Player::kWhite ? Player::kBlack : Player::kWhite;
-  std::vector<State> next_states = GenMoves(state, /*pseudo=*/ true);
-
-  for (auto next_state : next_states) {
-    if ((king_plane & next_state.GetBoard().GetPlayerPlane(opponent)).empty())
-      continue;
-    return true;
-  }
-
-  return false;
 }
 
 }  // namespace chess
