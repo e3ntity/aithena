@@ -24,7 +24,7 @@ build: $(OFILES)
 	@$(CXX) $(CXXFLAGS) -o $(DIRBUILD)/$(TARGET) $(DIRSRC)/main.cc $(OFILES)
 
 .PHONY: test
-test: $(OFILES)
+test: clean $(OFILES)
 	@mkdir -p $(DIRBUILD)
 	@$(CXX) $(CXXFLAGS) -Wall -Wl,--unresolved-symbols=ignore-in-object-files -g \
 		-o $(DIRBUILD)/test $(DIRTEST)/*.cc $(OFILES) -lgtest_main -lgtest \
