@@ -5,7 +5,7 @@
 #include <time.h>
 
 #include "chess/game.h"
-#include "mcts/tree.h"
+#include "mcts/node.h"
 
 class MCTSNodeTest : public ::testing::Test {
  protected:
