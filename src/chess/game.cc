@@ -22,11 +22,28 @@ Game::Game() : Game{Options{}} {}
 Game::Game(Options options) : ::aithena::Game<State> {options} {
   DefaultOption("board_width", 8);
   DefaultOption("board_height", 8);
+  DefaultOption("max_no_progress", 50);
   DefaultOption("figure_count", static_cast<unsigned>(Figure::kCount));
+
+  max_no_progress_ = GetOption("max_no_progress");
 
   assert(GetOption("board_width") <= 8 && GetOption("board_height") <= 8);
 
   //InitializeMagic();
+}
+
+Game::Game(const Game& other) : ::aithena::Game<State>(other) {
+  //InitializeMagic();
+}
+
+// Operators
+
+Game& Game::operator=(const Game& other) {
+  ::aithena::Game<State>::operator=(other);
+
+  //InitializeMagic();
+
+  return *this;
 }
 
 // Static attributes
@@ -118,10 +135,29 @@ bool Game::KingInCheck(State state, Player player) {
   return false;
 }
 
+bool Game::IsTerminalState(State& state) {
+  // Check for a draw
+  if (state.GetNoProgressCount() > max_no_progress_)
+    return true;
+
+  // Check for checkmate
+  if (GetLegalActions(state).size() == 0)
+    return true;
+
+  return false;
+}
+
+int Game::GetStateResult(State& state) {
+  assert(IsTerminalState(state));
+  assert(false);  // TODO: implement
+
+  return 0;
+}
+
 // Move generation
 
 std::vector<State> Game::GetLegalActions(State state) {
-  return {};
+  return GenMoves(state, /*pseudo=*/ true);
 };
 
 std::vector<State> Game::GenPawnMoves(State state, unsigned x, unsigned y) {
@@ -210,6 +246,13 @@ std::vector<State> Game::GenPawnMoves(State state, unsigned x, unsigned y) {
 
   state.SetDPushPawnX(tmp_dobule_push_pawn_x);
   state.SetDPushPawnY(tmp_dobule_push_pawn_y);
+
+  // ANy pawn move resets no progress counter
+  std::for_each(
+    moves.begin(),
+    moves.end(),
+  [&](State & s) { s.ResetNoProgressCount(); });
+
   return moves;
 }
 
@@ -274,6 +317,8 @@ std::vector<State> Game::GenMoves(State state, unsigned x, unsigned y,
 
   // Generate pseudo-moves
 
+  state.IncNoProgressCount();
+
   switch (piece.figure) {
   case static_cast<unsigned>(Figure::kPawn):
     moves = GenPawnMoves(state, x, y);
@@ -309,7 +354,14 @@ std::vector<State> Game::GenMoves(State state, unsigned x, unsigned y,
   std::for_each(
     moves.begin(),
     moves.end(),
-  [&next_player](State & s) { s.IncMoveCount(); s.SetPlayer(next_player); });
+  [&next_player, &state](State & s) {
+    s.IncMoveCount();
+    s.SetPlayer(next_player);
+
+    // Any capture resets no progress counter
+    if (s.GetBoard().GetFigureCount() < state.GetBoard().GetFigureCount())
+      s.ResetNoProgressCount();
+  });
 
   if (pseudo) return moves;
 
