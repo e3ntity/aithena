@@ -12,6 +12,7 @@ template <typename Game>
 class MCTSNode {
  public:
 	using Child = std::shared_ptr<MCTSNode<Game>>;
+	using ChildList = std::vector<Child> ;
 
 	// Initialize with the default game state.
 	MCTSNode(Game&);
@@ -23,7 +24,7 @@ class MCTSNode {
 
 	// Getter
 	typename Game::GameState GetState();
-	std::vector<Child> GetChildren();
+	ChildList GetChildren();
 
 	// Generates child nodes.
 	void Expand();
@@ -33,15 +34,23 @@ class MCTSNode {
 	bool IsExpanded();
 	// Returns whether this node is a terminal node.
 	bool IsTerminal();
+
+	unsigned GetWins();
+	unsigned GetDraws();
+	unsigned GetVisits();
  private:
 	// This node's child nodes.
-	std::vector<Child> children_;
+	ChildList children_;
 	// An object capturing the rules of the game.
 	Game& game_;
 	// The state of the game that this node captures.
 	typename Game::GameState state_;
 	// Whether this node has all possible child nodes in children_.
 	bool expanded_{false};
+
+	unsigned wins{0};
+	unsigned draws{0};
+	unsigned visits{0};
 };
 
 template class MCTSNode<::aithena::chess::Game>;
