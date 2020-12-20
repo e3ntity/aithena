@@ -87,13 +87,10 @@ class Game : public ::aithena::Game<State> {
 	std::vector<State> GenKingMoves(State state, unsigned x, unsigned y);
 
 	// An array of all figures.
-	constexpr static std::array<Figure, 6> figures{
-		Figure::kKing, Figure::kQueen, Figure::kRook,
-		Figure::kKnight, Figure::kBishop, Figure::kPawn
-	};
+	const static std::array<Figure, 6> figures;
 
 	// An array of all players.
-	constexpr static std::array<Player, 2> players{Player::kWhite, Player::kBlack};
+	const static std::array<Player, 2> players;
  private:
 	// Returns whether the player's king is in check.
 	bool KingInCheck(State state, Player player);
