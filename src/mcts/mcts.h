@@ -25,8 +25,8 @@ class MCTS {
   // Assumes that the child has already been visited at least once.
   static Node::Child UCTSelect(Node, Node::ChildList);
  private:
-  Game& game_;
-  Node& root_;
+  Game game_;
+  Node root_;
 };
 
 template class MCTS<::aithena::chess::Game>;
