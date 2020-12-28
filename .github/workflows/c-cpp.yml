@@ -31,4 +31,4 @@ jobs:
       - name: Install Cpplint
         run: sudo pip install cpplint
       - name: Lint
-        run: cpplint --recursive .
+        run: cpplint --recursive src
