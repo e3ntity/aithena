@@ -29,6 +29,6 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Install Cpplint
-        run: pip install cpplint
-      - name: cpplint
+        run: sudo pip install cpplint
+      - name: Lint
         run: cpplint --recursive .
