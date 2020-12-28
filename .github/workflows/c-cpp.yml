@@ -13,6 +13,10 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+    - name: Install Cpplint
+      run: pip install cpplint
+    - name: cpplint
+      run: cpplint --recursive .
     - name: Install boost library
       run: sudo apt-get install -y libboost-all-dev
     - name: Install googletest library
