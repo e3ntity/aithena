@@ -23,3 +23,12 @@ jobs:
       run: make test
     - name: test
       run: build/test
+  
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install Cpplint
+        run: sudo pip install cpplint
+      - name: Lint
+        run: cpplint --recursive src
