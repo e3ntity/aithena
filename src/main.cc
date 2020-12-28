@@ -126,7 +126,7 @@ std::tuple<unsigned, unsigned, bool> ParseField(std::string field) {
 
 template <typename Game, typename State>
 State EvaluateUserInput(const std::string input,
-        const Game& game, const State& state) {
+        Game& game, State& state) {
   if (input.compare("help") == 0) {
     PrintHelp();
     return state;
@@ -287,7 +287,7 @@ State EvaluateUserInput(const std::string input,
 }
 
 template <typename Game, typename State>
-bool CheckWinner(const Game& game, const State& state) {
+bool CheckWinner(Game& game, State& state) {
   auto next_moves = game.GenMoves(state);
 
   if (next_moves.size() > 0) return false;

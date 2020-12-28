@@ -11,7 +11,7 @@ namespace aithena {
 // Constructors
 
 template <typename Game>
-MCTSNode<Game>::MCTSNode(const Game& game)
+MCTSNode<Game>::MCTSNode(Game& game)
   : children_{}, game_{game}, state_{game.GetInitialState()} {}
 
 template <typename Game>

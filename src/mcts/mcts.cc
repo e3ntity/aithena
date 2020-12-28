@@ -23,7 +23,7 @@ aithena::MCTSNode<aithena::chess::Game>& MCTS<Game>::GetRoot() {
 template <typename Game>
 MCTS<Game>::Node::Child MCTS<Game>::RandomSelect(MCTS<Game>::Node node,
     MCTS<Game>::Node::ChildList children) {
-  return children.at(rand_r() % children.size());
+  return children.at(rand() % children.size());
 }
 
 template <typename Game>

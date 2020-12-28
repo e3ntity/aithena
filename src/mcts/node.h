@@ -20,7 +20,7 @@ class MCTSNode {
   using ChildList = std::vector<Child>;
 
   // Initialize with the default game state.
-  explicit MCTSNode(const Game&);
+  explicit MCTSNode(Game&);
   // Initialize with a specific state.
   MCTSNode(Game&, typename Game::GameState);
 
