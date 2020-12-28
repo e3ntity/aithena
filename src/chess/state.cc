@@ -1,3 +1,7 @@
+/*
+Copyright 2020 All rights reserved.
+*/
+
 #include "chess/state.h"
 
 #include "chess/game.h"
@@ -44,8 +48,6 @@ State& State::operator=(const State& other) {
   return *this;
 }
 
-// TODO: implement
-
 bool State::operator==(const State& other) {
   return ::aithena::State::operator==(other)
          && player_ == other.player_
@@ -91,5 +93,5 @@ void State::SetDPushPawnX(unsigned x) { double_push_pawn_x = x; }
 
 void State::SetDPushPawnY(unsigned y) { double_push_pawn_y = y; }
 
-}
-}
+}  // namespace chess
+}  // namespace aithena

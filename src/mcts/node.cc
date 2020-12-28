@@ -1,3 +1,7 @@
+/*
+Copyright 2020 All rights reserved.
+*/
+
 #include "mcts/node.h"
 
 #include <memory>
@@ -7,7 +11,7 @@ namespace aithena {
 // Constructors
 
 template <typename Game>
-MCTSNode<Game>::MCTSNode(Game& game)
+MCTSNode<Game>::MCTSNode(const Game& game)
   : children_{}, game_{game}, state_{game.GetInitialState()} {}
 
 template <typename Game>
@@ -59,7 +63,7 @@ bool MCTSNode<Game>::IsExpanded() {
 
 template <typename Game>
 bool MCTSNode<Game>::IsTerminal() {
-  if (IsExpanded()) return children_.size() == 0; // Cheap check
+  if (IsExpanded()) return children_.size() == 0;  // Cheap check
 
   return game_.IsTerminalState(state_);
 }
@@ -79,4 +83,4 @@ unsigned MCTSNode<Game>::GetVisits() {
   return visits_;
 }
 
-}
+}  // namespace aithena

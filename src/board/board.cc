@@ -1,8 +1,12 @@
+/*
+Copyright 2020 All rights reserved.
+*/
+
 #include "board/board.h"
 
 namespace aithena {
 
-BoardPlane GetNewFields(Board& before, Board& after) {
+BoardPlane GetNewFields(const Board& before, const Board& after) {
   assert(before.width_ == after.width_
          && before.height_ == after.height_
          && before.figure_count_ == after.figure_count_);
@@ -38,7 +42,7 @@ Board& Board::operator=(const Board& other) {
   figure_count_ = other.figure_count_;
 
   return *this;
-};
+}
 
 bool Board::operator==(const Board& other) const {
   return width_ == other.width_
@@ -67,7 +71,8 @@ BoardPlane Board::GetFigurePlane(unsigned figure) {
 BoardPlane Board::GetPlayerPlane(unsigned player) {
   BoardPlane plane{width_, height_};
 
-  for (unsigned i = player * figure_count_; i < (player + 1) * figure_count_; ++i)
+  for (unsigned i = player * figure_count_;
+          i < (player + 1) * figure_count_; ++i)
     plane |= planes_[i];
 
   return plane;
@@ -119,4 +124,4 @@ void Board::MoveField(unsigned x, unsigned y, unsigned x_, unsigned y_) {
   SetField(x_, y_, piece);
 }
 
-}
+}  // namespace aithena

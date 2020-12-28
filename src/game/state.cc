@@ -1,8 +1,12 @@
+/*
+Copyright 2020 All rights reserved.
+*/
+
 #include "game/state.h"
 
+#include <iostream>
 #include <string>
 #include <sstream>
-#include <iostream>
 
 namespace aithena {
 
@@ -41,8 +45,8 @@ std::string State::ToString() {
   }
 
   return repr.str();
-};
+}
 
 Board& State::GetBoard() {return board_;}
 
-}
+}  // namespace aithena

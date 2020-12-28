@@ -1,5 +1,9 @@
-#ifndef AITHENTA_GAME_GAME_H
-#define AITHENTA_GAME_GAME_H
+/*
+Copyright 2020 All rights reserved.
+*/
+
+#ifndef SRC_GAME_GAME_H_
+#define SRC_GAME_GAME_H_
 
 #include <string>
 #include <unordered_map>
@@ -17,11 +21,11 @@ class Game {
   // Options can be added/overridden using the SetOption member function.
   Game() : options_{} {}
   // Creates the game with custom options.
-  Game(Options options) : options_{options} {}
+  explicit Game(Options options) : options_{options} {}
   // Copy constructor
   Game(const Game<State>& other) {
     options_ = other.options_;
-  };
+  }
 
   Game& operator=(const Game& other) {
     options_ = other.options_;
@@ -66,6 +70,6 @@ class Game {
   Options options_;
 };
 
-}
+}  // namespace aithena
 
-#endif // AITHENTA_GAME_GAME_H
+#endif  // SRC_GAME_GAME_H_

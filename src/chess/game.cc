@@ -1,7 +1,8 @@
-#include "chess/game.h"
+/*
+Copyright 2020 All rights reserved.
+*/
 
-#include <assert.h>
-#include <iostream>
+#include "chess/game.h"
 
 #include "board/board.h"
 #include "chess/moves.h"
@@ -13,7 +14,7 @@ namespace chess {
 
 Piece make_piece(Figure figure, Player player) {
   return Piece{static_cast<unsigned>(figure), static_cast<unsigned>(player)};
-};
+}
 
 // Constructors
 
@@ -29,11 +30,11 @@ Game::Game(Options options) : ::aithena::Game<State> {options} {
 
   assert(GetOption("board_width") <= 8 && GetOption("board_height") <= 8);
 
-  //InitializeMagic();
+  // InitializeMagic();
 }
 
 Game::Game(const Game& other) : ::aithena::Game<State>(other) {
-  //InitializeMagic();
+  // InitializeMagic();
 }
 
 // Operators
@@ -41,7 +42,7 @@ Game::Game(const Game& other) : ::aithena::Game<State>(other) {
 Game& Game::operator=(const Game& other) {
   ::aithena::Game<State>::operator=(other);
 
-  //InitializeMagic();
+  // InitializeMagic();
 
   return *this;
 }
@@ -158,21 +159,22 @@ int Game::GetStateResult(State& state) {
   if (GetLegalActions(state).size() == 0)
     return -1;
 
-  assert(false); // should never reach here (terminal but can move and not draw)
+  // should never reach here (terminal but can move and not draw)
+  assert(false);
 }
 
 // Move generation
 
 std::vector<State> Game::GetLegalActions(State state) {
   return GenMoves(state, /*pseudo=*/ true);
-};
+}
 
 std::vector<State> Game::GenPawnMoves(State state, unsigned x, unsigned y) {
   Board board_before{state.GetBoard()};
   std::size_t width{board_before.GetWidth()};
   std::size_t height{board_before.GetHeight()};
 
-  std::vector<State> moves{}; // Return value
+  std::vector<State> moves{};  // Return value
 
   int direction = state.GetPlayer() == Player::kWhite ? 1 : -1;
 
@@ -223,8 +225,7 @@ std::vector<State> Game::GenPawnMoves(State state, unsigned x, unsigned y) {
   auto opponent = state.GetPlayer() == Player::kWhite
                   ? Player::kBlack : Player::kWhite;
   BoardPlane enemy_figures = board_before.GetPlayerPlane(
-                               static_cast<unsigned>(opponent)
-                             );
+                               static_cast<unsigned>(opponent));
 
   if (x + 1 < width && enemy_figures.get(x + 1, y + direction)) {
     moves.push_back(State{state});
@@ -243,7 +244,6 @@ std::vector<State> Game::GenPawnMoves(State state, unsigned x, unsigned y) {
       new_state.GetBoard().ClearField(x - 1, y);
       moves.push_back(new_state);
     } else if (static_cast<unsigned>(tmp_dobule_push_pawn_x) == x + 1) {
-
       State new_state = State{state};
       new_state.GetBoard().MoveField(x, y, x + 1, y + direction);
       new_state.GetBoard().ClearField(x + 1, y);
@@ -344,7 +344,6 @@ std::vector<State> Game::GenMoves(State state, unsigned x, unsigned y,
     break;
   case static_cast<unsigned>(Figure::kKing):
     moves = GenKingMoves(state, x, y);
-    // TODO: generate king moves.
     break;
   case kEmptyPiece.figure:
     break;

@@ -1,5 +1,10 @@
+/*
+Copyright 2020 All rights reserved.
+*/
+
 #include <cstdlib>
 #include <iostream>
+#include <string>
 
 #include <boost/algorithm/string.hpp>
 
@@ -13,10 +18,14 @@ void PrintHelp() {
   std::cout << "  show                  - Displays the board." << std::endl;
   std::cout << "  info <field>          - Show possible moves for a piece."
             << std::endl;
-  std::cout << "  move <field> <field>  - Move a piece from the first to the second field."
-            << std::endl;
-  std::cout << "  promote <field> <fig> - Promotes a pawn on field to figure fig."
-            << std::endl;
+
+  std::string moves_inst = "  move <field> <field>";
+  std::string moves_desc = "  - Move a piece from first to second field.";
+  std::cout << moves_inst + moves_desc << std::endl;
+
+  std::string promote_inst = "  promote <field> <fig>";
+  std::string promote_desc = " - Promotes a pawn on field to figure fig.";
+  std::cout << promote_inst + promote_desc << std::endl;
 }
 
 std::string PrintMarkedBoard(aithena::chess::State state,
@@ -41,7 +50,8 @@ std::string PrintMarkedBoard(aithena::chess::State state,
       piece = board.GetField(x, y);
 
       // Player indication
-      bool white = piece.player == static_cast<unsigned>(aithena::chess::Player::kWhite);
+      bool white = piece.player ==
+              static_cast<unsigned>(aithena::chess::Player::kWhite);
       std::string s_piece;
 
       // Figure icon
@@ -99,18 +109,24 @@ std::tuple<unsigned, unsigned, bool> ParseField(std::string field) {
   unsigned x = unsigned(field[0]);
   unsigned y = unsigned(field[1]);
 
-  if (x > 96 && x < 123) x -= 97;
-  else if (x > 64 && x < 91) x -= 65;
-  else return std::make_tuple(0, 0, false);
+  if (x > 96 && x < 123)
+    x -= 97;
+  else if (x > 64 && x < 91)
+    x -= 65;
+  else
+    return std::make_tuple(0, 0, false);
 
-  if (y > 47 && y < 58) y -= 49;
-  else return std::make_tuple(0, 0, false);
+  if (y > 47 && y < 58)
+    y -= 49;
+  else
+    return std::make_tuple(0, 0, false);
 
   return std::make_tuple(x, y, true);
 }
 
 template <typename Game, typename State>
-State EvaluateUserInput(std::string input, Game& game, State& state) {
+State EvaluateUserInput(const std::string input,
+        const Game& game, const State& state) {
   if (input.compare("help") == 0) {
     PrintHelp();
     return state;
@@ -132,15 +148,11 @@ State EvaluateUserInput(std::string input, Game& game, State& state) {
     std::cout << PrintBoard(state) << std::endl;
 
     return new_state;
-  }
-  // Show command
-  else if (input_parts[0].compare("show") == 0) {
+  } else if (input_parts[0].compare("show") == 0) {
     std::cout << PrintBoard(state) << std::endl;
 
     return state;
-  }
-  // Info command
-  else if (input_parts[0].compare("info") == 0) {
+  } else if (input_parts[0].compare("info") == 0) {
     if (input_parts.size() != 2) {
       std::cout << "Incorrect usage of \"info\"" << std::endl;
       PrintHelp();
@@ -160,7 +172,6 @@ State EvaluateUserInput(std::string input, Game& game, State& state) {
     aithena::BoardPlane marker{board.GetWidth(), board.GetHeight()};
 
     for (auto move : moves) {
-      // TODO: somehow, black moves are not marked
       marker |= aithena::GetNewFields(board, move.GetBoard());
     }
     marker.clear(std::get<0>(field), std::get<1>(field));
@@ -168,9 +179,7 @@ State EvaluateUserInput(std::string input, Game& game, State& state) {
     std::cout << PrintMarkedBoard(state, marker) << std::endl;
 
     return state;
-  }
-  // Move command
-  else if (input_parts[0].compare("move") == 0) {
+  } else if (input_parts[0].compare("move") == 0) {
     if (input_parts.size() != 3) {
       std::cout << "Incorrect usage of \"move\"" << std::endl;
       PrintHelp();
@@ -198,11 +207,9 @@ State EvaluateUserInput(std::string input, Game& game, State& state) {
         && (
           static_cast<unsigned>(state.GetDPushPawnY() % 8)
           == std::get<1>(target))) {
-
         move_board.ClearField(
           std::get<0>(target),
-          static_cast<unsigned>(state.GetDPushPawnY() / 8)
-        );
+          static_cast<unsigned>(state.GetDPushPawnY() / 8));
       }
     }
 
@@ -221,9 +228,7 @@ State EvaluateUserInput(std::string input, Game& game, State& state) {
     std::cout << PrintBoard(moves[i]) << std::endl;
 
     return moves[i];
-  }
-  // Promote command
-  else if (input_parts[0].compare("promote") == 0) {
+  } else if (input_parts[0].compare("promote") == 0) {
     if (input_parts.size() != 3) {
       std::cout << "Incorrect usage of \"promote\"" << std::endl;
       PrintHelp();
@@ -282,7 +287,7 @@ State EvaluateUserInput(std::string input, Game& game, State& state) {
 }
 
 template <typename Game, typename State>
-bool CheckWinner(Game& game, State& state) {
+bool CheckWinner(const Game& game, const State& state) {
   auto next_moves = game.GenMoves(state);
 
   if (next_moves.size() > 0) return false;

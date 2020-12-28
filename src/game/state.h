@@ -1,10 +1,14 @@
-#ifndef AITHENTA_GAME_STATE_H
-#define AITHENTA_GAME_STATE_H
+/*
+Copyright 2020 All rights reserved.
+*/
 
-#include "board/board.h"
+#ifndef SRC_GAME_STATE_H_
+#define SRC_GAME_STATE_H_
 
 #include <string>
 #include <sstream>
+
+#include "board/board.h"
 
 namespace aithena {
 
@@ -26,6 +30,6 @@ class State {
   Board board_;
 };
 
-}
+}  // namespace aithena
 
-#endif // AITHENTA_GAME_STATE_H
+#endif  // SRC_GAME_STATE_H_

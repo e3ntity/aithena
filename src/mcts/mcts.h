@@ -1,5 +1,9 @@
-#ifndef AITHENTA_MCTS_MCTS_H
-#define AITHENTA_MCTS_MCTS_H
+/*
+Copyright 2020 All rights reserved.
+*/
+
+#ifndef SRC_MCTS_MCTS_H_
+#define SRC_MCTS_MCTS_H_
 
 #include "mcts/node.h"
 
@@ -31,6 +35,6 @@ class MCTS {
 
 template class MCTS<::aithena::chess::Game>;
 
-}
+}  // namespace aithena
 
-#endif // AITHENTA_MCTS_MCTS_H
+#endif  // SRC_MCTS_MCTS_H_

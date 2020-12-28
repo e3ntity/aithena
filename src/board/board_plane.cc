@@ -1,3 +1,7 @@
+/*
+Copyright 2020 All rights reserved.
+*/
+
 #include "board/board_plane.h"
 
 namespace aithena {
@@ -57,28 +61,28 @@ BoardPlane& BoardPlane::operator^=(const BoardPlane& other) {
   return *this;
 }
 
-BoardPlane BoardPlane::operator&(const BoardPlane& other) {
+BoardPlane BoardPlane::operator&(const BoardPlane& other) const {
   BoardPlane result(*this);
   result.plane_ = plane_ & other.plane_;
 
   return result;
 }
 
-BoardPlane BoardPlane::operator|(const BoardPlane& other) {
+BoardPlane BoardPlane::operator|(const BoardPlane& other) const {
   BoardPlane result(*this);
   result.plane_ = plane_ | other.plane_;
 
   return result;
 }
 
-BoardPlane BoardPlane::operator^(const BoardPlane& other) {
+BoardPlane BoardPlane::operator^(const BoardPlane& other) const {
   BoardPlane result(*this);
   result.plane_ = plane_ ^ other.plane_;
 
   return result;
 }
 
-BoardPlane BoardPlane::operator!() {
+BoardPlane BoardPlane::operator!() const {
   BoardPlane result{width_, height_};
   result.plane_ = ~plane_;
 
@@ -97,4 +101,4 @@ bool BoardPlane::empty() const {
   return plane_.none();
 }
 
-}
+}  // namespace aithena

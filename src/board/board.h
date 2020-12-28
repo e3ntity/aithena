@@ -1,5 +1,9 @@
-#ifndef AITHENTA_BOARD_BOARD_H
-#define AITHENTA_BOARD_BOARD_H
+/*
+Copyright 2020 All rights reserved.
+*/
+
+#ifndef SRC_BOARD_BOARD_H_
+#define SRC_BOARD_BOARD_H_
 
 #include <climits>
 #include <vector>
@@ -60,7 +64,7 @@ class Board {
   // overriding a piece on the destination position.
   void MoveField(unsigned x, unsigned y, unsigned x_, unsigned y_);
 
-  friend BoardPlane GetNewFields(Board&, Board&);
+  friend BoardPlane GetNewFields(const Board&, const Board&);
 
  private:
   // The width and height of the board and therefore of all board planes
@@ -76,8 +80,8 @@ class Board {
 // Returns a board plane highlighting all fields that contain a different
 // figure in the after board than they did in the before board.
 // If a figure was removed and is not kEmptyPiece, no indication is given.
-BoardPlane GetNewFields(Board& before, Board& after);
+BoardPlane GetNewFields(const Board& before, const Board& after);
 
-}
+}  // namespace aithena
 
-#endif // AITHENTA_BOARD_BOARD_H
+#endif  // SRC_BOARD_BOARD_H_
