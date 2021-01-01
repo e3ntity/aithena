@@ -170,54 +170,46 @@ std::vector<State> Game::GetLegalActions(State state) {
 }
 
 std::vector<State> Game::GenPawnMoves(State state, unsigned x, unsigned y) {
+  std::size_t width{this->GetOption("board_width")};
+  std::size_t height{this->GetOption("board_height")};
+
   Board board_before{state.GetBoard()};
-  std::size_t width{board_before.GetWidth()};
-  std::size_t height{board_before.GetHeight()};
 
   std::vector<State> moves{};  // Return value
 
   int direction = state.GetPlayer() == Player::kWhite ? 1 : -1;
+
+  BoardPlane figure_plane = board_before.GetCompletePlane();
 
   signed tmp_dobule_push_pawn_x = state.GetDPushPawnX();
   signed tmp_dobule_push_pawn_y = state.GetDPushPawnY();
   state.SetDPushPawnX(-1);
   state.SetDPushPawnY(-1);
 
-  if (y + direction >= height || y + direction < 0) {
-    // Generate promotions
-    for (auto figure : Game::figures) {
-      if ((figure == Figure::kPawn) || figure == Figure::kKing) continue;
-
-      State s = State{state};
-      s.GetBoard().SetField(x, y, make_piece(figure, state.GetPlayer()));
-
-      moves.push_back(s);
-    }
-
-    state.SetDPushPawnX(tmp_dobule_push_pawn_x);
-    state.SetDPushPawnY(tmp_dobule_push_pawn_y);
-    return moves;
-  }
-
-  // Generate moves
-  BoardPlane figure_plane = board_before.GetCompletePlane();
-
   // Generate pushes
-
   if (!figure_plane.get(x, y + direction)) {
-    // Move forward once
-    moves.push_back(State{state});
-    moves.back().GetBoard().MoveField(x, y, x, y + direction);
+    if (y + direction == height - 1 || y + direction == 0) {
+      // Generate promotions
+      for (auto figure : Game::figures) {
+        if ((figure == Figure::kPawn) || figure == Figure::kKing) continue;
 
-    if (y == (state.GetPlayer() == Player::kWhite ? 1 : height - 2)
-        && !figure_plane.get(x, y + 2 * direction)) {
+        moves.push_back(state);
+        moves.back().GetBoard().SetField(x, y + direction,
+            make_piece(figure, state.GetPlayer()));
+      }
+    } else {
+      // Move forward once
+      moves.push_back(state);
+      moves.back().GetBoard().MoveField(x, y, x, y + direction);
+
       // Move forward twice
-      State new_state = state;
-      new_state.GetBoard().MoveField(x, y, x, y + direction * 2);
-      new_state.SetDPushPawnX(static_cast<signed>(x));
-      new_state.SetDPushPawnY(static_cast<signed>(y + direction)
-                              | (static_cast<signed>(y + direction * 2) << 3));
-      moves.push_back(new_state);
+      if (y == (state.GetPlayer() == Player::kWhite ? 1 : height - 2)
+          && !figure_plane.get(x, y + 2 * direction)) {
+        moves.push_back(state);
+        moves.back().GetBoard().MoveField(x, y, x, y + direction * 2);
+        moves.back().SetDPushPawnX(static_cast<signed>(x));
+        moves.back().SetDPushPawnY(static_cast<signed>(y + direction));
+      }
     }
   }
 
@@ -228,16 +220,39 @@ std::vector<State> Game::GenPawnMoves(State state, unsigned x, unsigned y) {
                                static_cast<unsigned>(opponent));
 
   if (x + 1 < width && enemy_figures.get(x + 1, y + direction)) {
-    moves.push_back(State{state});
-    moves.back().GetBoard().MoveField(x, y, x + 1, y + direction);
+    if (y + direction == height - 1 || y + direction == 0) {
+      // Generate promotions
+      for (auto figure : Game::figures) {
+        if ((figure == Figure::kPawn) || figure == Figure::kKing) continue;
+        moves.push_back(state);
+        moves.back().GetBoard().ClearField(x + 1, y + direction);
+        moves.back().GetBoard().SetField(x + 1, y + direction,
+            make_piece(figure, state.GetPlayer()));
+      }
+    } else {
+      moves.push_back(state);
+      moves.back().GetBoard().MoveField(x, y, x + 1, y + direction);
+    }
   }
 
   if (x >= 1 && enemy_figures.get(x - 1, y + direction)) {
-    moves.push_back(State{state});
-    moves.back().GetBoard().MoveField(x, y, x - 1, y + direction);
+    if (y + direction == height - 1 || y + direction == 0) {
+      // Generate promotions
+      for (auto figure : Game::figures) {
+        if ((figure == Figure::kPawn) || figure == Figure::kKing) continue;
+        moves.push_back(state);
+        moves.back().GetBoard().ClearField(x - 1, y + direction);
+        moves.back().GetBoard().SetField(x - 1, y + direction,
+            make_piece(figure, state.GetPlayer()));
+      }
+    } else {
+      moves.push_back(state);
+      moves.back().GetBoard().MoveField(x, y, x - 1, y + direction);
+    }
   }
+
   // en passant
-  if (static_cast<unsigned>(tmp_dobule_push_pawn_y % 8) == y + direction) {
+  if (static_cast<unsigned>(tmp_dobule_push_pawn_y) == y + direction) {
     if (static_cast<unsigned>(tmp_dobule_push_pawn_x) == x - 1) {
       State new_state = State{state};
       new_state.GetBoard().MoveField(x, y, x - 1, y + direction);
@@ -251,14 +266,14 @@ std::vector<State> Game::GenPawnMoves(State state, unsigned x, unsigned y) {
     }
   }
 
-  state.SetDPushPawnX(tmp_dobule_push_pawn_x);
-  state.SetDPushPawnY(tmp_dobule_push_pawn_y);
-
   // ANy pawn move resets no progress counter
   std::for_each(
     moves.begin(),
     moves.end(),
-  [&](State & s) { s.ResetNoProgressCount(); });
+  [&](State & s) { s.ResetNoProgressCount(); s.GetBoard().ClearField(x, y); });
+
+  state.SetDPushPawnX(tmp_dobule_push_pawn_x);
+  state.SetDPushPawnY(tmp_dobule_push_pawn_y);
 
   return moves;
 }
