@@ -5,6 +5,8 @@ Copyright 2020 All rights reserved.
 #ifndef SRC_MCTS_MCTS_H_
 #define SRC_MCTS_MCTS_H_
 
+#include <chrono>
+
 #include "mcts/node.h"
 
 namespace aithena {
@@ -43,7 +45,7 @@ class MCTS {
 
   // Backpropagates the result of a playout from the node where it was started
   // to the root.
-  static void Backpropagate(typename Node::NodePtr, int);
+  void Backpropagate(typename Node::NodePtr, int);
 
   // Strategies for selecting the next node.
 
@@ -58,8 +60,17 @@ class MCTS {
 
   // Selects the next node greedily.
   static typename Node::NodePtr GreedySelect(typename Node::NodePtr);
+
+  double BenchmarkSelect();
+  double BenchmarkSimulate();
+  double BenchmarkBackpropagate();
  private:
   Game game_;
+
+  // Stats
+  std::vector<std::chrono::milliseconds> time_select{};
+  std::vector<std::chrono::milliseconds> time_simulate{};
+  std::vector<std::chrono::milliseconds> time_backpropagate{};
 };
 
 template class MCTS<::aithena::chess::Game>;

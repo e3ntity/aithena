@@ -23,8 +23,8 @@ Game::Game() : Game{Options{}} {}
 Game::Game(Options options) : ::aithena::Game<State> {options} {
   DefaultOption("board_width", 8);
   DefaultOption("board_height", 8);
-  DefaultOption("max_no_progress", 50);
-  DefaultOption("max_move_count", 200);
+  DefaultOption("max_no_progress", 30);
+  DefaultOption("max_move_count", 80);
   DefaultOption("figure_count", static_cast<unsigned>(Figure::kCount));
 
   max_no_progress_ = GetOption("max_no_progress");

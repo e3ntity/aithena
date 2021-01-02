@@ -314,12 +314,16 @@ State EvaluateUserInput(const std::string input,
     aithena::MCTS<aithena::chess::Game> mcts{game};
     auto root_ptr = std::make_shared<aithena::MCTSNode<aithena::chess::Game>>(root);
 
-    mcts.Run(root_ptr, 25, 3);
+    mcts.Run(root_ptr, 25, 10);
 
     auto next = mcts.GreedySelect(root_ptr);
     auto marker = aithena::GetNewFields(board, next->GetState().GetBoard());
 
     std::cout << PrintMarkedBoard(state, marker) << std::endl;
+
+    std::cout << "Selection: " << mcts.BenchmarkSelect() << std::endl;
+    std::cout << "Simulation: " << mcts.BenchmarkSimulate() << std::endl;
+    std::cout << "Backpropagation: " << mcts.BenchmarkBackpropagate() << std::endl;
 
     return state;
   } else if (input_parts[0].compare("benchmark") == 0) {
