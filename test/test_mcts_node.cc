@@ -25,6 +25,7 @@ class MCTSNodeTest : public ::testing::Test {
 
 TEST_F(MCTSNodeTest, InitializesCorrectly) {
 	ASSERT_TRUE(game_.GetInitialState() == root_.GetState());
+	ASSERT_EQ(root_.GetParent(), nullptr);
 }
 
 // Tests whether MCTSNode::Expand works correctly by checking the child node's
@@ -39,6 +40,8 @@ TEST_F(MCTSNodeTest, ExpandsCorrectly) {
 	while (!(*current_node).IsTerminal() && i < 300) {
 		MCTSNode& node = *current_node;
 		node.Expand();
+
+		ASSERT_TRUE(node.IsExpanded());
 
 		auto children = node.GetChildren();
 		auto legal_actions = game_.GetLegalActions(node.GetState());

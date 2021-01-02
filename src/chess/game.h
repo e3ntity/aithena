@@ -62,7 +62,7 @@ class Game : public ::aithena::Game<State> {
   // Generates all next moves for any piece at field (x, y) for a given state.
   // The pseudo parameter indicates whether to only generate pseudo moves.
   std::vector<State> GenMoves(State, unsigned x, unsigned y,
-                                bool pseudo = false);
+                              bool pseudo = false);
 
   // Generates the next moves for a single pawn at field (x, y) for a given
   // state.
@@ -117,6 +117,9 @@ class Game : public ::aithena::Game<State> {
       static_cast<unsigned>(Figure::kCount) * 2> magic_bit_planes_;
   // For faster access to GetOption("max_no_progress")
   unsigned int max_no_progress_;
+  // For faster access to GetOption("max_move_count")
+  // Set to 0 to disable.
+  unsigned int max_move_count_;
 };
 
 }  // namespace chess

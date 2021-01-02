@@ -24,9 +24,11 @@ Game::Game(Options options) : ::aithena::Game<State> {options} {
   DefaultOption("board_width", 8);
   DefaultOption("board_height", 8);
   DefaultOption("max_no_progress", 50);
+  DefaultOption("max_move_count", 200);
   DefaultOption("figure_count", static_cast<unsigned>(Figure::kCount));
 
   max_no_progress_ = GetOption("max_no_progress");
+  max_move_count_ = GetOption("max_move_count");
 
   assert(GetOption("board_width") <= 8 && GetOption("board_height") <= 8);
 
@@ -141,6 +143,9 @@ bool Game::IsTerminalState(State& state) {
   if (state.GetNoProgressCount() > max_no_progress_)
     return true;
 
+  if (state.GetMoveCount() > max_move_count_)
+    return true;
+
   // Check for checkmate
   if (GetLegalActions(state).size() == 0)
     return true;
@@ -152,7 +157,8 @@ int Game::GetStateResult(State& state) {
   assert(IsTerminalState(state));
 
   // Check for a draw
-  if (state.GetNoProgressCount() > max_no_progress_)
+  if (state.GetNoProgressCount() > max_no_progress_
+      || state.GetMoveCount() > max_move_count_)
     return 0;
 
   // Check if we are unable to move
@@ -195,7 +201,7 @@ std::vector<State> Game::GenPawnMoves(State state, unsigned x, unsigned y) {
 
         moves.push_back(state);
         moves.back().GetBoard().SetField(x, y + direction,
-            make_piece(figure, state.GetPlayer()));
+                                         make_piece(figure, state.GetPlayer()));
       }
     } else {
       // Move forward once
@@ -227,7 +233,7 @@ std::vector<State> Game::GenPawnMoves(State state, unsigned x, unsigned y) {
         moves.push_back(state);
         moves.back().GetBoard().ClearField(x + 1, y + direction);
         moves.back().GetBoard().SetField(x + 1, y + direction,
-            make_piece(figure, state.GetPlayer()));
+                                         make_piece(figure, state.GetPlayer()));
       }
     } else {
       moves.push_back(state);
@@ -243,7 +249,7 @@ std::vector<State> Game::GenPawnMoves(State state, unsigned x, unsigned y) {
         moves.push_back(state);
         moves.back().GetBoard().ClearField(x - 1, y + direction);
         moves.back().GetBoard().SetField(x - 1, y + direction,
-            make_piece(figure, state.GetPlayer()));
+                                         make_piece(figure, state.GetPlayer()));
       }
     } else {
       moves.push_back(state);

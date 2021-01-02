@@ -14,22 +14,27 @@ Copyright 2020 All rights reserved.
 namespace aithena {
 
 template <typename Game>
-class MCTSNode {
+class MCTSNode : public std::enable_shared_from_this<MCTSNode<Game>> {
  public:
-  using Child = std::shared_ptr<MCTSNode<Game>>;
-  using ChildList = std::vector<Child>;
+  using NodePtr = std::shared_ptr<MCTSNode<Game>>;
+  using NodePtrList = std::vector<NodePtr>;
 
   // Initialize with the default game state.
   explicit MCTSNode(Game&);
   // Initialize with a specific state.
-  MCTSNode(Game&, typename Game::GameState);
+  MCTSNode(Game&, typename Game::GameState, NodePtr parent);
 
   // Operators
   MCTSNode<Game>& operator=(const MCTSNode& node);
 
+  // Two nodes are considered the same if they represent the same state.
+  bool operator==(const MCTSNode& node);
+  bool operator!=(const MCTSNode& node);
+
   // Getter
-  typename Game::GameState GetState();
-  ChildList GetChildren();
+  typename Game::GameState& GetState();
+  NodePtrList GetChildren();
+  NodePtr GetParent();
 
   // Generates child nodes.
   void Expand();
@@ -37,16 +42,29 @@ class MCTSNode {
   // children_ may have members without the node being expanded if e.g. a
   // garbage collector is used to remove untouched nodes.
   bool IsExpanded();
+  // Returns true if any of the node's children have not been visited or if the
+  // node is terminal.
+  bool IsLeaf();
   // Returns whether this node is a terminal node.
   bool IsTerminal();
 
+  // Increments the win count and visit count by one.
+  void IncWins();
+  // Increments the draw count and visit count by one.
+  void IncDraws();
+  // Increments the loss count and visit count by one.
+  void IncLosses();
+
   unsigned GetWins();
   unsigned GetDraws();
+  unsigned GetLosses();
   unsigned GetVisits();
 
  private:
   // This node's child nodes.
-  ChildList children_;
+  NodePtrList children_;
+  // This node's parent.
+  NodePtr parent_;
   // An object capturing the rules of the game.
   Game& game_;
   // The state of the game that this node captures.

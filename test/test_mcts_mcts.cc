@@ -28,3 +28,33 @@ class MCTSTest : public ::testing::Test {
 TEST_F(MCTSTest, InitializesCorrectly) {
 	ASSERT_TRUE(mcts_.GetRoot().GetState() == root_.GetState());
 }
+
+TEST_F(MCTSTest, SelectsUnexpandedCorrectly) {
+	auto leaf = mcts_.Select(root_, mcts_.RandomSelect);
+
+	ASSERT_TRUE(leaf.GetState() == root_.GetState());
+}
+
+TEST_F(MCTSTest, SelectsExpandedCorrectly) {
+	root_.Expand();
+
+	auto leaf = mcts_.Select(root_, mcts_.RandomSelect);
+
+	ASSERT_TRUE(leaf.GetState() == root_.GetState());
+}
+
+TEST_F(MCTSTest, SelectsTraverseCorrectly) {
+	root_.Expand();
+
+	for (auto child : root_.GetChildren())
+		child->IncDraws();
+
+	auto leaf = mcts_.Select(root_, mcts_.RandomSelect);
+
+	ASSERT_FALSE(leaf.GetState() == root_.GetState());
+
+	for (auto child : root_.GetChildren())
+		if (leaf.GetState() == child->GetState()) return;
+
+	ASSERT_TRUE(false); // Loop should return before reaching here.
+}

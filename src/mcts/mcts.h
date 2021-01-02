@@ -13,24 +13,53 @@ namespace aithena {
 template <typename Game>
 class MCTS {
  public:
-  using Node = aithena::MCTSNode<aithena::chess::Game>;
+  using Node = MCTSNode<Game>;
 
-  MCTS(Game, Node&);
+  MCTS(Game);
 
-  Node& GetRoot();
+  // Runs the MCTS algorithms for n rounds, using m simulations each round,
+  // starting at the given node.
+  void Run(
+    typename Node::NodePtr,
+    unsigned rounds = 1,
+    unsigned simulations = 1
+  );
+
+  // MCTS Selection, starting at some node and selecting successive children
+  // according to the search strategy until a leaf node / terminal node is
+  // reached.
+  typename Node::NodePtr Select(
+    typename Node::NodePtr,
+    typename Node::NodePtr (*next)(typename Node::NodePtr)
+  );
+
+  // Simulates a playout using some selection strategy, starting from some node.
+  // Returns the result of the playout from the perspective of the node from
+  // which it was started.
+  int Simulate(
+    typename Node::NodePtr,
+    typename Node::NodePtr (*next)(typename Node::NodePtr)
+  );
+
+  // Backpropagates the result of a playout from the node where it was started
+  // to the root.
+  static void Backpropagate(typename Node::NodePtr, int);
 
   // Strategies for selecting the next node.
 
   // Selects a random next node. Make sure to previously seed the prng with
-  // srand()
-  static Node::Child RandomSelect(Node, Node::ChildList);
+  // srand(). Assumes that the node has already been expanded.
+  static typename Node::NodePtr RandomSelect(typename Node::NodePtr);
 
   // Selects the next node according to the upper confidence bound.
-  // Assumes that the child has already been visited at least once.
-  static Node::Child UCTSelect(Node, Node::ChildList);
+  // Assumes that the node has already been expanded and that each child node
+  // has been visited at least once.
+  static typename Node::NodePtr UCTSelect(typename Node::NodePtr);
+
+  // Selects the next node greedily.
+  static typename Node::NodePtr GreedySelect(typename Node::NodePtr);
  private:
   Game game_;
-  Node root_;
 };
 
 template class MCTS<::aithena::chess::Game>;

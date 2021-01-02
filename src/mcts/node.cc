@@ -12,11 +12,11 @@ namespace aithena {
 
 template <typename Game>
 MCTSNode<Game>::MCTSNode(Game& game)
-  : children_{}, game_{game}, state_{game.GetInitialState()} {}
+  : children_{}, parent_{nullptr}, game_{game}, state_{game.GetInitialState()} {}
 
 template <typename Game>
-MCTSNode<Game>::MCTSNode(Game& game, typename Game::GameState state)
-  : children_{}, game_{game}, state_{state} {}
+MCTSNode<Game>::MCTSNode(Game& game, typename Game::GameState state, NodePtr parent)
+  : children_{}, parent_{parent}, game_{game}, state_{state} {}
 
 // Operators
 
@@ -30,16 +30,31 @@ MCTSNode<Game>& MCTSNode<Game>::operator=(const MCTSNode& node) {
   return *this;
 }
 
+template <typename Game>
+bool MCTSNode<Game>::operator==(const MCTSNode<Game>& other) {
+  return state_ == other.state_;
+}
+
+template <typename Game>
+bool MCTSNode<Game>::operator!=(const MCTSNode<Game>& other) {
+  return !operator==(other);
+}
+
 // Getters
 
 template <typename Game>
-typename Game::GameState MCTSNode<Game>::GetState() {
+typename Game::GameState& MCTSNode<Game>::GetState() {
   return state_;
 }
 
 template <typename Game>
 std::vector<std::shared_ptr<MCTSNode<Game>>> MCTSNode<Game>::GetChildren() {
   return children_;
+}
+
+template <typename Game>
+std::shared_ptr<MCTSNode<Game>> MCTSNode<Game>::GetParent() {
+  return parent_;
 }
 
 // Tree operations
@@ -50,7 +65,10 @@ void MCTSNode<Game>::Expand() {
 
   for (auto state : moves) {
     children_.push_back(
-      std::shared_ptr<MCTSNode<Game>>(new MCTSNode<Game>(game_, state)));
+      std::shared_ptr<MCTSNode<Game>>(
+        new MCTSNode<Game>(game_, state, this->shared_from_this())
+      )
+    );
   }
 
   expanded_ = true;
@@ -62,10 +80,38 @@ bool MCTSNode<Game>::IsExpanded() {
 }
 
 template <typename Game>
+bool MCTSNode<Game>::IsLeaf() {
+  if (!IsExpanded() || IsTerminal()) return true;
+
+  for (auto child : GetChildren()) {
+    if (child->GetVisits() == 0) return true;
+  }
+
+  return false;
+}
+
+template <typename Game>
 bool MCTSNode<Game>::IsTerminal() {
-  if (IsExpanded()) return children_.size() == 0;  // Cheap check
+  //if (IsExpanded()) return children_.size() == 0;  // Cheap check
 
   return game_.IsTerminalState(state_);
+}
+
+template <typename Game>
+void MCTSNode<Game>::IncWins() {
+  wins_++;
+  visits_++;
+}
+
+template <typename Game>
+void MCTSNode<Game>::IncDraws() {
+  draws_++;
+  visits_++;
+}
+
+template <typename Game>
+void MCTSNode<Game>::IncLosses() {
+  visits_++;
 }
 
 template <typename Game>
@@ -76,6 +122,11 @@ unsigned MCTSNode<Game>::GetWins() {
 template <typename Game>
 unsigned MCTSNode<Game>::GetDraws() {
   return draws_;
+}
+
+template <typename Game>
+unsigned MCTSNode<Game>::GetLosses() {
+  return GetVisits() - GetDraws() - GetWins();
 }
 
 template <typename Game>

@@ -2,6 +2,7 @@
 Copyright 2020 All rights reserved.
 */
 
+#include <chrono>
 #include <cstdlib>
 #include <iostream>
 #include <string>
@@ -9,6 +10,7 @@ Copyright 2020 All rights reserved.
 #include <boost/algorithm/string.hpp>
 
 #include "chess/game.h"
+#include "mcts/mcts.h"
 
 void PrintHelp() {
   std::cout << "Possible actions:" << std::endl;
@@ -18,7 +20,6 @@ void PrintHelp() {
   std::cout << "  show                  - Displays the board." << std::endl;
   std::cout << "  info <field>          - Show possible moves for a piece."
             << std::endl;
-
   std::string moves_inst = "  move <field> <field>";
   std::string moves_desc = "  - Move a piece from first to second field.";
   std::cout << moves_inst + moves_desc << std::endl;
@@ -26,6 +27,33 @@ void PrintHelp() {
   std::string promote_inst = "  promote <field> <fig>";
   std::string promote_desc = " - Promotes a pawn on field to figure fig.";
   std::cout << promote_inst + promote_desc << std::endl;
+  std::cout << "  suggest               - Let the engine suggest a move"
+            << std::endl;
+  std::cout << "  benchmark             - Benchmark chess engine" << std::endl;
+}
+
+template <typename Game>
+void Benchmark(Game game) {
+  aithena::MCTSNode<aithena::chess::Game> root{game, game.GetInitialState(), nullptr};
+  aithena::MCTS<aithena::chess::Game> mcts{game};
+  auto root_ptr = std::make_shared<aithena::MCTSNode<aithena::chess::Game>>(root);
+
+  // Settings
+  int sim_runs = 10;
+
+  // Take measurements
+
+  auto sim_start = std::chrono::high_resolution_clock::now();
+  for (int i = 0; i < sim_runs; i++)
+    mcts.Simulate(root_ptr, mcts.RandomSelect);
+  auto sim_end = std::chrono::high_resolution_clock::now();
+
+  auto sim_time = std::chrono::duration_cast<std::chrono::seconds>(sim_end - sim_start).count();
+  auto sim_time_each = static_cast<double>(sim_time) / static_cast<double>(sim_runs);
+
+  // Collect results
+  std::cout << "Simulating took " << sim_time_each << " seconds per run."
+            << std::endl;
 }
 
 std::string PrintMarkedBoard(aithena::chess::State state,
@@ -51,7 +79,7 @@ std::string PrintMarkedBoard(aithena::chess::State state,
 
       // Player indication
       bool white = piece.player ==
-              static_cast<unsigned>(aithena::chess::Player::kWhite);
+                   static_cast<unsigned>(aithena::chess::Player::kWhite);
       std::string s_piece;
 
       // Figure icon
@@ -126,7 +154,7 @@ std::tuple<unsigned, unsigned, bool> ParseField(std::string field) {
 
 template <typename Game, typename State>
 State EvaluateUserInput(const std::string input,
-        Game& game, State& state) {
+                        Game& game, State& state) {
   if (input.compare("help") == 0) {
     PrintHelp();
     return state;
@@ -281,6 +309,23 @@ State EvaluateUserInput(const std::string input,
     }
 
     return moves[i];
+  } else if (input_parts[0].compare("suggest") == 0) {
+    aithena::MCTSNode<aithena::chess::Game> root{game, state, nullptr};
+    aithena::MCTS<aithena::chess::Game> mcts{game};
+    auto root_ptr = std::make_shared<aithena::MCTSNode<aithena::chess::Game>>(root);
+
+    mcts.Run(root_ptr, 25, 3);
+
+    auto next = mcts.GreedySelect(root_ptr);
+    auto marker = aithena::GetNewFields(board, next->GetState().GetBoard());
+
+    std::cout << PrintMarkedBoard(state, marker) << std::endl;
+
+    return state;
+  } else if (input_parts[0].compare("benchmark") == 0) {
+    Benchmark(game);
+
+    return state;
   }
 
   return state;
