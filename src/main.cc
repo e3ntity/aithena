@@ -57,7 +57,8 @@ void Benchmark(Game game) {
 }
 
 std::string PrintMarkedBoard(aithena::chess::State state,
-                             aithena::BoardPlane marker) {
+                             aithena::BoardPlane marker,
+                             std::string marker_color = "\033[31m") {
   aithena::Board board = state.GetBoard();
   std::ostringstream repr;
   aithena::Piece piece;
@@ -110,10 +111,10 @@ std::string PrintMarkedBoard(aithena::chess::State state,
       bool marked = marker.get(x, y);
 
       if (piece == aithena::kEmptyPiece) {
-        repr << s_color << (marked ? "\033[31m- -" : "   ") << "\033[0m";
+        repr << s_color << (marked ? marker_color + "- -" : "   ") << "\033[0m";
       } else {
-        repr << s_color << (marked ? "\033[31m-" : " ") << s_color << s_piece
-             << "\033[24m" << (marked ? "\033[31m-" : " ") << "\033[0m";
+        repr << s_color << (marked ? marker_color + "-" : " ") << s_color << s_piece
+             << "\033[24m" << (marked ? marker_color + "-" : " ") << "\033[0m";
       }
     }
   }
@@ -233,11 +234,11 @@ State EvaluateUserInput(const std::string input,
       if (
         static_cast<unsigned>(state.GetDPushPawnX()) == std::get<0>(target)
         && (
-          static_cast<unsigned>(state.GetDPushPawnY() % 8)
+          static_cast<unsigned>(state.GetDPushPawnY() % 4)
           == std::get<1>(target))) {
         move_board.ClearField(
           std::get<0>(target),
-          static_cast<unsigned>(state.GetDPushPawnY() / 8));
+          static_cast<unsigned>(state.GetDPushPawnY() / 4));
       }
     }
 
@@ -314,10 +315,11 @@ State EvaluateUserInput(const std::string input,
     aithena::MCTS<aithena::chess::Game> mcts{game};
     auto root_ptr = std::make_shared<aithena::MCTSNode<aithena::chess::Game>>(root);
 
-    mcts.Run(root_ptr, 25, 10);
+    mcts.Run(root_ptr, 4, 4);
 
     auto next = mcts.GreedySelect(root_ptr);
     auto marker = aithena::GetNewFields(board, next->GetState().GetBoard());
+    marker |= aithena::GetNewFields(next->GetState().GetBoard(), board);
 
     std::cout << PrintMarkedBoard(state, marker) << std::endl;
 
@@ -352,8 +354,8 @@ bool CheckWinner(Game& game, State& state) {
 
 int main() {
   aithena::chess::Game::Options options = {
-    {"board_width", 8},
-    {"board_height", 8}
+    {"board_width", 4},
+    {"board_height", 4}
   };
 
   aithena::chess::Game game = aithena::chess::Game(options);

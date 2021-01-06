@@ -85,6 +85,25 @@ State Game::GetInitialState() {
   State state(GetOption("board_width"), GetOption("board_height"),
               GetOption("figure_count"));
 
+  assert(GetOption("board_width") == 4 && GetOption("board_height") == 4);
+
+  Board& board = state.GetBoard();
+
+  // Queen
+  board.SetField(0, 2, make_piece(Figure::kQueen, Player::kWhite));
+
+  // Kings
+  board.SetField(2, 1, make_piece(Figure::kKing, Player::kWhite));
+  board.SetField(3, 3, make_piece(Figure::kKing, Player::kBlack));
+
+  return state;
+}
+
+/*
+State Game::GetInitialState() {
+  State state(GetOption("board_width"), GetOption("board_height"),
+              GetOption("figure_count"));
+
   assert(GetOption("board_width") == 8 && GetOption("board_height") == 8);
 
   Board& board = state.GetBoard();
@@ -122,6 +141,7 @@ State Game::GetInitialState() {
   board.SetField(4, 7, make_piece(Figure::kQueen, Player::kBlack));
   return state;
 }
+*/
 
 bool Game::KingInCheck(State state, Player player) {
   Board board = state.GetBoard();
@@ -172,7 +192,7 @@ int Game::GetStateResult(State& state) {
 // Move generation
 
 std::vector<State> Game::GetLegalActions(State state) {
-  return GenMoves(state, /*pseudo=*/ true);
+  return GenMoves(state, /*pseudo=*/ false);
 }
 
 std::vector<State> Game::GenPawnMoves(State state, unsigned x, unsigned y) {
