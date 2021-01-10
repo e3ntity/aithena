@@ -19,13 +19,16 @@ Copyright 2020 All rights reserved.
  * P - Pawn
  */
 
-std::string PrintMarkedBoard(aithena::chess::State state,
+
+using namespace aithena::chess;
+
+std::string PrintMarkedBoard(State state,
                              aithena::BoardPlane marker) {
   aithena::Board board = state.GetBoard();
   std::ostringstream repr;
   aithena::Piece piece;
 
-  std::string turn = state.GetPlayer() == aithena::chess::Player::kWhite
+  std::string turn = state.GetPlayer() == Player::kWhite
                      ? "White" : "Black";
 
   repr << turn << "'s move:";
@@ -42,27 +45,27 @@ std::string PrintMarkedBoard(aithena::chess::State state,
 
       // Player indication
       bool white = piece.player ==
-              static_cast<unsigned>(aithena::chess::Player::kWhite);
+              static_cast<unsigned>(Player::kWhite);
       std::string s_piece;
 
       // Figure icon
       switch (piece.figure) {
-      case static_cast<unsigned>(aithena::chess::Figure::kKing):
+      case static_cast<unsigned>(Figure::kKing):
         s_piece = white ? "♔" : "♚";
         break;
-      case static_cast<unsigned>(aithena::chess::Figure::kQueen):
+      case static_cast<unsigned>(Figure::kQueen):
         s_piece = white ? "♕" : "♛";
         break;
-      case static_cast<unsigned>(aithena::chess::Figure::kRook):
+      case static_cast<unsigned>(Figure::kRook):
         s_piece = white ? "♖" : "♜";
         break;
-      case static_cast<unsigned>(aithena::chess::Figure::kBishop):
+      case static_cast<unsigned>(Figure::kBishop):
         s_piece = white ? "♗" : "♝";
         break;
-      case static_cast<unsigned>(aithena::chess::Figure::kKnight):
+      case static_cast<unsigned>(Figure::kKnight):
         s_piece = white ? "♘" : "♞";
         break;
-      case static_cast<unsigned>(aithena::chess::Figure::kPawn):
+      case static_cast<unsigned>(Figure::kPawn):
         s_piece = white ? "♙" : "♟︎";
         break;
       default:
@@ -85,7 +88,7 @@ std::string PrintMarkedBoard(aithena::chess::State state,
   return repr.str();
 }
 
-std::string PrintBoard(aithena::chess::State state) {
+std::string PrintBoard(State state) {
   aithena::Board board = state.GetBoard();
   aithena::BoardPlane marker{board.GetWidth(), board.GetHeight()};
 
@@ -95,19 +98,19 @@ std::string PrintBoard(aithena::chess::State state) {
 /**
  * Generates a Move in manual fashion
  */
-aithena::chess::State GenMoveManually(aithena::chess::State fromState,
+State GenMoveManually(State fromState,
     unsigned x_start, unsigned y_start, unsigned x_dest, unsigned y_dest,
     bool reset_no_progress = true) {
 
-  aithena::chess::State newState{fromState};
+  State newState{fromState};
   newState.GetBoard().MoveField(x_start, y_start, x_dest, y_dest);
   newState.IncMoveCount();
   if (reset_no_progress)
     newState.ResetNoProgressCount();
   newState.SetPlayer(
-    newState.GetPlayer() == aithena::chess::Player::kBlack
-      ? aithena::chess::Player::kWhite
-      : aithena::chess::Player::kBlack);
+    newState.GetPlayer() == Player::kBlack
+      ? Player::kWhite
+      : Player::kBlack);
   newState.SetDPushPawnX(-1);
   newState.SetDPushPawnY(-1);
   return newState;
@@ -116,17 +119,17 @@ aithena::chess::State GenMoveManually(aithena::chess::State fromState,
 /**
  * Generates a Capture in manual fashion
  */
-aithena::chess::State GenCaptureManually(aithena::chess::State fromState,
+State GenCaptureManually(State fromState,
     unsigned x_start, unsigned y_start, unsigned x_dest, unsigned y_dest) {
 
-  aithena::chess::State newState{fromState};
+  State newState{fromState};
   newState.GetBoard().MoveField(x_start, y_start, x_dest, y_dest);
   newState.IncMoveCount();
   newState.ResetNoProgressCount();
   newState.SetPlayer(
-    newState.GetPlayer() == aithena::chess::Player::kBlack
-      ? aithena::chess::Player::kWhite
-      : aithena::chess::Player::kBlack);
+    newState.GetPlayer() == Player::kBlack
+      ? Player::kWhite
+      : Player::kBlack);
   newState.SetDPushPawnX(-1);
   newState.SetDPushPawnY(-1);
   return newState;
@@ -144,34 +147,34 @@ aithena::chess::State GenCaptureManually(aithena::chess::State fromState,
  * White's turn
  */
 TEST(MoveGenerationTest, default_state_moves) {
-  aithena::chess::Game::Options options {
+  Game::Options options {
     {"board_width", 4},
     {"board_height", 4}
   };
-  aithena::chess::Game game{options};
-  aithena::chess::State initstate {
+  Game game{options};
+  State initstate {
     static_cast<std::size_t>(4),
     static_cast<std::size_t>(4),
-    static_cast<unsigned>(aithena::chess::Figure::kCount)
+    static_cast<unsigned>(Figure::kCount)
   };
 
   aithena::Board& board = initstate.GetBoard();
-    board.SetField(0, 0, aithena::chess::make_piece(
-          aithena::chess::Figure::kRook, aithena::chess::Player::kWhite));
-    board.SetField(1, 0, aithena::chess::make_piece(
-          aithena::chess::Figure::kQueen, aithena::chess::Player::kWhite));
-    board.SetField(2, 0, aithena::chess::make_piece(
-          aithena::chess::Figure::kKing, aithena::chess::Player::kWhite));
-    board.SetField(3, 0, aithena::chess::make_piece(
-          aithena::chess::Figure::kRook, aithena::chess::Player::kWhite));
-    board.SetField(0, 3, aithena::chess::make_piece(
-          aithena::chess::Figure::kRook, aithena::chess::Player::kBlack));
-    board.SetField(1, 3, aithena::chess::make_piece(
-          aithena::chess::Figure::kQueen, aithena::chess::Player::kBlack));
-    board.SetField(2, 3, aithena::chess::make_piece(
-          aithena::chess::Figure::kKing, aithena::chess::Player::kBlack));
-    board.SetField(3, 3, aithena::chess::make_piece(
-          aithena::chess::Figure::kRook, aithena::chess::Player::kBlack));
+    board.SetField(0, 0, make_piece(
+          Figure::kRook, Player::kWhite));
+    board.SetField(1, 0, make_piece(
+          Figure::kQueen, Player::kWhite));
+    board.SetField(2, 0, make_piece(
+          Figure::kKing, Player::kWhite));
+    board.SetField(3, 0, make_piece(
+          Figure::kRook, Player::kWhite));
+    board.SetField(0, 3, make_piece(
+          Figure::kRook, Player::kBlack));
+    board.SetField(1, 3, make_piece(
+          Figure::kQueen, Player::kBlack));
+    board.SetField(2, 3, make_piece(
+          Figure::kKing, Player::kBlack));
+    board.SetField(3, 3, make_piece(
+          Figure::kRook, Player::kBlack));
 
   auto moves_generated = game.GenMoves(initstate);
   ASSERT_EQ(moves_generated.size(), 13);
@@ -217,24 +220,24 @@ TEST(MoveGenerationTest, default_state_moves) {
  * White's turn
  */
 TEST(MoveGenerationTest, KingInCheckTest1) {
-  aithena::chess::Game::Options options {
+  Game::Options options {
     {"board_width", 3},
     {"board_height", 5}
   };
-  aithena::chess::Game game{options};
-  aithena::chess::State initstate {
+  Game game{options};
+  State initstate {
     static_cast<std::size_t>(3),
     static_cast<std::size_t>(5),
-    static_cast<unsigned>(aithena::chess::Figure::kCount)
+    static_cast<unsigned>(Figure::kCount)
   };
 
   aithena::Board& board = initstate.GetBoard();
-  board.SetField(2, 4, aithena::chess::make_piece(
-        aithena::chess::Figure::kKing, aithena::chess::Player::kWhite));
-  board.SetField(1, 0, aithena::chess::make_piece(
-        aithena::chess::Figure::kQueen, aithena::chess::Player::kWhite));
-  board.SetField(1, 2, aithena::chess::make_piece(
-        aithena::chess::Figure::kKnight, aithena::chess::Player::kBlack));
+  board.SetField(2, 4, make_piece(
+        Figure::kKing, Player::kWhite));
+  board.SetField(1, 0, make_piece(
+        Figure::kQueen, Player::kWhite));
+  board.SetField(1, 2, make_piece(
+        Figure::kKnight, Player::kBlack));
 
   auto moves_generated = game.GenMoves(initstate);
   ASSERT_EQ(moves_generated.size(), 4);
@@ -262,22 +265,22 @@ TEST(MoveGenerationTest, KingInCheckTest1) {
  * White's turn
  */
 TEST(MoveGenerationTest, EnPassantTest1) {
-  aithena::chess::Game::Options options {
+  Game::Options options {
     {"board_width", 2},
     {"board_height", 6}
   };
-  aithena::chess::Game game{options};
-  aithena::chess::State initstate {
+  Game game{options};
+  State initstate {
     static_cast<std::size_t>(2),
     static_cast<std::size_t>(5),
-    static_cast<unsigned>(aithena::chess::Figure::kCount)
+    static_cast<unsigned>(Figure::kCount)
   };
 
   aithena::Board& board = initstate.GetBoard();
-  board.SetField(0, 3, aithena::chess::make_piece(
-        aithena::chess::Figure::kPawn, aithena::chess::Player::kBlack));
-  board.SetField(1, 1, aithena::chess::make_piece(
-        aithena::chess::Figure::kPawn, aithena::chess::Player::kWhite));
+  board.SetField(0, 3, make_piece(
+        Figure::kPawn, Player::kBlack));
+  board.SetField(1, 1, make_piece(
+        Figure::kPawn, Player::kWhite));
 
   auto double_push_state = game.GenMoves(initstate)[1];
   auto moves_generated = game.GenMoves(double_push_state);
@@ -303,26 +306,26 @@ TEST(MoveGenerationTest, EnPassantTest1) {
  * White's turn
  */
 TEST(MoveGenerationTest, CheckMateTest1) {
-  aithena::chess::Game::Options options {
+  Game::Options options {
     {"board_width", 4},
     {"board_height", 4}
   };
-  aithena::chess::Game game{options};
-  aithena::chess::State initstate {
+  Game game{options};
+  State initstate {
     static_cast<std::size_t>(4),
     static_cast<std::size_t>(4),
-    static_cast<unsigned>(aithena::chess::Figure::kCount)
+    static_cast<unsigned>(Figure::kCount)
   };
 
   aithena::Board& board = initstate.GetBoard();
-  board.SetField(0, 3, aithena::chess::make_piece(
-        aithena::chess::Figure::kKing, aithena::chess::Player::kWhite));
-  board.SetField(1, 1, aithena::chess::make_piece(
-        aithena::chess::Figure::kKnight, aithena::chess::Player::kBlack));
-  board.SetField(2, 1, aithena::chess::make_piece(
-        aithena::chess::Figure::kKnight, aithena::chess::Player::kBlack));
-  board.SetField(2, 2, aithena::chess::make_piece(
-        aithena::chess::Figure::kQueen, aithena::chess::Player::kBlack));
+  board.SetField(0, 3, make_piece(
+        Figure::kKing, Player::kWhite));
+  board.SetField(1, 1, make_piece(
+        Figure::kKnight, Player::kBlack));
+  board.SetField(2, 1, make_piece(
+        Figure::kKnight, Player::kBlack));
+  board.SetField(2, 2, make_piece(
+        Figure::kQueen, Player::kBlack));
 
   auto moves_generated = game.GenMoves(initstate);
   ASSERT_EQ(moves_generated.size(), 0);
@@ -342,28 +345,28 @@ TEST(MoveGenerationTest, CheckMateTest1) {
  * White's turn
  */
 TEST(MoveGenerationTest, PinnedPieceTest1) {
-  aithena::chess::Game::Options options {
+  Game::Options options {
     {"board_width", 6},
     {"board_height", 6}
   };
-  aithena::chess::Game game{options};
-  aithena::chess::State initstate {
+  Game game{options};
+  State initstate {
     static_cast<std::size_t>(6),
     static_cast<std::size_t>(6),
-    static_cast<unsigned>(aithena::chess::Figure::kCount)
+    static_cast<unsigned>(Figure::kCount)
   };
 
   aithena::Board& board = initstate.GetBoard();
-  board.SetField(0, 5, aithena::chess::make_piece(
-        aithena::chess::Figure::kKing, aithena::chess::Player::kWhite));
-  board.SetField(0, 4, aithena::chess::make_piece(
-        aithena::chess::Figure::kQueen, aithena::chess::Player::kWhite));
-  board.SetField(0, 0, aithena::chess::make_piece(
-        aithena::chess::Figure::kQueen, aithena::chess::Player::kBlack));
-  board.SetField(5, 4, aithena::chess::make_piece(
-        aithena::chess::Figure::kRook, aithena::chess::Player::kBlack));
-  board.SetField(1, 0, aithena::chess::make_piece(
-        aithena::chess::Figure::kRook, aithena::chess::Player::kBlack));
+  board.SetField(0, 5, make_piece(
+        Figure::kKing, Player::kWhite));
+  board.SetField(0, 4, make_piece(
+        Figure::kQueen, Player::kWhite));
+  board.SetField(0, 0, make_piece(
+        Figure::kQueen, Player::kBlack));
+  board.SetField(5, 4, make_piece(
+        Figure::kRook, Player::kBlack));
+  board.SetField(1, 0, make_piece(
+        Figure::kRook, Player::kBlack));
 
   auto moves_generated = game.GenMoves(initstate);
   ASSERT_EQ(moves_generated.size(), 4);
@@ -391,31 +394,31 @@ TEST(MoveGenerationTest, PinnedPieceTest1) {
  * player black. Black's turn.
  */
 TEST(MoveGenerationTest, DoubleCheckTest1) {
-  aithena::chess::Game::Options options {
+  Game::Options options {
     {"board_width", 6},
     {"board_height", 6}
   };
-  aithena::chess::Game game{options};
-  aithena::chess::State initstate {
+  Game game{options};
+  State initstate {
     static_cast<std::size_t>(6),
     static_cast<std::size_t>(6),
-    static_cast<unsigned>(aithena::chess::Figure::kCount)
+    static_cast<unsigned>(Figure::kCount)
   };
-  initstate.SetPlayer(aithena::chess::Player::kBlack);
+  initstate.SetPlayer(Player::kBlack);
 
   aithena::Board& board = initstate.GetBoard();
-  board.SetField(0, 5, aithena::chess::make_piece(
-        aithena::chess::Figure::kKing, aithena::chess::Player::kBlack));
-  board.SetField(5, 0, aithena::chess::make_piece(
-        aithena::chess::Figure::kQueen, aithena::chess::Player::kBlack));
-  board.SetField(0, 0, aithena::chess::make_piece(
-        aithena::chess::Figure::kRook, aithena::chess::Player::kWhite));
-  board.SetField(5, 5, aithena::chess::make_piece(
-        aithena::chess::Figure::kRook, aithena::chess::Player::kWhite));
-  board.SetField(2, 2, aithena::chess::make_piece(
-        aithena::chess::Figure::kBishop, aithena::chess::Player::kBlack));
-  board.SetField(3, 3, aithena::chess::make_piece(
-        aithena::chess::Figure::kKnight, aithena::chess::Player::kBlack));
+  board.SetField(0, 5, make_piece(
+        Figure::kKing, Player::kBlack));
+  board.SetField(5, 0, make_piece(
+        Figure::kQueen, Player::kBlack));
+  board.SetField(0, 0, make_piece(
+        Figure::kRook, Player::kWhite));
+  board.SetField(5, 5, make_piece(
+        Figure::kRook, Player::kWhite));
+  board.SetField(2, 2, make_piece(
+        Figure::kBishop, Player::kBlack));
+  board.SetField(3, 3, make_piece(
+        Figure::kKnight, Player::kBlack));
 
   auto moves_generated = game.GenMoves(initstate);
   ASSERT_EQ(moves_generated.size(), 1);
@@ -433,131 +436,131 @@ TEST(MoveGenerationTest, DoubleCheckTest1) {
  * White's turn
  */
 TEST(MoveGenerationTest, PromotionTest1) {
-  aithena::chess::Game::Options options {
+  Game::Options options {
     {"board_width", 3},
     {"board_height", 2}
   };
-  aithena::chess::Game game{options};
-  aithena::chess::State initstate {
+  Game game{options};
+  State initstate {
     static_cast<std::size_t>(3),
     static_cast<std::size_t>(2),
-    static_cast<unsigned>(aithena::chess::Figure::kCount)
+    static_cast<unsigned>(Figure::kCount)
   };
 
   aithena::Board& board = initstate.GetBoard();
-  board.SetField(1, 0, aithena::chess::make_piece(
-        aithena::chess::Figure::kPawn, aithena::chess::Player::kWhite));
-  board.SetField(0, 1, aithena::chess::make_piece(
-        aithena::chess::Figure::kRook, aithena::chess::Player::kBlack));
-  board.SetField(2, 1, aithena::chess::make_piece(
-        aithena::chess::Figure::kQueen, aithena::chess::Player::kBlack));
+  board.SetField(1, 0, make_piece(
+        Figure::kPawn, Player::kWhite));
+  board.SetField(0, 1, make_piece(
+        Figure::kRook, Player::kBlack));
+  board.SetField(2, 1, make_piece(
+        Figure::kQueen, Player::kBlack));
 
   auto moves_generated = game.GenMoves(initstate);
   ASSERT_EQ(moves_generated.size(), 12);
   auto promotion_by_push = GenMoveManually(initstate, 1, 0, 1, 1);
   promotion_by_push.GetBoard().ClearField(1, 1);
   promotion_by_push.GetBoard().SetField(1, 1,
-      aithena::chess::make_piece(
-        aithena::chess::Figure::kQueen,
-        aithena::chess::Player::kWhite));
+      make_piece(
+        Figure::kQueen,
+        Player::kWhite));
   ASSERT_TRUE(std::find(moves_generated.begin(), moves_generated.end(),
       promotion_by_push) != moves_generated.end());
 
   promotion_by_push.GetBoard().ClearField(1, 1);
   promotion_by_push.GetBoard().SetField(1, 1,
-      aithena::chess::make_piece(
-        aithena::chess::Figure::kRook,
-        aithena::chess::Player::kWhite));
+      make_piece(
+        Figure::kRook,
+        Player::kWhite));
   ASSERT_TRUE(std::find(moves_generated.begin(), moves_generated.end(),
       promotion_by_push) != moves_generated.end());
 
   promotion_by_push.GetBoard().ClearField(1, 1);
   promotion_by_push.GetBoard().SetField(1, 1,
-      aithena::chess::make_piece(
-        aithena::chess::Figure::kBishop,
-        aithena::chess::Player::kWhite));
+      make_piece(
+        Figure::kBishop,
+        Player::kWhite));
   ASSERT_TRUE(std::find(moves_generated.begin(), moves_generated.end(),
       promotion_by_push) != moves_generated.end());
 
   promotion_by_push.GetBoard().ClearField(1, 1);
   promotion_by_push.GetBoard().SetField(1, 1,
-      aithena::chess::make_piece(
-        aithena::chess::Figure::kKnight,
-        aithena::chess::Player::kWhite));
+      make_piece(
+        Figure::kKnight,
+        Player::kWhite));
   ASSERT_TRUE(std::find(moves_generated.begin(), moves_generated.end(),
       promotion_by_push) != moves_generated.end());
 
   auto promotion_by_capture_1 = GenCaptureManually(initstate, 1, 0, 0, 1);
   promotion_by_capture_1.GetBoard().ClearField(0, 1);
   promotion_by_capture_1.GetBoard().SetField(0, 1,
-      aithena::chess::make_piece(
-        aithena::chess::Figure::kQueen,
-        aithena::chess::Player::kWhite));
+      make_piece(
+        Figure::kQueen,
+        Player::kWhite));
   ASSERT_TRUE(std::find(moves_generated.begin(), moves_generated.end(),
       promotion_by_capture_1) != moves_generated.end());
 
   promotion_by_capture_1.GetBoard().ClearField(0, 1);
   promotion_by_capture_1.GetBoard().SetField(0, 1,
-      aithena::chess::make_piece(
-        aithena::chess::Figure::kRook,
-        aithena::chess::Player::kWhite));
+      make_piece(
+        Figure::kRook,
+        Player::kWhite));
   ASSERT_TRUE(std::find(moves_generated.begin(), moves_generated.end(),
       promotion_by_capture_1) != moves_generated.end());
 
   promotion_by_capture_1.GetBoard().ClearField(0, 1);
   promotion_by_capture_1.GetBoard().SetField(0, 1,
-      aithena::chess::make_piece(
-        aithena::chess::Figure::kBishop,
-        aithena::chess::Player::kWhite));
+      make_piece(
+        Figure::kBishop,
+        Player::kWhite));
   ASSERT_TRUE(std::find(moves_generated.begin(), moves_generated.end(),
       promotion_by_capture_1) != moves_generated.end());
 
   promotion_by_capture_1.GetBoard().ClearField(0, 1);
   promotion_by_capture_1.GetBoard().SetField(0, 1,
-      aithena::chess::make_piece(
-        aithena::chess::Figure::kKnight,
-        aithena::chess::Player::kWhite));
+      make_piece(
+        Figure::kKnight,
+        Player::kWhite));
   ASSERT_TRUE(std::find(moves_generated.begin(), moves_generated.end(),
       promotion_by_capture_1) != moves_generated.end());
 
   auto promotion_by_capture_2 = GenCaptureManually(initstate, 1, 0, 2, 1);
   promotion_by_capture_2.GetBoard().ClearField(2, 1);
   promotion_by_capture_2.GetBoard().SetField(2, 1,
-      aithena::chess::make_piece(
-        aithena::chess::Figure::kQueen,
-        aithena::chess::Player::kWhite));
+      make_piece(
+        Figure::kQueen,
+        Player::kWhite));
   ASSERT_TRUE(std::find(moves_generated.begin(), moves_generated.end(),
       promotion_by_capture_2) != moves_generated.end());
 
   promotion_by_capture_2.GetBoard().ClearField(2, 1);
   promotion_by_capture_2.GetBoard().SetField(2, 1,
-      aithena::chess::make_piece(
-        aithena::chess::Figure::kQueen,
-        aithena::chess::Player::kWhite));
+      make_piece(
+        Figure::kQueen,
+        Player::kWhite));
   ASSERT_TRUE(std::find(moves_generated.begin(), moves_generated.end(),
       promotion_by_capture_2) != moves_generated.end());
 
   promotion_by_capture_2.GetBoard().ClearField(2, 1);
   promotion_by_capture_2.GetBoard().SetField(2, 1,
-      aithena::chess::make_piece(
-        aithena::chess::Figure::kRook,
-        aithena::chess::Player::kWhite));
+      make_piece(
+        Figure::kRook,
+        Player::kWhite));
   ASSERT_TRUE(std::find(moves_generated.begin(), moves_generated.end(),
       promotion_by_capture_2) != moves_generated.end());
 
   promotion_by_capture_2.GetBoard().ClearField(2, 1);
   promotion_by_capture_2.GetBoard().SetField(2, 1,
-      aithena::chess::make_piece(
-        aithena::chess::Figure::kBishop,
-        aithena::chess::Player::kWhite));
+      make_piece(
+        Figure::kBishop,
+        Player::kWhite));
   ASSERT_TRUE(std::find(moves_generated.begin(), moves_generated.end(),
       promotion_by_capture_2) != moves_generated.end());
 
   promotion_by_capture_2.GetBoard().ClearField(2, 1);
   promotion_by_capture_2.GetBoard().SetField(2, 1,
-      aithena::chess::make_piece(
-        aithena::chess::Figure::kKnight,
-        aithena::chess::Player::kWhite));
+      make_piece(
+        Figure::kKnight,
+        Player::kWhite));
   ASSERT_TRUE(std::find(moves_generated.begin(), moves_generated.end(),
       promotion_by_capture_2) != moves_generated.end());
 }
@@ -578,24 +581,24 @@ TEST(MoveGenerationTest, PromotionTest1) {
  * White's turn
  */
 TEST(MoveGenerationTest, CastlingTest1) {
-  aithena::chess::Game::Options options {
+  Game::Options options {
     {"board_width", 8},
     {"board_height", 8}
   };
-  aithena::chess::Game game{options};
-  aithena::chess::State initstate {
+  Game game{options};
+  State initstate {
     static_cast<std::size_t>(8),
     static_cast<std::size_t>(8),
-    static_cast<unsigned>(aithena::chess::Figure::kCount)
+    static_cast<unsigned>(Figure::kCount)
   };
 
   aithena::Board& board = initstate.GetBoard();
-  board.SetField(0, 0, aithena::chess::make_piece(
-        aithena::chess::Figure::kRook, aithena::chess::Player::kWhite));
-  board.SetField(4, 0, aithena::chess::make_piece(
-        aithena::chess::Figure::kKing, aithena::chess::Player::kWhite));
-  board.SetField(7, 0, aithena::chess::make_piece(
-        aithena::chess::Figure::kRook, aithena::chess::Player::kWhite));
+  board.SetField(0, 0, make_piece(
+        Figure::kRook, Player::kWhite));
+  board.SetField(4, 0, make_piece(
+        Figure::kKing, Player::kWhite));
+  board.SetField(7, 0, make_piece(
+        Figure::kRook, Player::kWhite));
 
   auto moves_generated = game.GenMoves(initstate);
   auto castling_king_side =
@@ -607,4 +610,38 @@ TEST(MoveGenerationTest, CastlingTest1) {
       GenMoveManually(GenMoveManually(initstate, 4, 0, 6, 0), 0, 0, 5, 0);
   ASSERT_TRUE(std::find(moves_generated.begin(), moves_generated.end(),
        castling_queen_side) != moves_generated.end());
+}
+
+
+TEST(game, MagicBitBoardsTest) {
+  Game::Options options {
+    {"board_width", 8},
+    {"board_height", 8}
+  };
+  Game game{options};
+  State state{8, 8,
+    static_cast<unsigned>(Figure::kCount)};
+  state.GetBoard().SetField(3, 0, make_piece(Figure::kRook, Player::kBlack));
+  state.GetBoard().SetField(3, 6, make_piece(Figure::kRook, Player::kBlack));
+  state.GetBoard().SetField(0, 3, make_piece(Figure::kRook, Player::kBlack));
+  state.GetBoard().SetField(6, 3, make_piece(Figure::kRook, Player::kBlack));
+  state.GetBoard().SetField(0, 0, make_piece(Figure::kBishop, Player::kBlack));
+  state.GetBoard().SetField(6, 0, make_piece(Figure::kBishop, Player::kBlack));
+  state.GetBoard().SetField(7, 7, make_piece(Figure::kBishop, Player::kBlack));
+  state.GetBoard().SetField(0, 6, make_piece(Figure::kBishop, Player::kBlack));
+  state.GetBoard().SetField(4, 2, make_piece(Figure::kQueen, Player::kWhite));
+  state.GetBoard().SetField(2, 4, make_piece(Figure::kQueen, Player::kWhite));
+  state.GetBoard().SetField(5, 1, make_piece(Figure::kQueen, Player::kWhite));
+  state.GetBoard().SetField(5, 3, make_piece(Figure::kKnight, Player::kWhite));
+  state.GetBoard().SetField(3, 2, make_piece(Figure::kKnight, Player::kWhite));
+  state.GetBoard().SetField(3, 3, make_piece(Figure::kKing, Player::kWhite));
+  aithena::BoardPlane constrained_to{8, 8};
+  aithena::BoardPlane pinned{8, 8};
+  unsigned attackers = 0;
+  game.GeneratePositionAttackers(3, 3, &state, &constrained_to, &attackers,
+  &pinned);
+  std::cerr << PrintMarkedBoard(state, constrained_to);
+  std::cerr << PrintMarkedBoard(state, pinned);
+  std::cerr << "Attackers: " << attackers << "\n";
+  ASSERT_TRUE(true);
 }

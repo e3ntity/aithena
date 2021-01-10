@@ -20,10 +20,11 @@ namespace chess {
 enum class Figure : unsigned {
   kKing, kQueen, kRook,
   kKnight, kBishop, kPawn,
-  /*kGhostPawn, */kCount
+  kCount
 };
 
 enum Player : unsigned {kWhite, kBlack};
+static const unsigned bb_per_pos = 12;
 
 }  // namespace chess
 }  // namespace aithena
@@ -34,6 +35,8 @@ enum Player : unsigned {kWhite, kBlack};
 
 namespace aithena {
 namespace chess {
+
+static const BoardPlane one{1UL};
 
 Piece make_piece(Figure, Player);
 
@@ -51,6 +54,13 @@ class Game : public ::aithena::Game<State> {
 
   State GetInitialState() override;
   std::vector<State> GetLegalActions(State) override;
+  void GeneratePositionAttackers(unsigned x, unsigned y,
+    State* state, BoardPlane* constrained_to,  unsigned* attacker_count,
+    BoardPlane* pinned);
+
+  bool SearchForAttack(unsigned x, unsigned y, State* state,
+    BoardPlane* filtered_enemies, unsigned bb_offset, unsigned inv_bb,
+    bool lower, BoardPlane* constrained_to, BoardPlane* pinned);
 
   bool IsTerminalState(State&) override;
   int GetStateResult(State&) override;
@@ -111,10 +121,10 @@ class Game : public ::aithena::Game<State> {
   bool KingInCheck(State state, Player player);
 
   // Stores the magic bit boards computed by InitializeMagic.
-  // magic_bit_planes_[2*i + 0] thereby stores the push bit planes for figure i
-  // whereas magic_bit_planes[2*i + 1] stores the capture bit planes
-  std::array<std::unique_ptr<BoardPlane[]>,
-      static_cast<unsigned>(Figure::kCount) * 2> magic_bit_planes_;
+  std::vector<BoardPlane> magic_bit_planes_;
+
+  std::vector<BoardPlane> king_move_patterns;
+
   // For faster access to GetOption("max_no_progress")
   unsigned int max_no_progress_;
   // For faster access to GetOption("max_move_count")
