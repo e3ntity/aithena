@@ -15,8 +15,8 @@ State::State(
   unsigned figure_count = static_cast<unsigned>(Figure::kCount))
   : ::aithena::State(width, height, figure_count),
     player_{Player::kWhite},
-    castle_queen_{false, false},
-    castle_king_{false, false},
+    castle_queen_{true, true},
+    castle_king_{true, true},
     move_count_{0},
     no_progress_count_{0},
     double_push_pawn_x{ -1},
