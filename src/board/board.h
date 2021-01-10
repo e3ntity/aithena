@@ -48,6 +48,7 @@ class Board {
   // Returns the BoardPlane for a given piece.
   BoardPlane& GetPlane(Piece);
   BoardPlane GetFigurePlane(unsigned figure);
+  BoardPlane GetPlayerFigurePlane(unsigned player, unsigned figure);
   BoardPlane GetPlayerPlane(unsigned player);
   BoardPlane GetCompletePlane();
 
