@@ -263,13 +263,13 @@ std::vector<State> Game::GetLegalActions(State state) {
   return GenMoves(state, /*pseudo=*/ false);
 }
 
-bool Game::SearchForAttack(unsigned x, unsigned y, State* state,
+bool Game::SearchForLineAttack(unsigned x, unsigned y, State* state,
 BoardPlane* filtered_enemies, unsigned bb_offset, unsigned inv_bb, bool lower,
 BoardPlane* attack_path, BoardPlane* pinned = nullptr) {
   signed width = GetOption("board_width");
   signed height = GetOption("board_height");
 
-  Board current_board = state->GetBoard();
+  Board& current_board = state->GetBoard();
   unsigned current_player = static_cast<unsigned>(state->GetPlayer());
   unsigned enemy = state->GetPlayer() == Player::kWhite
       ? static_cast<unsigned>(Player::kBlack)
@@ -278,11 +278,13 @@ BoardPlane* attack_path, BoardPlane* pinned = nullptr) {
   unsigned arr_pos = y * width + x;
 
   BoardPlane player_figures = current_board.GetPlayerPlane(current_player);
+  BoardPlane enemy_figures = current_board.GetPlayerPlane(enemy);
   BoardPlane line_of_attack =
       magic_bit_planes_[arr_pos * bb_per_pos + bb_offset];
 
   signed first_enemy_in_path =
-    (line_of_attack & *filtered_enemies).find_first();
+    (line_of_attack & enemy_figures).find_first();
+
   BoardPlane allies_in_path = line_of_attack & player_figures;
   signed first_ally_in_path = lower ?
     allies_in_path.msb() : allies_in_path.find_first();
@@ -290,7 +292,9 @@ BoardPlane* attack_path, BoardPlane* pinned = nullptr) {
     ? allies_in_path.prev(first_ally_in_path)
     : allies_in_path.next(first_ally_in_path);
 
-  if (first_enemy_in_path < 0) {
+  if (first_enemy_in_path < 0
+    || !filtered_enemies->get(first_enemy_in_path / width,
+        first_enemy_in_path % width)) {
       // No enemy lie in path
       return false;
   } else {
@@ -311,16 +315,87 @@ BoardPlane* attack_path, BoardPlane* pinned = nullptr) {
           : second_ally_in_path < first_enemy_in_path))
       // blocked by two allies, no pinned pieces
       return false;
-    if (pinned)
+    if (pinned) {
       *pinned |= line_of_attack & magic_bit_planes_[first_enemy_in_path
               * bb_per_pos + inv_bb];
+      pinned->set(first_enemy_in_path);
+    }
     return false;
   }
 }
 
-void Game::GeneratePositionAttackers(unsigned x, unsigned y, State* state,
-BoardPlane* constrained_to, unsigned* attacker_count,
-BoardPlane* pinned = nullptr) {
+unsigned Game::SearchForKnightAttack(unsigned x, unsigned y, State* state,
+BoardPlane* constrained_to) {
+  signed width = GetOption("board_width");
+  signed height = GetOption("board_height");
+
+  Board& current_board = state->GetBoard();
+  unsigned current_player = static_cast<unsigned>(state->GetPlayer());
+  unsigned enemy = state->GetPlayer() == Player::kWhite
+      ? static_cast<unsigned>(Player::kBlack)
+      : static_cast<unsigned>(Player::kWhite);
+
+  unsigned arr_pos = y * width + x;
+
+  BoardPlane enemy_knights = current_board.GetPlayerFigurePlane(
+    enemy, static_cast<unsigned>(Figure::kKnight)
+  );
+  BoardPlane attack_bb = magic_bit_planes_[arr_pos * bb_per_pos + 8];
+  BoardPlane attacking_knights = attack_bb & enemy_knights;
+  if (constrained_to)
+    *constrained_to |= attacking_knights;
+  return attacking_knights.count();
+}
+
+unsigned Game::SearchForPawnAttack(unsigned x, unsigned y, State* state,
+BoardPlane* constrained_to) {
+  signed width = GetOption("board_width");
+  signed height = GetOption("board_height");
+
+  Board& current_board = state->GetBoard();
+  unsigned enemy = state->GetPlayer() == Player::kWhite
+      ? static_cast<unsigned>(Player::kBlack)
+      : static_cast<unsigned>(Player::kWhite);
+  signed direction = enemy == static_cast<unsigned>(Player::kWhite) ? -1 : 1;
+
+  BoardPlane enemy_pawns = current_board.GetPlayerFigurePlane(
+    enemy, static_cast<unsigned>(Figure::kPawn)
+  );
+  unsigned count = 0;
+  if (y + direction < height && y >= 0) {
+    if (x + 1 < width && enemy_pawns.get(x + 1, y + direction)) {
+      if (constrained_to)
+        constrained_to->set(x + 1, y + direction);
+      count++;
+    }
+    if (x - 1 < width && enemy_pawns.get(x - 1, y + direction)) {
+      if (constrained_to)
+        constrained_to->set(x - 1, y + direction);
+      count++;
+    }
+  }
+  return count;
+}
+
+bool Game::SearchForKingAttack(unsigned x, unsigned y, State* state) {
+  signed width = GetOption("board_width");
+  signed height = GetOption("board_height");
+
+  Board& current_board = state->GetBoard();
+  unsigned enemy = state->GetPlayer() == Player::kWhite
+      ? static_cast<unsigned>(Player::kBlack)
+      : static_cast<unsigned>(Player::kWhite);
+
+  BoardPlane enemy_king = current_board.GetPlayerFigurePlane(
+    enemy, static_cast<unsigned>(Figure::kKing)
+  );
+  unsigned arr_pos = y * width + x;
+
+  return !((enemy_king & magic_bit_planes_[arr_pos * bb_per_pos + 11]).empty());
+}
+
+unsigned Game::GeneratePositionAttackers(unsigned x, unsigned y, State* state,
+BoardPlane* constrained_to, BoardPlane* pinned = nullptr) {
   signed width = GetOption("board_width");
   signed height = GetOption("board_height");
 
@@ -335,6 +410,7 @@ BoardPlane* pinned = nullptr) {
   unsigned arr_pos = y * width + x;
 
   // Gather information about threads to the given position
+  unsigned attacker_count = 0;
 
   // Get position of enemy pieces that can move like a rook
   BoardPlane enemy_rook_queen =
@@ -345,13 +421,13 @@ BoardPlane* pinned = nullptr) {
 
   // Get rook-like attackers attacking from upper part
   for (unsigned rook_upper_bb = 0; rook_upper_bb < 2; ++rook_upper_bb) {
-    *attacker_count += SearchForAttack(x, y, state, &enemy_rook_queen,
+    attacker_count += SearchForLineAttack(x, y, state, &enemy_rook_queen,
       rook_upper_bb, rook_upper_bb + 2, false, constrained_to, pinned);
   }
 
   // Get rook-like attackers attacking from lower part
   for (unsigned rook_lower_bb = 0; rook_lower_bb < 2; ++rook_lower_bb) {
-    *attacker_count += SearchForAttack(x, y, state, &enemy_rook_queen,
+    attacker_count += SearchForLineAttack(x, y, state, &enemy_rook_queen,
       rook_lower_bb + 2, rook_lower_bb, true, constrained_to, pinned);
   }
 
@@ -364,15 +440,21 @@ BoardPlane* pinned = nullptr) {
 
   // Get bishop-like attackers attacking from upper part
   for (unsigned bishop_upper_bb = 0; bishop_upper_bb < 2; ++bishop_upper_bb) {
-    *attacker_count += SearchForAttack(x, y, state, &enemy_bishop_queen,
+    attacker_count += SearchForLineAttack(x, y, state, &enemy_bishop_queen,
       bishop_upper_bb + 4, bishop_upper_bb + 6, false, constrained_to, pinned);
   }
 
   // Get bishop-like attackers attacking from lower part
   for (unsigned bishop_lower_bb = 0; bishop_lower_bb < 2; ++bishop_lower_bb) {
-    *attacker_count += SearchForAttack(x, y, state, &enemy_bishop_queen,
+    attacker_count += SearchForLineAttack(x, y, state, &enemy_bishop_queen,
       bishop_lower_bb + 6, bishop_lower_bb + 4, true, constrained_to, pinned);
   }
+
+  // Check for attacking knights
+  attacker_count += SearchForKnightAttack(x, y, state, constrained_to);
+  attacker_count += SearchForPawnAttack(x, y, state, constrained_to);
+  attacker_count += SearchForKingAttack(x, y, state);
+  return attacker_count;
 }
 
 std::vector<State> Game::GenPawnMoves(State state, unsigned x, unsigned y) {

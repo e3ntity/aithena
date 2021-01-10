@@ -624,22 +624,32 @@ TEST(game, MagicBitBoardsTest) {
   state.GetBoard().SetField(3, 0, make_piece(Figure::kRook, Player::kBlack));
   state.GetBoard().SetField(3, 6, make_piece(Figure::kRook, Player::kBlack));
   state.GetBoard().SetField(0, 3, make_piece(Figure::kRook, Player::kBlack));
-  state.GetBoard().SetField(6, 3, make_piece(Figure::kRook, Player::kBlack));
-  state.GetBoard().SetField(0, 0, make_piece(Figure::kBishop, Player::kBlack));
+  state.GetBoard().SetField(6, 3, make_piece(Figure::kQueen, Player::kBlack));
+  state.GetBoard().SetField(0, 0, make_piece(Figure::kQueen, Player::kBlack));
   state.GetBoard().SetField(6, 0, make_piece(Figure::kBishop, Player::kBlack));
   state.GetBoard().SetField(7, 7, make_piece(Figure::kBishop, Player::kBlack));
   state.GetBoard().SetField(0, 6, make_piece(Figure::kBishop, Player::kBlack));
-  state.GetBoard().SetField(4, 2, make_piece(Figure::kQueen, Player::kWhite));
+  state.GetBoard().SetField(5, 4, make_piece(Figure::kKnight, Player::kBlack));
+  state.GetBoard().SetField(4, 4, make_piece(Figure::kPawn, Player::kBlack));
+  state.GetBoard().SetField(4, 2, make_piece(Figure::kPawn, Player::kBlack));
+  state.GetBoard().SetField(5, 0, make_piece(Figure::kKing, Player::kBlack));
   state.GetBoard().SetField(2, 4, make_piece(Figure::kQueen, Player::kWhite));
-  state.GetBoard().SetField(5, 1, make_piece(Figure::kQueen, Player::kWhite));
+  state.GetBoard().SetField(5, 1, make_piece(Figure::kQueen, Player::kBlack));
   state.GetBoard().SetField(5, 3, make_piece(Figure::kKnight, Player::kWhite));
   state.GetBoard().SetField(3, 2, make_piece(Figure::kKnight, Player::kWhite));
   state.GetBoard().SetField(3, 3, make_piece(Figure::kKing, Player::kWhite));
+  state.GetBoard().SetField(4, 1, make_piece(Figure::kKing, Player::kWhite));
   aithena::BoardPlane constrained_to{8, 8};
   aithena::BoardPlane pinned{8, 8};
-  unsigned attackers = 0;
-  game.GeneratePositionAttackers(3, 3, &state, &constrained_to, &attackers,
-  &pinned);
+  unsigned attackers =
+    game.GeneratePositionAttackers(3, 3, &state, &constrained_to, &pinned);    
+  std::cerr << PrintMarkedBoard(state, constrained_to);
+  std::cerr << PrintMarkedBoard(state, pinned);
+  std::cerr << "Attackers: " << attackers << "\n";
+  constrained_to.reset();
+  pinned.reset();
+  attackers =
+    game.GeneratePositionAttackers(4, 1, &state, &constrained_to, &pinned);
   std::cerr << PrintMarkedBoard(state, constrained_to);
   std::cerr << PrintMarkedBoard(state, pinned);
   std::cerr << "Attackers: " << attackers << "\n";

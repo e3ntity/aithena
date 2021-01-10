@@ -54,13 +54,20 @@ class Game : public ::aithena::Game<State> {
 
   State GetInitialState() override;
   std::vector<State> GetLegalActions(State) override;
-  void GeneratePositionAttackers(unsigned x, unsigned y,
-    State* state, BoardPlane* constrained_to,  unsigned* attacker_count,
-    BoardPlane* pinned);
+  unsigned GeneratePositionAttackers(unsigned x, unsigned y,
+    State* state, BoardPlane* constrained_to, BoardPlane* pinned);
 
-  bool SearchForAttack(unsigned x, unsigned y, State* state,
+  bool SearchForLineAttack(unsigned x, unsigned y, State* state,
     BoardPlane* filtered_enemies, unsigned bb_offset, unsigned inv_bb,
     bool lower, BoardPlane* constrained_to, BoardPlane* pinned);
+
+  unsigned SearchForKnightAttack(unsigned x, unsigned y, State* state,
+    BoardPlane* constrained_to);
+
+  unsigned SearchForPawnAttack(unsigned x, unsigned y, State* state,
+    BoardPlane* constrained_to);
+
+  bool SearchForKingAttack(unsigned x, unsigned y, State* state);
 
   bool IsTerminalState(State&) override;
   int GetStateResult(State&) override;
