@@ -53,7 +53,7 @@ BoardPlane& BoardPlane::operator=(const BoardPlane& other) {
 }
 
 BoardPlane& BoardPlane::operator&=(const BoardPlane& other) {
-  plane_ |= other.plane_;
+  plane_ &= other.plane_;
   return *this;
 }
 
