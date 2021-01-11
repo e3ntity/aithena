@@ -48,7 +48,6 @@ std::vector<State> GenDirectionalMoves(State state, unsigned x, unsigned y,
       // if not blocked by ally generate move
       State new_state = State{state};
       new_state.SetDPushPawnX(-1);
-      new_state.SetDPushPawnY(-1);
       new_state.GetBoard().MoveField(x, y, new_x, new_y);
       moves.push_back(new_state);
 

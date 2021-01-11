@@ -211,19 +211,14 @@ State Game::GetInitialState() {
 }
 */
 
-bool Game::KingInCheck(State state, Player player) {
-  Board board = state.GetBoard();
-  BoardPlane king_plane = board.GetPlane(make_piece(Figure::kKing, player));
-  Player opponent = player == Player::kWhite ? Player::kBlack : Player::kWhite;
-  std::vector<State> next_states = GenMoves(&state, /*pseudo=*/ true);
+bool Game::KingInCheck(State* state, Player player) {
+  unsigned width = GetOption("board_width");
+  Board& board = state->GetBoard();
+  unsigned king_pos =
+    board.GetPlayerFigurePlane(player, Figure::kKing).find_first();
 
-  for (auto next_state : next_states) {
-    if ((king_plane & next_state.GetBoard().GetPlayerPlane(opponent)).empty())
-      continue;
-    return true;
-  }
-
-  return false;
+  return GeneratePositionAttackers(state, king_pos & width, king_pos / width,
+    nullptr, nullptr) > 0;
 }
 
 bool Game::IsTerminalState(State& state) {
@@ -263,7 +258,7 @@ std::vector<State> Game::GetLegalActions(State state) {
   return GenMoves(&state, /*pseudo=*/ false);
 }
 
-bool Game::SearchForLineAttack(unsigned x, unsigned y, State* state,
+bool Game::SearchForLineAttack(State* state, unsigned x, unsigned y,
 BoardPlane* filtered_enemies, unsigned bb_offset, unsigned inv_bb, bool lower,
 BoardPlane* attack_path, BoardPlane* pinned = nullptr) {
   signed width = GetOption("board_width");
@@ -325,7 +320,7 @@ BoardPlane* attack_path, BoardPlane* pinned = nullptr) {
   }
 }
 
-unsigned Game::SearchForKnightAttack(unsigned x, unsigned y, State* state,
+unsigned Game::SearchForKnightAttack(State* state, unsigned x, unsigned y,
 BoardPlane* constrained_to) {
   signed width = GetOption("board_width");
   signed height = GetOption("board_height");
@@ -347,7 +342,7 @@ BoardPlane* constrained_to) {
   return attacking_knights.count();
 }
 
-unsigned Game::SearchForPawnAttack(unsigned x, unsigned y, State* state,
+unsigned Game::SearchForPawnAttack(State* state, unsigned x, unsigned y,
 BoardPlane* constrained_to) {
   signed width = GetOption("board_width");
   signed height = GetOption("board_height");
@@ -376,7 +371,7 @@ BoardPlane* constrained_to) {
   return count;
 }
 
-bool Game::SearchForKingAttack(unsigned x, unsigned y, State* state) {
+bool Game::SearchForKingAttack(State* state, unsigned x, unsigned y) {
   signed width = GetOption("board_width");
   signed height = GetOption("board_height");
 
@@ -392,7 +387,7 @@ bool Game::SearchForKingAttack(unsigned x, unsigned y, State* state) {
   return !((enemy_king & magic_bit_planes_[arr_pos * bb_per_pos + 11]).empty());
 }
 
-unsigned Game::GeneratePositionAttackers(unsigned x, unsigned y, State* state,
+unsigned Game::GeneratePositionAttackers(State* state, unsigned x, unsigned y,
 BoardPlane* constrained_to, BoardPlane* pinned = nullptr) {
   signed width = GetOption("board_width");
   signed height = GetOption("board_height");
@@ -419,13 +414,13 @@ BoardPlane* constrained_to, BoardPlane* pinned = nullptr) {
 
   // Get rook-like attackers attacking from upper part
   for (unsigned rook_upper_bb = 0; rook_upper_bb < 2; ++rook_upper_bb) {
-    attacker_count += SearchForLineAttack(x, y, state, &enemy_rook_queen,
+    attacker_count += SearchForLineAttack(state, x, y, &enemy_rook_queen,
       rook_upper_bb, rook_upper_bb + 2, false, constrained_to, pinned);
   }
 
   // Get rook-like attackers attacking from lower part
   for (unsigned rook_lower_bb = 0; rook_lower_bb < 2; ++rook_lower_bb) {
-    attacker_count += SearchForLineAttack(x, y, state, &enemy_rook_queen,
+    attacker_count += SearchForLineAttack(state, x, y, &enemy_rook_queen,
       rook_lower_bb + 2, rook_lower_bb, true, constrained_to, pinned);
   }
 
@@ -438,147 +433,279 @@ BoardPlane* constrained_to, BoardPlane* pinned = nullptr) {
 
   // Get bishop-like attackers attacking from upper part
   for (unsigned bishop_upper_bb = 0; bishop_upper_bb < 2; ++bishop_upper_bb) {
-    attacker_count += SearchForLineAttack(x, y, state, &enemy_bishop_queen,
+    attacker_count += SearchForLineAttack(state, x, y, &enemy_bishop_queen,
       bishop_upper_bb + 4, bishop_upper_bb + 6, false, constrained_to, pinned);
   }
 
   // Get bishop-like attackers attacking from lower part
   for (unsigned bishop_lower_bb = 0; bishop_lower_bb < 2; ++bishop_lower_bb) {
-    attacker_count += SearchForLineAttack(x, y, state, &enemy_bishop_queen,
+    attacker_count += SearchForLineAttack(state, x, y, &enemy_bishop_queen,
       bishop_lower_bb + 6, bishop_lower_bb + 4, true, constrained_to, pinned);
   }
 
-  // Check for attacking knights
-  attacker_count += SearchForKnightAttack(x, y, state, constrained_to);
-  attacker_count += SearchForPawnAttack(x, y, state, constrained_to);
-  attacker_count += SearchForKingAttack(x, y, state);
+  attacker_count += SearchForKnightAttack(state, x, y, constrained_to);
+  attacker_count += SearchForPawnAttack(state, x, y, constrained_to);
+  attacker_count += SearchForKingAttack(state, x, y);
   return attacker_count;
 }
 
-std::vector<State> Game::GenPawnMoves(State state, unsigned x, unsigned y) {
-signed width{this->GetOption("board_width")};
-signed height{this->GetOption("board_height")};
+void Game::GenerateMoveFromBB(State* state, unsigned x,
+unsigned y, std::vector<State>* moves, unsigned bb_offset, unsigned inv_bb,
+bool lower, bool rook, const BoardPlane& constrained_to,
+const BoardPlane& pinned) {
+  signed width = GetOption("board_width");
+  signed height = GetOption("board_height");
 
-  Board board_before{state.GetBoard()};
+  Board& current_board = state->GetBoard();
+  Player current_player = state->GetPlayer();
+  Player enemy = state->GetPlayer() == Player::kWhite
+      ? Player::kBlack
+      : Player::kWhite;
 
-  std::vector<State> moves{};  // Return value
+  unsigned arr_pos = y * width + x;
 
-  int direction = state.GetPlayer() == Player::kWhite ? 1 : -1;
+  BoardPlane possible_moves{width, height};
+  bool can_attack = false;
+  BoardPlane player_figures = current_board.GetPlayerPlane(current_player);
+  BoardPlane enemy_figures = current_board.GetPlayerPlane(enemy);
+  BoardPlane move_bb =
+    magic_bit_planes_[arr_pos * bb_per_pos + bb_offset];
 
-  BoardPlane figure_plane = board_before.GetCompletePlane();
+  if (!constrained_to.empty())
+    move_bb &= constrained_to;
 
-  signed tmp_dobule_push_pawn_x = state.GetDPushPawnX();
-  signed tmp_dobule_push_pawn_y = state.GetDPushPawnY();
-  state.SetDPushPawnX(-1);
-  state.SetDPushPawnY(-1);
+  if (pinned.get(x, y))
+    move_bb &= pinned;
+
+  signed first_enemy_in_path = lower
+    ? (move_bb & enemy_figures).msb()
+    : (move_bb & enemy_figures).find_first();
+
+  BoardPlane allies_in_path = move_bb & player_figures;
+  signed first_ally_in_path = lower ?
+    allies_in_path.msb() : allies_in_path.find_first();
+
+
+  if (first_ally_in_path < 0) {
+    // no ally on path
+    if (first_enemy_in_path < 0) {
+      // no enemy on path
+      possible_moves |= move_bb;
+    } else {
+      // enemy on path
+      possible_moves |=
+        move_bb & magic_bit_planes_[first_enemy_in_path * bb_per_pos + inv_bb];
+      can_attack = true;
+    }
+  } else {
+    // ally on path
+    if (first_enemy_in_path < 0) {
+      // no enemy on path
+      possible_moves |=
+        move_bb & magic_bit_planes_[first_ally_in_path * bb_per_pos + inv_bb];
+    } else {
+      if (lower ? first_ally_in_path > first_enemy_in_path
+      : first_ally_in_path < first_enemy_in_path) {
+        // ally comes first
+        possible_moves |=
+          move_bb & magic_bit_planes_[first_ally_in_path * bb_per_pos + inv_bb];
+      } else {
+        possible_moves |= move_bb
+          & magic_bit_planes_[first_enemy_in_path * bb_per_pos + inv_bb];
+        can_attack = true;
+      }
+    }
+  }
+
+  signed viable_move = possible_moves.find_first();
+
+  while (viable_move >= 0) {
+    moves->push_back(*state);
+    moves->back().GetBoard().MoveField(x, y, viable_move % width,
+      viable_move / width);
+    moves->back().SetDPushPawnX(-1);
+    if (rook) {
+      if (x == 0)
+        moves->back().SetCastleQueen(current_player);
+      else if (x == width - 1)
+        moves->back().SetCastleKing(current_player);
+    }
+    viable_move = possible_moves.next(viable_move);
+  }
+
+  if (can_attack) {
+    moves->push_back(*state);
+    moves->back().GetBoard().MoveField(x, y, first_enemy_in_path % width,
+      first_enemy_in_path / width);
+    moves->back().SetDPushPawnX(-1);
+    if (rook) {
+      if (x == 0)
+        moves->back().SetCastleQueen(current_player);
+      else if (x == width - 1)
+        moves->back().SetCastleKing(current_player);
+    }
+    state->ResetNoProgressCount();
+  }
+}
+
+void Game::GenPawnMoves(State* state, unsigned x, unsigned y,
+std::vector<State>* moves, const BoardPlane& constrained_to,
+const BoardPlane& pinned, bool double_push = true) {
+  signed width{this->GetOption("board_width")};
+  signed height{this->GetOption("board_height")};
+
+  Board& current_board = state->GetBoard();
+  auto opponent = state->GetPlayer() == Player::kWhite
+                  ? Player::kBlack : Player::kWhite;
+
+  int direction = state->GetPlayer() == Player::kWhite ? 1 : -1;
+
+  BoardPlane figure_plane = current_board.GetCompletePlane();
+  BoardPlane enemy_figures = current_board.GetPlayerPlane(
+    static_cast<unsigned>(opponent));
+  BoardPlane moveable_fields{width, height};
+
+  signed tmp_dobule_push_pawn_x = state->GetDPushPawnX();
+  state->SetDPushPawnX(-1);
 
   // Generate pushes
   if (!figure_plane.get(x, y + direction)) {
-    if (y + direction == height - 1 || y + direction == 0) {
-      // Generate promotions
-      for (auto figure : Game::figures) {
-        if ((figure == Figure::kPawn) || figure == Figure::kKing) continue;
-
-        moves.push_back(state);
-        moves.back().GetBoard().SetField(x, y + direction,
-                                         make_piece(figure, state.GetPlayer()));
-      }
-    } else {
-      // Move forward once
-      moves.push_back(state);
-      moves.back().GetBoard().MoveField(x, y, x, y + direction);
-
-      // Move forward twice
-      if (y == (state.GetPlayer() == Player::kWhite ? 1 : height - 2)
-          && !figure_plane.get(x, y + 2 * direction)) {
-        moves.push_back(state);
-        moves.back().GetBoard().MoveField(x, y, x, y + direction * 2);
-        moves.back().SetDPushPawnX(static_cast<signed>(x));
-        moves.back().SetDPushPawnY(static_cast<signed>(y + direction));
-      }
+    if (constrained_to.empty() || constrained_to.get(x, y + direction) &&
+    (!pinned.get(x, y) || pinned.get(x, y + direction))) {
+      // Generate single push
+        moveable_fields.set(x, y + direction);
+    }
+    if (y + 2 * direction >= 0 && y + 2 * direction < height
+    && (y == 1 || y == height - 2)
+    && !figure_plane.get(x, y + 2 * direction)
+    // King is attacked by one piece and attack can be blocked
+    && (constrained_to.empty() || constrained_to.get(x, y + 2 * direction))
+    // Piece is pinned
+    && (!pinned.get(x, y) || pinned.get(x, y + 2 * direction))) {
+      // Generate double push
+      moveable_fields.set(x, y + 2 * direction);
     }
   }
 
   // Generate captures
-  auto opponent = state.GetPlayer() == Player::kWhite
-                  ? Player::kBlack : Player::kWhite;
-  BoardPlane enemy_figures = board_before.GetPlayerPlane(
-                               static_cast<unsigned>(opponent));
-
   if (x + 1 < width && enemy_figures.get(x + 1, y + direction)) {
-    if (y + direction == height - 1 || y + direction == 0) {
-      // Generate promotions
-      for (auto figure : Game::figures) {
-        if ((figure == Figure::kPawn) || figure == Figure::kKing) continue;
-        moves.push_back(state);
-        moves.back().GetBoard().ClearField(x + 1, y + direction);
-        moves.back().GetBoard().SetField(x + 1, y + direction,
-                                         make_piece(figure, state.GetPlayer()));
-      }
-    } else {
-      moves.push_back(state);
-      moves.back().GetBoard().MoveField(x, y, x + 1, y + direction);
+    // enemy on the right side is in capture range
+    if (constrained_to.empty() || constrained_to.get(x + 1, y + direction) &&
+    (!pinned.get(x, y) || pinned.get(x + 1, y + direction))) {
+        // enemy is capturable without endangering own king
+        moveable_fields.set(x + 1, y + direction);
     }
   }
 
-  if (x >= 1 && enemy_figures.get(x - 1, y + direction)) {
-    if (y + direction == height - 1 || y + direction == 0) {
-      // Generate promotions
-      for (auto figure : Game::figures) {
-        if ((figure == Figure::kPawn) || figure == Figure::kKing) continue;
-        moves.push_back(state);
-        moves.back().GetBoard().ClearField(x - 1, y + direction);
-        moves.back().GetBoard().SetField(x - 1, y + direction,
-                                         make_piece(figure, state.GetPlayer()));
-      }
-    } else {
-      moves.push_back(state);
-      moves.back().GetBoard().MoveField(x, y, x - 1, y + direction);
+  if (x - 1 < width && enemy_figures.get(x - 1, y + direction)) {
+    // enemy on the right side is in capture range
+    if (constrained_to.empty() || constrained_to.get(x - 1, y + direction) &&
+    (!pinned.get(x, y) || pinned.get(x - 1, y + direction))) {
+        // enemy is capturable without endangering own king
+        moveable_fields.set(x - 1, y + direction);
     }
   }
 
   // en passant
-  if (static_cast<unsigned>(tmp_dobule_push_pawn_y) == y + direction) {
+  if ((opponent == Player::kWhite ? 3 : height - 3) == y) {
     if (static_cast<unsigned>(tmp_dobule_push_pawn_x) == x - 1) {
-      State new_state = State{state};
+      // enpassant on left side
+      State new_state = State{*state};
       new_state.GetBoard().MoveField(x, y, x - 1, y + direction);
       new_state.GetBoard().ClearField(x - 1, y);
-      moves.push_back(new_state);
+      new_state.ResetNoProgressCount();
+
+      // For enpassant the move is checked for legality manually
+      if (!KingInCheck(&new_state, state->GetPlayer()))
+        moves->push_back(new_state);
     } else if (static_cast<unsigned>(tmp_dobule_push_pawn_x) == x + 1) {
-      State new_state = State{state};
+      // enpassant on right side
+      State new_state = State{*state};
       new_state.GetBoard().MoveField(x, y, x + 1, y + direction);
       new_state.GetBoard().ClearField(x + 1, y);
-      moves.push_back(new_state);
+      new_state.ResetNoProgressCount();
+
+      // For enpassant the move is checked for legality manually
+      if (!KingInCheck(&new_state, state->GetPlayer()))
+        moves->push_back(new_state);
     }
   }
 
-  // ANy pawn move resets no progress counter
-  std::for_each(
-    moves.begin(),
-    moves.end(),
-  [&](State & s) { s.ResetNoProgressCount(); s.GetBoard().ClearField(x, y); });
+  signed movable_field = moveable_fields.find_first();
+  while (movable_field >= 0) {
+    moves->push_back(*state);
+    if (movable_field / width == y + 2 * direction) {
+      // Double push
+      moves->back().SetDPushPawnX(x);
+      moves->back().GetBoard().MoveField(x, y, movable_field % width,
+        movable_field / width);
+    } else if (movable_field / width == height - 1
+    || movable_field / width == 0) {
+      // Promotion
+      for (Figure figure : Game::figures) {
+        if (figure == Figure::kKing || figure == Figure::kPawn) continue;
+        moves->back().GetBoard().SetField(movable_field % width,
+          movable_field / width, make_piece(figure, state->GetPlayer()));
+          moves->back().GetBoard().ClearField(x, y);
+        moves->back().ResetNoProgressCount();
+        moves->push_back(*state);
+      }
+      moves->pop_back();
+    } else {
+      moves->back().GetBoard().MoveField(x, y, movable_field % width,
+        movable_field / width);
+    }
+    moves->back().ResetNoProgressCount();
+    movable_field = moveable_fields.next(movable_field);
+  }
 
-  state.SetDPushPawnX(tmp_dobule_push_pawn_x);
-  state.SetDPushPawnY(tmp_dobule_push_pawn_y);
-
-  return moves;
+  state->SetDPushPawnX(tmp_dobule_push_pawn_x);
 }
 
-std::vector<State> Game::GenRookMoves(State state, unsigned x, unsigned y) {
-  return aithena::chess::GenDirectionalMoves(state, x,
-         y, {up, down, left, right}, 8);
+void Game::GenRookMoves(State* state, unsigned x, unsigned y,
+std::vector<State>* moves, const BoardPlane& constrained_to,
+const BoardPlane& pinned) {
+  // Generate moves in direction right
+  GenerateMoveFromBB(state, x, y, moves, 0, 2, false,
+    true, constrained_to, pinned);
+
+  // Generate moves in direction up
+  GenerateMoveFromBB(state, x, y, moves, 1, 3, false,
+    true, constrained_to, pinned);
+
+  // Generate moves in direction left
+  GenerateMoveFromBB(state, x, y, moves, 2, 0, true,
+    true, constrained_to, pinned);
+
+  // Generate moves in direction down
+  GenerateMoveFromBB(state, x, y, moves, 3, 1, true,
+    true, constrained_to, pinned);
 }
 
-std::vector<State> Game::GenBishopMoves(State state, unsigned x, unsigned y) {
-  return aithena::chess::GenDirectionalMoves(state, x, y,
-  {up + left, up + right, down + left, down + right}, 8);
+void Game::GenBishopMoves(State* state, unsigned x, unsigned y,
+std::vector<State>* moves, const BoardPlane& constrained_to,
+const BoardPlane& pinned) {
+  // Generate moves in direction upleft
+  GenerateMoveFromBB(state, x, y, moves, 4, 6, false,
+    false, constrained_to, pinned);
+
+  // Generate moves in direction upright
+  GenerateMoveFromBB(state, x, y, moves, 5, 7, false,
+    false, constrained_to, pinned);
+
+  // Generate moves in direction downright
+  GenerateMoveFromBB(state, x, y, moves, 6, 4, true,
+    false, constrained_to, pinned);
+
+  // Generate moves in direction downleft
+  GenerateMoveFromBB(state, x, y, moves, 7, 5, true,
+    false, constrained_to, pinned);
 }
 
-std::vector<State> Game::GenKingMoves(State *state, unsigned x, unsigned y) {
+void Game::GenKingMoves(State *state, unsigned x, unsigned y,
+std::vector<State>* moves, const BoardPlane& attacked_fields) {
   signed width = GetOption("board_width");
   signed height = GetOption("board_height");
-  std::vector<State> moves;
-
   Board& current_board = state->GetBoard();
   Player current_player = state->GetPlayer();
   Player enemy = state->GetPlayer() == Player::kWhite
@@ -588,39 +715,112 @@ std::vector<State> Game::GenKingMoves(State *state, unsigned x, unsigned y) {
   unsigned arr_pos = y * width + x;
   BoardPlane& king_bb = magic_bit_planes_[arr_pos * bb_per_pos + 11];
   BoardPlane potential_moves =
-    !(king_bb & current_board.GetPlayerPlane(current_player)) & king_bb;
+    !(king_bb & current_board.GetPlayerPlane(current_player)& attacked_fields)
+      & king_bb;
 
   signed move_pos = potential_moves.find_first();
   while (move_pos >= 0) {
     BoardPlane pinned{width, height};
-    unsigned attackers = GeneratePositionAttackers(
-      move_pos % width, move_pos / width, state, nullptr, &pinned);
+    unsigned attackers = GeneratePositionAttackers(state,
+      move_pos % width, move_pos / width, nullptr, &pinned);
     if (attackers < 1 & !pinned.get(x, y)) {
-      State new_state{*state};
-      new_state.GetBoard().MoveField(x, y, move_pos % width, move_pos / width);
-      new_state.SetDPushPawnX(-1);
-      new_state.SetDPushPawnY(-1);
-      new_state.SetCastleKing(current_player);
-      new_state.SetCastleQueen(current_player);
-      moves.push_back(new_state);
+      moves->push_back(*state);
+      moves->back().GetBoard().MoveField(
+        x, y, move_pos % width, move_pos / width);
+      moves->back().SetDPushPawnX(-1);
+      moves->back().SetCastleKing(current_player);
+      moves->back().SetCastleQueen(current_player);
     }
     move_pos = potential_moves.next(move_pos);
   }
-  return moves;
 }
 
-std::vector<State> Game::GenQueenMoves(State state, unsigned x, unsigned y) {
-  return aithena::chess::GenDirectionalMoves(state, x, y,
-  {up + left, up + right, down + left, down + right, up, down, left, right}, 8);
+void Game::GenQueenMoves(State* state, unsigned x, unsigned y,
+std::vector<State>* moves, const BoardPlane& constrained_to,
+const BoardPlane& pinned) {
+  // Generate moves in direction right
+  GenerateMoveFromBB(state, x, y, moves, 0, 2, false,
+    false, constrained_to, pinned);
+
+  // Generate moves in direction up
+  GenerateMoveFromBB(state, x, y, moves, 1, 3, false,
+    false, constrained_to, pinned);
+
+  // Generate moves in direction left
+  GenerateMoveFromBB(state, x, y, moves, 2, 0, true,
+    false, constrained_to, pinned);
+
+  // Generate moves in direction down
+  GenerateMoveFromBB(state, x, y, moves, 3, 1, true,
+    false, constrained_to, pinned);
+
+  // Generate moves in direction upleft
+  GenerateMoveFromBB(state, x, y, moves, 4, 6, false,
+    false, constrained_to, pinned);
+
+  // Generate moves in direction upright
+  GenerateMoveFromBB(state, x, y, moves, 5, 7, false,
+    false, constrained_to, pinned);
+
+  // Generate moves in direction downright
+  GenerateMoveFromBB(state, x, y, moves, 6, 4, true,
+    false, constrained_to, pinned);
+
+  // Generate moves in direction downleft
+  GenerateMoveFromBB(state, x, y, moves, 7, 5, true,
+    false, constrained_to, pinned);
 }
 
-std::vector<State> Game::GenKnightMoves(State state, unsigned x, unsigned y) {
-  return aithena::chess::GenDirectionalMoves(state, x, y, {
-    up + up + left, up + up + right,
-    down + down + left, down + down + right,
-    up + left + left, up + right + right,
-    down + left + left, down + right + right
-  }, 1);
+void Game::GenKnightMoves(State* state, unsigned x, unsigned y,
+std::vector<State>* moves, const BoardPlane& constrained_to,
+const BoardPlane& pinned) {
+  GenerateMoveFromBB(state, x, y, moves, 8, 8, true, false, constrained_to,
+    pinned);
+}
+
+void Game::GenCastling(State* state, std::vector<State>* moves) {
+  signed width = GetOption("board_width");
+  signed height = GetOption("board_height");
+  if (width < 8 || height < 8 || KingInCheck(state, state->GetPlayer()))
+    return;
+  Board& current_board = state->GetBoard();
+  Player current_player = state->GetPlayer();
+  unsigned c_height = state->GetPlayer() == Player::kWhite
+    ? 0 : 7;
+
+  if (state->GetCastleKing(state->GetPlayer())) {
+    // King side castling
+    if (!(state->GetBoard().GetCompletePlane().get(5, c_height))
+    && !(state->GetBoard().GetCompletePlane().get(6, c_height))) {
+      unsigned attacks = 0;
+      attacks += GeneratePositionAttackers(state, 5, c_height, nullptr);
+      attacks += GeneratePositionAttackers(state, 6, c_height, nullptr);
+      if (attacks < 1) {
+        moves->push_back(*state);
+        moves->back().GetBoard().MoveField(4, c_height, 6, c_height);
+        moves->back().GetBoard().MoveField(7, c_height, 5, c_height);
+        moves->back().SetCastleKing(state->GetPlayer());
+        moves->back().SetCastleQueen(state->GetPlayer());
+      }
+    }
+  }
+  if (state->GetCastleQueen(state->GetPlayer())) {
+    // King side castling
+    if (!(state->GetBoard().GetCompletePlane().get(1, c_height))
+    && !(state->GetBoard().GetCompletePlane().get(2, c_height))
+    && !(state->GetBoard().GetCompletePlane().get(3, c_height))) {
+      unsigned attacks = 0;
+      attacks += GeneratePositionAttackers(state, 2, c_height, nullptr);
+      attacks += GeneratePositionAttackers(state, 3, c_height, nullptr);
+      if (attacks < 1) {
+        moves->push_back(*state);
+        moves->back().GetBoard().MoveField(4, c_height, 2, c_height);
+        moves->back().GetBoard().MoveField(0, c_height, 3, c_height);
+        moves->back().SetCastleKing(state->GetPlayer());
+        moves->back().SetCastleQueen(state->GetPlayer());
+      }
+    }
+  }
 }
 
 std::vector<State> Game::GenMoves(State *state, bool pseudo) {
@@ -628,6 +828,8 @@ std::vector<State> Game::GenMoves(State *state, bool pseudo) {
   signed width = GetOption("board_width");
   signed height = GetOption("board_height");
   std::vector<State> moves;
+  // Maximal move count per player
+  moves.reserve(124);
 
   Board current_board = state->GetBoard();
   Player current_player = state->GetPlayer();
@@ -638,51 +840,160 @@ std::vector<State> Game::GenMoves(State *state, bool pseudo) {
   BoardPlane constrained{width, height};
   BoardPlane pinned{width, height};
 
-  unsigned king_pos = state->GetBoard().GetPlayerFigurePlane(
+  signed king_pos = state->GetBoard().GetPlayerFigurePlane(
     current_player, Figure::kKing).find_first();
 
-  unsigned attackers = GeneratePositionAttackers(
-    king_pos % width, king_pos / width, state, &constrained, &pinned);
+  // Detect check and pinned pieces
+  unsigned attackers = king_pos >= 0 ? GeneratePositionAttackers(state,
+    king_pos % width, king_pos / width, &constrained, &pinned) : 0;
 
-  return {};
+  // Generate King moves
+  if (king_pos >= 0)
+    GenKingMoves(state, king_pos % width, king_pos / width, &moves,
+      constrained);
+
+  if (attackers > 1) {
+    std::for_each(
+      moves.begin(),
+      moves.end(),
+    [state, enemy](State & s) {
+      s.IncMoveCount();
+      s.SetPlayer(enemy);
+      s.SetDPushPawnX(-1);
+      if (s.GetBoard().GetFigureCount() < state->GetBoard().GetFigureCount())
+        s.ResetNoProgressCount();
+    });
+    return moves;
+  }
+
+  // Generate Queen moves
+  signed queen_pos = state->GetBoard().GetPlayerFigurePlane(current_player,
+    Figure::kQueen).find_first();
+
+  if (queen_pos >= 0)
+    GenQueenMoves(state, queen_pos % width, queen_pos / width, &moves,
+      constrained, pinned);
+
+  signed next_pos = -1;
+
+  // Generate Rook moves
+  BoardPlane rook_plane =
+    state->GetBoard().GetPlayerFigurePlane(current_player, Figure::kRook);
+
+  next_pos = rook_plane.find_first();
+  while (next_pos >= 0) {
+    GenRookMoves(state, next_pos % width, next_pos / width, &moves, constrained,
+      pinned);
+    next_pos = rook_plane.next(next_pos);
+  }
+
+  // Generate Bishop moves
+  BoardPlane bishop =
+    state->GetBoard().GetPlayerFigurePlane(current_player, Figure::kBishop);
+
+  next_pos = bishop.find_first();
+  while (next_pos >= 0) {
+    GenBishopMoves(state, next_pos % width, next_pos / width, &moves,
+      constrained, pinned);
+    next_pos = bishop.next(next_pos);
+  }
+
+  // Generate Knight moves
+  BoardPlane knight =
+    state->GetBoard().GetPlayerFigurePlane(current_player, Figure::kKnight);
+
+  next_pos = knight.find_first();
+  while (next_pos >= 0) {
+    GenKnightMoves(state, next_pos % width, next_pos / width, &moves,
+      constrained, pinned);
+    next_pos = knight.next(next_pos);
+  }
+
+  // Generate Castling
+  GenCastling(state, &moves);
+
+  std::for_each(
+    moves.begin(),
+    moves.end(),
+  [state](State & s) {
+    s.SetDPushPawnX(-1);
+    if (s.GetBoard().GetFigureCount() < state->GetBoard().GetFigureCount())
+      s.ResetNoProgressCount();
+  });
+
+  // Generate Pawn moves
+  BoardPlane pawn =
+    state->GetBoard().GetPlayerFigurePlane(current_player, Figure::kPawn);
+
+  next_pos = pawn.find_first();
+  while (next_pos >= 0) {
+    GenPawnMoves(state, next_pos % width, next_pos / width, &moves,
+      constrained, pinned);
+    next_pos = pawn.next(next_pos);
+  }
+
+  std::for_each(
+    moves.begin(),
+    moves.end(),
+  [&enemy](State & s) {
+    s.IncMoveCount();
+    s.SetPlayer(enemy);
+  });
+  return moves;
 }
 
-std::vector<State> Game::GenMoves(State state, unsigned x, unsigned y,
-                                  bool pseudo) {
-  Piece piece = state.GetBoard().GetField(x, y);
+std::vector<State> Game::GenMoves(State* state, unsigned x, unsigned y,
+bool pseudo) {
+  unsigned width = GetOption("board_width");
+  unsigned height = GetOption("board_height");
+  Piece piece = state->GetBoard().GetField(x, y);
   std::vector<State> moves;
+  moves.reserve(14);
 
+  BoardPlane constraint = pseudo
+    ? BoardPlane{1, 1}
+    : BoardPlane{width, height};
+
+  BoardPlane pinned = pseudo
+    ? BoardPlane{1, 1}
+    : BoardPlane{width, height};
   // Make checks
 
-  if (piece.player != static_cast<unsigned>(state.GetPlayer())
+  if (!pseudo) {
+    unsigned king_pos = state->GetBoard().GetPlayerFigurePlane(
+        state->GetPlayer(), Figure::kKing).find_first();
+    GeneratePositionAttackers(state, king_pos % width, king_pos / width,
+      &constraint, &pinned);
+  }
+
+  if (piece.player != state->GetPlayer()
       || piece == kEmptyPiece)
     return moves;
 
   // Generate pseudo-moves
 
-  state.IncNoProgressCount();
+  state->IncNoProgressCount();
 
   switch (piece.figure) {
-  case static_cast<unsigned>(Figure::kPawn):
-    moves = GenPawnMoves(state, x, y);
+  case Figure::kPawn:
+    GenPawnMoves(state, x, y, &moves, constraint, pinned);
     break;
-  case static_cast<unsigned>(Figure::kRook):
-    moves = GenRookMoves(state, x, y);
+  case Figure::kRook:
+    GenRookMoves(state, x, y, &moves, constraint, pinned);
     break;
-  case static_cast<unsigned>(Figure::kBishop):
-    moves = GenBishopMoves(state, x, y);
+  case Figure::kBishop:
+    GenBishopMoves(state, x, y, &moves, constraint, pinned);
     break;
-  case static_cast<unsigned>(Figure::kQueen):
-    moves = GenQueenMoves(state, x, y);
+  case Figure::kQueen:
+    GenQueenMoves(state, x, y, &moves, constraint, pinned);
     break;
-  case static_cast<unsigned>(Figure::kKnight):
-    moves = GenKnightMoves(state, x, y);
+  case Figure::kKnight:
+    GenKnightMoves(state, x, y, &moves, constraint, pinned);
     break;
-  case static_cast<unsigned>(Figure::kKing):
-    moves = GenKingMoves(&state, x, y);
+  case Figure::kKing:
+    GenKingMoves(state, x, y, &moves, constraint);
     break;
   case kEmptyPiece.figure:
-    break;
   default:
     assert(false);
   }
@@ -696,26 +1007,10 @@ std::vector<State> Game::GenMoves(State state, unsigned x, unsigned y,
   std::for_each(
     moves.begin(),
     moves.end(),
-  [&next_player, &state](State & s) {
+  [&next_player](State & s) {
     s.IncMoveCount();
     s.SetPlayer(next_player);
-
-    // Any capture resets no progress counter
-    if (s.GetBoard().GetFigureCount() < state.GetBoard().GetFigureCount())
-      s.ResetNoProgressCount();
   });
-
-  if (pseudo) return moves;
-
-  // Remove moves with king checked
-
-  auto move = std::begin(moves);
-  while (move != std::end(moves)) {
-    if (KingInCheck(*move, state.GetPlayer()))
-      move = moves.erase(move);
-    else
-      ++move;
-  }
 
   return moves;
 }

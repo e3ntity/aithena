@@ -54,20 +54,20 @@ class Game : public ::aithena::Game<State> {
 
   State GetInitialState() override;
   std::vector<State> GetLegalActions(State) override;
-  unsigned GeneratePositionAttackers(unsigned x, unsigned y,
-    State* state, BoardPlane* constrained_to, BoardPlane* pinned);
+  unsigned GeneratePositionAttackers(State* state, unsigned x, unsigned y,
+    BoardPlane* constrained_to, BoardPlane* pinned);
 
-  bool SearchForLineAttack(unsigned x, unsigned y, State* state,
+  bool SearchForLineAttack(State* state, unsigned x, unsigned y,
     BoardPlane* filtered_enemies, unsigned bb_offset, unsigned inv_bb,
     bool lower, BoardPlane* constrained_to, BoardPlane* pinned);
 
-  unsigned SearchForKnightAttack(unsigned x, unsigned y, State* state,
+  unsigned SearchForKnightAttack(State* state, unsigned x, unsigned y,
     BoardPlane* constrained_to);
 
-  unsigned SearchForPawnAttack(unsigned x, unsigned y, State* state,
+  unsigned SearchForPawnAttack(State* state, unsigned x, unsigned y,
     BoardPlane* constrained_to);
 
-  bool SearchForKingAttack(unsigned x, unsigned y, State* state);
+  bool SearchForKingAttack(State* state, unsigned x, unsigned y);
 
   bool IsTerminalState(State&) override;
   int GetStateResult(State&) override;
@@ -78,44 +78,60 @@ class Game : public ::aithena::Game<State> {
 
   // Generates all next moves for any piece at field (x, y) for a given state.
   // The pseudo parameter indicates whether to only generate pseudo moves.
-  std::vector<State> GenMoves(State, unsigned x, unsigned y,
+  std::vector<State> GenMoves(State*, unsigned x, unsigned y,
                               bool pseudo = false);
+
+  void GenerateMoveFromBB(State*, unsigned, unsigned, std::vector<State>*,
+    unsigned, unsigned, bool, bool, const BoardPlane&, const BoardPlane&);
 
   // Generates the next moves for a single pawn at field (x, y) for a given
   // state.
   // * Assumes that there is a pawn of the player who's turn it is at
   // field (x, y).
   // * Does not switch the player turn.
-  std::vector<State> GenPawnMoves(State, unsigned x, unsigned y);
+  void GenPawnMoves(State* state, unsigned x, unsigned y,
+    std::vector<State>* moves, const BoardPlane& constrained_to,
+    const BoardPlane& pinned, bool double_push);
 
   // Generates the next moves for a single rook at field (x, y) for a given
   // state.
   // * Assumes that there is a pawn of the player who's turn it is at
   // field (x, y).
   // * Does not switch the player turn.
-  std::vector<State> GenRookMoves(State state, unsigned x, unsigned y);
+  void GenRookMoves(State* state, unsigned x, unsigned y,
+    std::vector<State>* moves, const BoardPlane& constrained_to,
+    const BoardPlane& pinned);
 
   // Generates the next moves for a single bishop at field (x, y) for a given
   // state.
   // * Assumes that there is a rook of the player who's turn it is at
   // field (x, y).
   // * Does not switch the player turn.
-  std::vector<State> GenBishopMoves(State state, unsigned x, unsigned y);
+  void GenBishopMoves(State* state, unsigned x, unsigned y,
+    std::vector<State>* moves, const BoardPlane& constrained_to,
+    const BoardPlane& pinned);
 
   // Generates the next moves for a single knight at field (x, y) for a given
   // state.
   // * Assumes that there is a knight of the player who's turn it is at
   // field (x, y).
   // * Does not switch the player turn.
-  std::vector<State> GenKnightMoves(State state, unsigned x, unsigned y);
+  void GenKnightMoves(State* state, unsigned x, unsigned y,
+    std::vector<State>* moves, const BoardPlane& constrained_to,
+    const BoardPlane& pinned);
 
   // Generates the next moves for a single queen at field (x, y) for a given
   // state.
-  std::vector<State> GenQueenMoves(State state, unsigned x, unsigned y);
+  void GenQueenMoves(State* state, unsigned x, unsigned y,
+    std::vector<State>* moves, const BoardPlane& constrained_to,
+    const BoardPlane& pinned);
 
   // Generates the next moves for a single king at field (x, y) for a given
   // state.
-  std::vector<State> GenKingMoves(State *state, unsigned x, unsigned y);
+  void GenKingMoves(State *state, unsigned x, unsigned y,
+    std::vector<State>* moves, const BoardPlane& attacked_fields);
+
+  void GenCastling(State* state, std::vector<State>* moves);
 
   // An array of all figures.
   static const std::array<Figure, 6> figures;
@@ -125,12 +141,10 @@ class Game : public ::aithena::Game<State> {
 
  private:
   // Returns whether the player's king is in check.
-  bool KingInCheck(State state, Player player);
+  bool KingInCheck(State* state, Player player);
 
   // Stores the magic bit boards computed by InitializeMagic.
   std::vector<BoardPlane> magic_bit_planes_;
-
-  std::vector<BoardPlane> king_move_patterns;
 
   // For faster access to GetOption("max_no_progress")
   unsigned int max_no_progress_;
