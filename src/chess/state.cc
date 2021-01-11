@@ -19,8 +19,7 @@ State::State(
     castle_king_{true, true},
     move_count_{0},
     no_progress_count_{0},
-    double_push_pawn_x{ -1},
-    double_push_pawn_y{ -1} {}
+    double_push_pawn_x{ -1} {}
 
 State::State(const State& other)
   : ::aithena::State(other),
@@ -29,8 +28,7 @@ State::State(const State& other)
     castle_king_{other.castle_king_},
     move_count_{other.move_count_},
     no_progress_count_{other.no_progress_count_},
-    double_push_pawn_x{other.double_push_pawn_x},
-    double_push_pawn_y{other.double_push_pawn_y} {}
+    double_push_pawn_x{other.double_push_pawn_x} {}
 
 State& State::operator=(const State& other) {
   if (this == &other) return *this;
@@ -43,7 +41,6 @@ State& State::operator=(const State& other) {
   move_count_ = other.move_count_;
   no_progress_count_ = other.no_progress_count_;
   double_push_pawn_x = other.double_push_pawn_x;
-  double_push_pawn_y = other.double_push_pawn_y;
 
   return *this;
 }
@@ -53,8 +50,7 @@ bool State::operator==(const State& other) {
          && player_ == other.player_
          && castle_queen_ == other.castle_queen_
          && castle_king_ == other.castle_king_
-         && double_push_pawn_x == other.double_push_pawn_x
-         && double_push_pawn_y == other.double_push_pawn_y;
+         && double_push_pawn_x == other.double_push_pawn_x;
 }
 
 bool State::operator!=(const State& other) {
@@ -87,11 +83,7 @@ void State::ResetNoProgressCount() { no_progress_count_ = 0; }
 
 unsigned State::GetDPushPawnX() { return double_push_pawn_x; }
 
-unsigned State::GetDPushPawnY() { return double_push_pawn_y; }
-
 void State::SetDPushPawnX(unsigned x) { double_push_pawn_x = x; }
-
-void State::SetDPushPawnY(unsigned y) { double_push_pawn_y = y; }
 
 }  // namespace chess
 }  // namespace aithena

@@ -41,9 +41,7 @@ class State : public ::aithena::State {
   void ResetNoProgressCount();
 
   unsigned GetDPushPawnX();
-  unsigned GetDPushPawnY();
   void SetDPushPawnX(unsigned);
-  void SetDPushPawnY(unsigned);
 
  private:
   // Indicates the player that has to make the next move.
@@ -58,7 +56,6 @@ class State : public ::aithena::State {
   // captured) up util this state.
   unsigned int no_progress_count_;
   signed double_push_pawn_x;
-  signed double_push_pawn_y;
 };
 
 }  // namespace chess
