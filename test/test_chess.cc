@@ -100,7 +100,7 @@ std::string PrintBoard(State state) {
  */
 State GenMoveManually(State fromState,
     unsigned x_start, unsigned y_start, unsigned x_dest, unsigned y_dest,
-    bool reset_no_progress = true) {
+    bool cq = false, bool ck = false, bool reset_no_progress = true) {
 
   State newState{fromState};
   newState.GetBoard().MoveField(x_start, y_start, x_dest, y_dest);
@@ -112,15 +112,18 @@ State GenMoveManually(State fromState,
       ? Player::kWhite
       : Player::kBlack);
   newState.SetDPushPawnX(-1);
-  newState.SetDPushPawnY(-1);
+  if (cq)
+    newState.SetCastleQueen(fromState.GetPlayer());
+  if (ck)
+    newState.SetCastleKing(fromState.GetPlayer());
   return newState;
 }
 
 /**
  * Generates a Capture in manual fashion
  */
-State GenCaptureManually(State fromState,
-    unsigned x_start, unsigned y_start, unsigned x_dest, unsigned y_dest) {
+State GenCaptureManually(State fromState, unsigned x_start, unsigned y_start,
+unsigned x_dest, unsigned y_dest, bool cq = false, bool ck = false) {
 
   State newState{fromState};
   newState.GetBoard().MoveField(x_start, y_start, x_dest, y_dest);
@@ -131,7 +134,10 @@ State GenCaptureManually(State fromState,
       ? Player::kWhite
       : Player::kBlack);
   newState.SetDPushPawnX(-1);
-  newState.SetDPushPawnY(-1);
+  if (cq)
+    newState.SetCastleQueen(fromState.GetPlayer());
+  if (ck)
+    newState.SetCastleKing(fromState.GetPlayer());
   return newState;
 }
 
@@ -176,34 +182,47 @@ TEST(MoveGenerationTest, default_state_moves) {
     board.SetField(3, 3, make_piece(
           Figure::kRook, Player::kBlack));
 
-  auto moves_generated = game.GenMoves(initstate);
+  auto moves_generated = game.GenMoves(&initstate);
   ASSERT_EQ(moves_generated.size(), 13);
+  auto manual = GenMoveManually(initstate, 0, 0, 0, 1, true);
   ASSERT_TRUE(std::find(moves_generated.begin(), moves_generated.end(),
-      GenMoveManually(initstate, 0, 0, 0, 1)) != moves_generated.end());
+    manual) != moves_generated.end());
+  manual = GenMoveManually(initstate, 0, 0, 0, 2, true);
   ASSERT_TRUE(std::find(moves_generated.begin(), moves_generated.end(),
-      GenMoveManually(initstate, 0, 0, 0, 2)) != moves_generated.end());
+    manual) != moves_generated.end());
+  manual = GenCaptureManually(initstate, 0, 0, 0, 3, true);
   ASSERT_TRUE(std::find(moves_generated.begin(), moves_generated.end(),
-      GenCaptureManually(initstate, 0, 0, 0, 3)) != moves_generated.end());
+    manual) != moves_generated.end());
+  manual = GenMoveManually(initstate, 1, 0, 0, 1);
   ASSERT_TRUE(std::find(moves_generated.begin(), moves_generated.end(),
-      GenMoveManually(initstate, 1, 0, 0, 1)) != moves_generated.end());
+    manual) != moves_generated.end());
+  manual = GenMoveManually(initstate, 1, 0, 1, 1);
   ASSERT_TRUE(std::find(moves_generated.begin(), moves_generated.end(),
-      GenMoveManually(initstate, 1, 0, 1, 1)) != moves_generated.end());
+    manual) != moves_generated.end());
+  manual = GenMoveManually(initstate, 1, 0, 1, 2);
   ASSERT_TRUE(std::find(moves_generated.begin(), moves_generated.end(),
-      GenMoveManually(initstate, 1, 0, 1, 2)) != moves_generated.end());
+    manual) != moves_generated.end());
+  manual = GenCaptureManually(initstate, 1, 0, 1, 3);
   ASSERT_TRUE(std::find(moves_generated.begin(), moves_generated.end(),
-      GenCaptureManually(initstate, 1, 0, 1, 3)) != moves_generated.end());
+    manual) != moves_generated.end());
+  manual = GenMoveManually(initstate, 1, 0, 2, 1);
   ASSERT_TRUE(std::find(moves_generated.begin(), moves_generated.end(),
-      GenMoveManually(initstate, 1, 0, 2, 1)) != moves_generated.end());
+    manual) != moves_generated.end());
+  manual = GenMoveManually(initstate, 1, 0, 3, 2);
   ASSERT_TRUE(std::find(moves_generated.begin(), moves_generated.end(),
-      GenMoveManually(initstate, 1, 0, 3, 2)) != moves_generated.end());
+    manual) != moves_generated.end());
+  manual = GenMoveManually(initstate, 2, 0, 2, 1, true, true);
   ASSERT_TRUE(std::find(moves_generated.begin(), moves_generated.end(),
-      GenMoveManually(initstate, 2, 0, 2, 1)) != moves_generated.end());
+    manual) != moves_generated.end());
+  manual = GenMoveManually(initstate, 3, 0, 3, 1, false, true);
   ASSERT_TRUE(std::find(moves_generated.begin(), moves_generated.end(),
-      GenMoveManually(initstate, 3, 0, 3, 1)) != moves_generated.end());
+    manual) != moves_generated.end());
+  manual = GenMoveManually(initstate, 3, 0, 3, 2, false, true);
   ASSERT_TRUE(std::find(moves_generated.begin(), moves_generated.end(),
-      GenMoveManually(initstate, 3, 0, 3, 2)) != moves_generated.end());
+    manual) != moves_generated.end());
+  manual = GenCaptureManually(initstate, 3, 0, 3, 3, false, true);
   ASSERT_TRUE(std::find(moves_generated.begin(), moves_generated.end(),
-      GenCaptureManually(initstate, 3, 0, 3, 3)) != moves_generated.end());
+    manual) != moves_generated.end());
 }
 
 /**
@@ -230,6 +249,10 @@ TEST(MoveGenerationTest, KingInCheckTest1) {
     static_cast<std::size_t>(5),
     static_cast<unsigned>(Figure::kCount)
   };
+  initstate.SetCastleKing(Player::kWhite);
+  initstate.SetCastleQueen(Player::kWhite);
+  initstate.SetCastleKing(Player::kBlack);
+  initstate.SetCastleQueen(Player::kBlack);
 
   aithena::Board& board = initstate.GetBoard();
   board.SetField(2, 4, make_piece(
@@ -239,16 +262,20 @@ TEST(MoveGenerationTest, KingInCheckTest1) {
   board.SetField(1, 2, make_piece(
         Figure::kKnight, Player::kBlack));
 
-  auto moves_generated = game.GenMoves(initstate);
+  auto moves_generated = game.GenMoves(&initstate);
   ASSERT_EQ(moves_generated.size(), 4);
+  auto manual = GenCaptureManually(initstate, 1, 0, 1, 2);
   ASSERT_TRUE(std::find(moves_generated.begin(), moves_generated.end(),
-      GenCaptureManually(initstate, 1, 0, 1, 2)) != moves_generated.end());
+      manual) != moves_generated.end());
+  manual = GenMoveManually(initstate, 2, 4, 1, 4);
   ASSERT_TRUE(std::find(moves_generated.begin(), moves_generated.end(),
-      GenMoveManually(initstate, 2, 4, 1, 4)) != moves_generated.end());
+      manual) != moves_generated.end());
+  manual = GenMoveManually(initstate, 2, 4, 1, 3);
   ASSERT_TRUE(std::find(moves_generated.begin(), moves_generated.end(),
-      GenMoveManually(initstate, 2, 4, 1, 3)) != moves_generated.end());
+      manual) != moves_generated.end());
+  manual = GenMoveManually(initstate, 2, 4, 2, 3);
   ASSERT_TRUE(std::find(moves_generated.begin(), moves_generated.end(),
-      GenMoveManually(initstate, 2, 4, 2, 3)) != moves_generated.end());
+      manual) != moves_generated.end());
 }
 
 /**
@@ -272,7 +299,7 @@ TEST(MoveGenerationTest, EnPassantTest1) {
   Game game{options};
   State initstate {
     static_cast<std::size_t>(2),
-    static_cast<std::size_t>(5),
+    static_cast<std::size_t>(6),
     static_cast<unsigned>(Figure::kCount)
   };
 
@@ -282,13 +309,16 @@ TEST(MoveGenerationTest, EnPassantTest1) {
   board.SetField(1, 1, make_piece(
         Figure::kPawn, Player::kWhite));
 
-  auto double_push_state = game.GenMoves(initstate)[1];
-  auto moves_generated = game.GenMoves(double_push_state);
+  auto double_push_state = game.GenMoves(&initstate);
+  auto moves_generated = game.GenMoves(&double_push_state[1]);
+  for (auto move : moves_generated)
+    std::cerr << PrintBoard(move) << "\n";
 
   ASSERT_EQ(moves_generated.size(), 2);
+  auto manual = GenMoveManually(double_push_state[1], 0, 3, 0, 2);
   ASSERT_TRUE(std::find(moves_generated.begin(), moves_generated.end(),
-      GenMoveManually(double_push_state, 0, 3, 0, 2)) != moves_generated.end());
-  auto enpassant = GenMoveManually(double_push_state, 0, 3, 1, 2);
+      manual) != moves_generated.end());
+  auto enpassant = GenMoveManually(double_push_state[1], 0, 3, 1, 2);
   enpassant.GetBoard().ClearField(1, 3);
   ASSERT_TRUE(std::find(moves_generated.begin(), moves_generated.end(),
       enpassant) != moves_generated.end());
@@ -327,7 +357,9 @@ TEST(MoveGenerationTest, CheckMateTest1) {
   board.SetField(2, 2, make_piece(
         Figure::kQueen, Player::kBlack));
 
-  auto moves_generated = game.GenMoves(initstate);
+  auto moves_generated = game.GenMoves(&initstate);
+  for (auto move : moves_generated)
+    std::cerr << PrintBoard(move) << "\n";
   ASSERT_EQ(moves_generated.size(), 0);
 }
 
@@ -368,23 +400,29 @@ TEST(MoveGenerationTest, PinnedPieceTest1) {
   board.SetField(1, 0, make_piece(
         Figure::kRook, Player::kBlack));
 
-  auto moves_generated = game.GenMoves(initstate);
+  auto moves_generated = game.GenMoves(&initstate);
+  for (auto move : moves_generated)
+    std::cerr << PrintBoard(move) << "\n";
   ASSERT_EQ(moves_generated.size(), 4);
+  auto manual = GenMoveManually(initstate, 0, 4, 0, 3);
   ASSERT_TRUE(std::find(moves_generated.begin(), moves_generated.end(),
-      GenMoveManually(initstate, 0, 4, 0, 3)) != moves_generated.end());
+      manual) != moves_generated.end());
+  manual = GenMoveManually(initstate, 0, 4, 0, 2);
   ASSERT_TRUE(std::find(moves_generated.begin(), moves_generated.end(),
-      GenMoveManually(initstate, 0, 4, 0, 2)) != moves_generated.end());
+      manual) != moves_generated.end());
+  manual = GenMoveManually(initstate, 0, 4, 0, 1);
   ASSERT_TRUE(std::find(moves_generated.begin(), moves_generated.end(),
-      GenMoveManually(initstate, 0, 4, 0, 1)) != moves_generated.end());
+      manual) != moves_generated.end());
+  manual = GenCaptureManually(initstate, 0, 4, 0, 0);
   ASSERT_TRUE(std::find(moves_generated.begin(), moves_generated.end(),
-      GenCaptureManually(initstate, 0, 4, 0, 0)) != moves_generated.end());
+      manual) != moves_generated.end());
 }
 
 /**
  * Test for
  *   A B C D E F
  * 1 x - - - - R
- * 2 -  - - - -
+ * 2 - - - - - -
  * 3 - - - k - -
  * 4 - - b - - -
  * 5 - - - - - -
@@ -405,6 +443,10 @@ TEST(MoveGenerationTest, DoubleCheckTest1) {
     static_cast<unsigned>(Figure::kCount)
   };
   initstate.SetPlayer(Player::kBlack);
+  initstate.SetCastleKing(Player::kWhite);
+  initstate.SetCastleQueen(Player::kWhite);
+  initstate.SetCastleKing(Player::kBlack);
+  initstate.SetCastleQueen(Player::kBlack);
 
   aithena::Board& board = initstate.GetBoard();
   board.SetField(0, 5, make_piece(
@@ -420,10 +462,13 @@ TEST(MoveGenerationTest, DoubleCheckTest1) {
   board.SetField(3, 3, make_piece(
         Figure::kKnight, Player::kBlack));
 
-  auto moves_generated = game.GenMoves(initstate);
+  auto moves_generated = game.GenMoves(&initstate);
+  for (auto move : moves_generated)
+    std::cerr << PrintBoard(move) << "\n";
   ASSERT_EQ(moves_generated.size(), 1);
+  auto manual = GenMoveManually(initstate, 0, 5, 1, 4);
   ASSERT_TRUE(std::find(moves_generated.begin(), moves_generated.end(),
-      GenMoveManually(initstate, 0, 5, 1, 4)) != moves_generated.end());
+      manual) != moves_generated.end());
 }
 
 /**
@@ -455,7 +500,9 @@ TEST(MoveGenerationTest, PromotionTest1) {
   board.SetField(2, 1, make_piece(
         Figure::kQueen, Player::kBlack));
 
-  auto moves_generated = game.GenMoves(initstate);
+  auto moves_generated = game.GenMoves(&initstate);
+  for (auto move : moves_generated)
+    std::cerr << PrintBoard(move) << "\n";
   ASSERT_EQ(moves_generated.size(), 12);
   auto promotion_by_push = GenMoveManually(initstate, 1, 0, 1, 1);
   promotion_by_push.GetBoard().ClearField(1, 1);
@@ -600,14 +647,22 @@ TEST(MoveGenerationTest, CastlingTest1) {
   board.SetField(7, 0, make_piece(
         Figure::kRook, Player::kWhite));
 
-  auto moves_generated = game.GenMoves(initstate);
+  auto moves_generated = game.GenMoves(&initstate);
+  for (auto move : moves_generated)
+    std::cerr << PrintBoard(move) << "\n";
   auto castling_king_side =
-      GenMoveManually(GenMoveManually(initstate, 4, 0, 2, 0), 0, 0, 3, 0);
+      GenMoveManually(initstate, 4, 0, 6, 0, true, true);
+  castling_king_side.GetBoard().MoveField(7, 0, 5, 0);
+  std::cerr << PrintBoard(castling_king_side) << "\n";
+  auto res = *std::find(moves_generated.begin(), moves_generated.end(),
+       castling_king_side);
   ASSERT_TRUE(std::find(moves_generated.begin(), moves_generated.end(),
        castling_king_side) != moves_generated.end());
 
   auto castling_queen_side =
-      GenMoveManually(GenMoveManually(initstate, 4, 0, 6, 0), 0, 0, 5, 0);
+      GenMoveManually(initstate, 4, 0, 2, 0, true, true);
+  std::cerr << PrintBoard(castling_queen_side) << "\n";
+  castling_queen_side.GetBoard().MoveField(0, 0, 3, 0);
   ASSERT_TRUE(std::find(moves_generated.begin(), moves_generated.end(),
        castling_queen_side) != moves_generated.end());
 }
@@ -642,16 +697,16 @@ TEST(game, MagicBitBoardsTest) {
   aithena::BoardPlane constrained_to{8, 8};
   aithena::BoardPlane pinned{8, 8};
   unsigned attackers =
-    game.GeneratePositionAttackers(3, 3, &state, &constrained_to, &pinned);    
-  std::cerr << PrintMarkedBoard(state, constrained_to);
-  std::cerr << PrintMarkedBoard(state, pinned);
-  std::cerr << "Attackers: " << attackers << "\n";
+    game.GeneratePositionAttackers(&state, 3, 3, &constrained_to, &pinned);    
+  //std::cerr << PrintMarkedBoard(state, constrained_to);
+  //std::cerr << PrintMarkedBoard(state, pinned);
+  //std::cerr << "Attackers: " << attackers << "\n";
   constrained_to.reset();
   pinned.reset();
   attackers =
-    game.GeneratePositionAttackers(4, 1, &state, &constrained_to, &pinned);
-  std::cerr << PrintMarkedBoard(state, constrained_to);
-  std::cerr << PrintMarkedBoard(state, pinned);
-  std::cerr << "Attackers: " << attackers << "\n";
+    game.GeneratePositionAttackers(&state, 4, 1, &constrained_to, &pinned);
+  //std::cerr << PrintMarkedBoard(state, constrained_to);
+  //std::cerr << PrintMarkedBoard(state, pinned);
+  //std::cerr << "Attackers: " << attackers << "\n";
   ASSERT_TRUE(true);
 }
