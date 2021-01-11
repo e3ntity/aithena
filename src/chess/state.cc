@@ -71,10 +71,10 @@ bool State::GetCastleKing(Player p) {
   return castle_king_[static_cast<unsigned>(p)];
 }
 void State::SetCastleQueen(Player p) {
-  castle_queen_[static_cast<unsigned>(p)] = true;
+  castle_queen_[static_cast<unsigned>(p)] = false;
 }
 void State::SetCastleKing(Player p) {
-  castle_king_[static_cast<unsigned>(p)] = true;
+  castle_king_[static_cast<unsigned>(p)] = false;
 }
 
 unsigned State::GetMoveCount() { return move_count_; }
