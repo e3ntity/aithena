@@ -17,7 +17,7 @@ namespace chess {
 
 // Defines the figures used in chess. GhostPawn is used to keep track of
 // "en-passant".
-enum class Figure : unsigned {
+enum Figure : unsigned {
   kKing, kQueen, kRook,
   kKnight, kBishop, kPawn,
   kCount
