@@ -74,7 +74,7 @@ class Game : public ::aithena::Game<State> {
 
   // Generates all enxt moves for all pieces for a given state.
   // The pseudo parameter indicates whether to only generate pseudo moves.
-  std::vector<State> GenMoves(State, bool pseudo = false);
+  std::vector<State> GenMoves(State*, bool pseudo = false);
 
   // Generates all next moves for any piece at field (x, y) for a given state.
   // The pseudo parameter indicates whether to only generate pseudo moves.
@@ -115,7 +115,7 @@ class Game : public ::aithena::Game<State> {
 
   // Generates the next moves for a single king at field (x, y) for a given
   // state.
-  std::vector<State> GenKingMoves(State state, unsigned x, unsigned y);
+  std::vector<State> GenKingMoves(State *state, unsigned x, unsigned y);
 
   // An array of all figures.
   static const std::array<Figure, 6> figures;
