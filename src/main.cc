@@ -2,12 +2,11 @@
 Copyright 2020 All rights reserved.
 */
 
+#include <boost/algorithm/string.hpp>
 #include <chrono>
 #include <cstdlib>
 #include <iostream>
 #include <string>
-
-#include <boost/algorithm/string.hpp>
 
 #include "chess/game.h"
 #include "mcts/mcts.h"
@@ -34,9 +33,11 @@ void PrintHelp() {
 
 template <typename Game>
 void Benchmark(Game game) {
-  aithena::MCTSNode<aithena::chess::Game> root{game, game.GetInitialState(), nullptr};
+  aithena::MCTSNode<aithena::chess::Game> root{game, game.GetInitialState(),
+                                               nullptr};
   aithena::MCTS<aithena::chess::Game> mcts{game};
-  auto root_ptr = std::make_shared<aithena::MCTSNode<aithena::chess::Game>>(root);
+  auto root_ptr =
+      std::make_shared<aithena::MCTSNode<aithena::chess::Game>>(root);
 
   // Settings
   int sim_runs = 10;
@@ -44,12 +45,14 @@ void Benchmark(Game game) {
   // Take measurements
 
   auto sim_start = std::chrono::high_resolution_clock::now();
-  for (int i = 0; i < sim_runs; i++)
-    mcts.Simulate(root_ptr, mcts.RandomSelect);
+  for (int i = 0; i < sim_runs; i++) mcts.Simulate(root_ptr, mcts.RandomSelect);
   auto sim_end = std::chrono::high_resolution_clock::now();
 
-  auto sim_time = std::chrono::duration_cast<std::chrono::seconds>(sim_end - sim_start).count();
-  auto sim_time_each = static_cast<double>(sim_time) / static_cast<double>(sim_runs);
+  auto sim_time =
+      std::chrono::duration_cast<std::chrono::seconds>(sim_end - sim_start)
+          .count();
+  auto sim_time_each =
+      static_cast<double>(sim_time) / static_cast<double>(sim_runs);
 
   // Collect results
   std::cout << "Simulating took " << sim_time_each << " seconds per run."
@@ -63,8 +66,8 @@ std::string PrintMarkedBoard(aithena::chess::State state,
   std::ostringstream repr;
   aithena::Piece piece;
 
-  std::string turn = state.GetPlayer() == aithena::chess::Player::kWhite
-                     ? "White" : "Black";
+  std::string turn =
+      state.GetPlayer() == aithena::chess::Player::kWhite ? "White" : "Black";
 
   repr << turn << "'s move:";
 
@@ -72,40 +75,38 @@ std::string PrintMarkedBoard(aithena::chess::State state,
     repr << std::endl << y + 1 << " ";
     for (unsigned x = 0; x < board.GetWidth(); ++x) {
       // field color
-      std::string s_color = ((x + y) % 2 == 1)
-                            ? "\033[1;47m"
-                            : "\033[1;45m";
+      std::string s_color = ((x + y) % 2 == 1) ? "\033[1;47m" : "\033[1;45m";
 
       piece = board.GetField(x, y);
 
       // Player indication
-      bool white = piece.player ==
-                   static_cast<unsigned>(aithena::chess::Player::kWhite);
+      bool white =
+          piece.player == static_cast<unsigned>(aithena::chess::Player::kWhite);
       std::string s_piece;
 
       // Figure icon
       switch (piece.figure) {
-      case static_cast<unsigned>(aithena::chess::Figure::kKing):
-        s_piece = white ? "♔" : "♚";
-        break;
-      case static_cast<unsigned>(aithena::chess::Figure::kQueen):
-        s_piece = white ? "♕" : "♛";
-        break;
-      case static_cast<unsigned>(aithena::chess::Figure::kRook):
-        s_piece = white ? "♖" : "♜";
-        break;
-      case static_cast<unsigned>(aithena::chess::Figure::kBishop):
-        s_piece = white ? "♗" : "♝";
-        break;
-      case static_cast<unsigned>(aithena::chess::Figure::kKnight):
-        s_piece = white ? "♘" : "♞";
-        break;
-      case static_cast<unsigned>(aithena::chess::Figure::kPawn):
-        s_piece = white ? "♙" : "♟︎";
-        break;
-      default:
-        s_piece += std::to_string(piece.figure);
-        break;
+        case static_cast<unsigned>(aithena::chess::Figure::kKing):
+          s_piece = white ? "♔" : "♚";
+          break;
+        case static_cast<unsigned>(aithena::chess::Figure::kQueen):
+          s_piece = white ? "♕" : "♛";
+          break;
+        case static_cast<unsigned>(aithena::chess::Figure::kRook):
+          s_piece = white ? "♖" : "♜";
+          break;
+        case static_cast<unsigned>(aithena::chess::Figure::kBishop):
+          s_piece = white ? "♗" : "♝";
+          break;
+        case static_cast<unsigned>(aithena::chess::Figure::kKnight):
+          s_piece = white ? "♘" : "♞";
+          break;
+        case static_cast<unsigned>(aithena::chess::Figure::kPawn):
+          s_piece = white ? "♙" : "♟︎";
+          break;
+        default:
+          s_piece += std::to_string(piece.figure);
+          break;
       }
 
       bool marked = marker.get(x, y);
@@ -113,8 +114,9 @@ std::string PrintMarkedBoard(aithena::chess::State state,
       if (piece == aithena::kEmptyPiece) {
         repr << s_color << (marked ? marker_color + "- -" : "   ") << "\033[0m";
       } else {
-        repr << s_color << (marked ? marker_color + "-" : " ") << s_color << s_piece
-             << "\033[24m" << (marked ? marker_color + "-" : " ") << "\033[0m";
+        repr << s_color << (marked ? marker_color + "-" : " ") << s_color
+             << s_piece << "\033[24m" << (marked ? marker_color + "-" : " ")
+             << "\033[0m";
       }
     }
   }
@@ -154,8 +156,7 @@ std::tuple<unsigned, unsigned, bool> ParseField(std::string field) {
 }
 
 template <typename Game, typename State>
-State EvaluateUserInput(const std::string input,
-                        Game& game, State& state) {
+State EvaluateUserInput(const std::string input, Game& game, State& state) {
   if (input.compare("help") == 0) {
     PrintHelp();
     return state;
@@ -197,7 +198,7 @@ State EvaluateUserInput(const std::string input,
       return state;
     }
 
-    auto moves = game.GenMoves(state, std::get<0>(field), std::get<1>(field));
+    auto moves = game.GenMoves(&state, std::get<0>(field), std::get<1>(field));
     aithena::BoardPlane marker{board.GetWidth(), board.GetHeight()};
 
     for (auto move : moves) {
@@ -231,18 +232,15 @@ State EvaluateUserInput(const std::string input,
                          std::get<0>(target), std::get<1>(target));
 
     if (piece.figure == static_cast<unsigned>(aithena::chess::Figure::kPawn)) {
-      if (
-        static_cast<unsigned>(state.GetDPushPawnX()) == std::get<0>(target)
-        && (
-          static_cast<unsigned>(state.GetDPushPawnY() % 4)
-          == std::get<1>(target))) {
-        move_board.ClearField(
-          std::get<0>(target),
-          static_cast<unsigned>(state.GetDPushPawnY() / 4));
+      if (static_cast<unsigned>(state.GetDPushPawnX()) == std::get<0>(target) &&
+              (2 == std::get<1>(target)) ||
+          (game.GetOption("board_height") - 3 == std::get<1>(target))) {
+        move_board.ClearField(std::get<0>(target), std::get<1>(target));
       }
     }
 
-    auto moves = game.GenMoves(state, std::get<0>(source), std::get<1>(source));
+    auto moves =
+        game.GenMoves(&state, std::get<0>(source), std::get<1>(source));
     unsigned i;
 
     for (i = 0; i < moves.size(); ++i) {
@@ -275,21 +273,21 @@ State EvaluateUserInput(const std::string input,
     aithena::chess::Figure next_figure;
 
     switch (std::tolower(input_parts[2].front())) {
-    case 'q':
-      next_figure = aithena::chess::Figure::kQueen;
-      break;
-    case 'r':
-      next_figure = aithena::chess::Figure::kRook;
-      break;
-    case 'n':
-      next_figure = aithena::chess::Figure::kKnight;
-      break;
-    case 'b':
-      next_figure = aithena::chess::Figure::kBishop;
-      break;
-    default:
-      std::cout << "Invalid figure \"" << input_parts[2] << "\"" << std::endl;
-      return state;
+      case 'q':
+        next_figure = aithena::chess::Figure::kQueen;
+        break;
+      case 'r':
+        next_figure = aithena::chess::Figure::kRook;
+        break;
+      case 'n':
+        next_figure = aithena::chess::Figure::kKnight;
+        break;
+      case 'b':
+        next_figure = aithena::chess::Figure::kBishop;
+        break;
+      default:
+        std::cout << "Invalid figure \"" << input_parts[2] << "\"" << std::endl;
+        return state;
     }
 
     aithena::Piece next_piece = make_piece(next_figure, state.GetPlayer());
@@ -297,7 +295,7 @@ State EvaluateUserInput(const std::string input,
 
     next_board.SetField(std::get<0>(field), std::get<1>(field), next_piece);
 
-    auto moves = game.GenMoves(state, std::get<0>(field), std::get<1>(field));
+    auto moves = game.GenMoves(&state, std::get<0>(field), std::get<1>(field));
     unsigned i;
 
     for (i = 0; i < moves.size(); ++i) {
@@ -313,9 +311,10 @@ State EvaluateUserInput(const std::string input,
   } else if (input_parts[0].compare("suggest") == 0) {
     aithena::MCTSNode<aithena::chess::Game> root{game, state, nullptr};
     aithena::MCTS<aithena::chess::Game> mcts{game};
-    auto root_ptr = std::make_shared<aithena::MCTSNode<aithena::chess::Game>>(root);
+    auto root_ptr =
+        std::make_shared<aithena::MCTSNode<aithena::chess::Game>>(root);
 
-    mcts.Run(root_ptr, 4, 4);
+    mcts.Run(root_ptr, 25, 25);
 
     auto next = mcts.GreedySelect(root_ptr);
     auto marker = aithena::GetNewFields(board, next->GetState().GetBoard());
@@ -325,7 +324,8 @@ State EvaluateUserInput(const std::string input,
 
     std::cout << "Selection: " << mcts.BenchmarkSelect() << std::endl;
     std::cout << "Simulation: " << mcts.BenchmarkSimulate() << std::endl;
-    std::cout << "Backpropagation: " << mcts.BenchmarkBackpropagate() << std::endl;
+    std::cout << "Backpropagation: " << mcts.BenchmarkBackpropagate()
+              << std::endl;
 
     return state;
   } else if (input_parts[0].compare("benchmark") == 0) {
@@ -339,24 +339,26 @@ State EvaluateUserInput(const std::string input,
 
 template <typename Game, typename State>
 bool CheckWinner(Game& game, State& state) {
-  auto next_moves = game.GenMoves(state);
+  auto next_moves = game.GenMoves(&state);
 
   if (next_moves.size() > 0) return false;
 
-  std::string winner = state.GetPlayer() == aithena::chess::Player::kWhite
-                       ? "Black" : "White";
+  std::string winner =
+      state.GetPlayer() == aithena::chess::Player::kWhite ? "Black" : "White";
 
-  std::cout << std::endl << std::endl << std::endl << winner
-            << " is victorious!" << std::endl << std::endl << std::endl;
+  std::cout << std::endl
+            << std::endl
+            << std::endl
+            << winner << " is victorious!" << std::endl
+            << std::endl
+            << std::endl;
 
   return true;
 }
 
 int main() {
-  aithena::chess::Game::Options options = {
-    {"board_width", 4},
-    {"board_height", 4}
-  };
+  aithena::chess::Game::Options options = {{"board_width", 8},
+                                           {"board_height", 8}};
 
   aithena::chess::Game game = aithena::chess::Game(options);
   aithena::chess::State state = game.GetInitialState();
