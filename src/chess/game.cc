@@ -502,8 +502,6 @@ void Game::GenerateMoveFromBB(State* state, unsigned x, unsigned y,
 
   if (pinned.get(x, y)) move_bb &= pinned;
 
-  //std::cout << move_bb.find_first() << "\n";
-
   signed first_enemy_in_path = lower ? (move_bb & enemy_figures).msb()
                                      : (move_bb & enemy_figures).find_first();
 
@@ -883,8 +881,7 @@ std::vector<State> Game::GenMoves(State* state, bool pseudo) {
           ? GeneratePositionAttackers(state, king_pos % width, king_pos / width,
                                       &constrained, &pinned)
           : 0;
-  //std::cout << attackers << ", " << pinned.find_first() << ", " << pinned.msb()
-  //          << "\n";
+
   // Generate King moves
   if (king_pos >= 0)
     GenKingMoves(state, king_pos % width, king_pos / width, &moves,

@@ -69,7 +69,6 @@ int MCTS<Game>::Simulate(
   auto bm_start = std::chrono::high_resolution_clock::now();
 
   while (!game_.IsTerminalState(current->GetState())) {
-    //std::cout << PrintBoard1(current->GetState()) << "\n";
     if (!current->IsExpanded()) current->Expand();
 
     current = next(current);
