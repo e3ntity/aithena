@@ -104,10 +104,9 @@ void MCTS<Game>::Run(
     for (unsigned simulation = 0; simulation < simulations; ++simulation) {
       int result = Simulate(child, RandomSelect);
       Backpropagate(child, result);
-
-      std::cout << "." << std::flush;
     }
-    std::cout << std::endl;
+    unsigned percent = round * 100 / rounds;
+    std::cout << percent << "%" << std::endl;
   }
 }
 
