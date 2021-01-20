@@ -33,10 +33,9 @@ void MCTS<Game>::Run(
     for (unsigned simulation = 0; simulation < simulations; ++simulation) {
       int result = Simulate(child, RandomSelect);
       Backpropagate(child, result);
-
-      std::cout << "." << std::flush;
     }
-    std::cout << std::endl;
+    unsigned percent = round * 100 / rounds;
+    std::cout << percent << "%" << std::endl;
   }
 }
 
@@ -89,10 +88,10 @@ void MCTS<Game>::Backpropagate(typename MCTSNode<Game>::NodePtr start, int resul
 
   auto bm_start = std::chrono::high_resolution_clock::now();
 
-  for (int i = 0; current->GetParent() != nullptr; ++i) {
+  for (int i = 0; current != nullptr; ++i) {
     if (result == 0)
       current->IncDraws();
-    else if ((result > 0 && i % 2 == 0) || (result < 0 && i % 2 == 1))
+    else if (result > 0)
       current->IncWins();
     else
       current->IncLosses();
@@ -154,7 +153,7 @@ typename MCTSNode<Game>::NodePtr MCTS<Game>::GreedySelect(typename MCTSNode<Game
   if (!node->IsExpanded()) return RandomSelect(node);
 
   unsigned index{0};
-  unsigned maximum{0};
+  double maximum{0};
 
   auto children = node->GetChildren();
 
@@ -163,7 +162,7 @@ typename MCTSNode<Game>::NodePtr MCTS<Game>::GreedySelect(typename MCTSNode<Game
 
     if (child->GetVisits() == 0) continue;
 
-    unsigned value = child->GetWins() / child->GetVisits();
+    double value = static_cast<double>(child->GetWins()) / child->GetVisits();
 
     if (value <= maximum) continue;
 

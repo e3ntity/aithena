@@ -22,6 +22,12 @@ void BoardPlane::set(unsigned x, unsigned y) {
   plane_.set(x + y * width_);
 }
 
+// Sets the bit of the board at the specified location.
+void BoardPlane::set(unsigned pos) {
+  assert(pos < width_ * height_);
+  plane_.set(pos);
+}
+
 // Clears the bit of the board at the specified location.
 void BoardPlane::clear(unsigned x, unsigned y) {
   assert(x < width_ && y < height_);
@@ -47,7 +53,7 @@ BoardPlane& BoardPlane::operator=(const BoardPlane& other) {
 }
 
 BoardPlane& BoardPlane::operator&=(const BoardPlane& other) {
-  plane_ |= other.plane_;
+  plane_ &= other.plane_;
   return *this;
 }
 
@@ -95,6 +101,42 @@ bool BoardPlane::operator==(const BoardPlane& other) const {
 
 bool BoardPlane::operator!=(const BoardPlane& other) const {
   return plane_ != other.plane_;
+}
+
+signed BoardPlane::find_first() const {
+  return plane_.find_first();
+}
+
+signed BoardPlane::msb() const {
+  signed index = -1;
+  signed iter = plane_.find_first();
+  while (iter >= 0) {
+    index = iter;
+    iter = plane_.find_next(iter);
+  }
+  return index;
+}
+
+signed BoardPlane::next(unsigned pos) const {
+  return plane_.find_next(pos);
+}
+
+signed BoardPlane::prev(unsigned pos) const {
+  signed index = -1;
+  signed lookahead = plane_.find_first();
+  while (lookahead >= 0 && lookahead < pos) {
+    index = lookahead;
+    lookahead = plane_.find_next(lookahead);
+  }
+  return index;
+}
+
+signed BoardPlane::count() const {
+  return plane_.count();
+}
+
+void BoardPlane::reset() {
+  plane_.reset();
 }
 
 bool BoardPlane::empty() const {

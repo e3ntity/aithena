@@ -21,6 +21,8 @@ class BoardPlane {
 
   // Sets the bit of the board at the specified location.
   void set(unsigned int x, unsigned int y);
+  // Sets the bit of the board at the specified location.
+  void set(unsigned pos);
   // Clears the bit of the board at the specified location.
   void clear(unsigned int x, unsigned int y);
   // Returns the bit of the board at the specified location.
@@ -39,6 +41,13 @@ class BoardPlane {
 
   bool operator==(const BoardPlane&) const;
   bool operator!=(const BoardPlane&) const;
+
+  signed find_first() const;
+  signed msb() const;
+  signed next(unsigned pos) const;
+  signed prev(unsigned pos) const;
+  signed count() const;
+  void reset();
 
   // Returns true if no bits are set, otherwise false.
   bool empty() const;

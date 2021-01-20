@@ -7,12 +7,12 @@ Copyright 2020 All rights reserved.
 namespace aithena {
 namespace chess {
 
-Direction operator+(Direction d1, Direction d2) {
+Coordinate operator+(Coordinate d1, Coordinate d2) {
   return {d1.x + d2.x, d1.y + d2.y};
 }
 
 std::vector<State> GenDirectionalMoves(State state, unsigned x, unsigned y,
-                                       std::vector<Direction> directions,
+                                       std::vector<Coordinate> directions,
                                        unsigned range) {
   Board board_before{state.GetBoard()};
   std::size_t width{board_before.GetWidth()};
@@ -48,7 +48,6 @@ std::vector<State> GenDirectionalMoves(State state, unsigned x, unsigned y,
       // if not blocked by ally generate move
       State new_state = State{state};
       new_state.SetDPushPawnX(-1);
-      new_state.SetDPushPawnY(-1);
       new_state.GetBoard().MoveField(x, y, new_x, new_y);
       moves.push_back(new_state);
 

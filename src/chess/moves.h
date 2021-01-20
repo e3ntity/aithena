@@ -13,24 +13,24 @@ namespace aithena {
 namespace chess {
 
 // struct that express a direction on the board
-struct Direction {
+struct Coordinate {
   signed x;
   signed y;
 };
 
 
-const Direction up{0, 1};
-const Direction down{0, -1};
-const Direction left{ -1, 0};
-const Direction right{1, 0};
+const Coordinate up{0, 1};
+const Coordinate down{0, -1};
+const Coordinate left{ -1, 0};
+const Coordinate right{1, 0};
 
 // Adds two Direction to generate direction that would be the additive result
 // of the two Direction vectors
-Direction operator+(Direction d1, Direction d2);
+Coordinate operator+(Coordinate d1, Coordinate d2);
 
 // Generate pseudo moves in the given directions
 std::vector<State> GenDirectionalMoves(State state, unsigned x, unsigned y,
-                                       std::vector<Direction> directions,
+                                       std::vector<Coordinate> directions,
                                        unsigned range);
 
 // Move patterns define how a piece may move starting from a given position.
