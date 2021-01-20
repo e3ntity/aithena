@@ -35,8 +35,9 @@ void MCTS<Game>::Run(
       Backpropagate(child, result);
     }
     unsigned percent = round * 100 / rounds;
-    std::cout << percent << "%" << std::endl;
+    std::cout << "Simulation: " << percent << "%\r" << std::flush;
   }
+  std::cout << std::endl;
 }
 
 template <typename Game>
