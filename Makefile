@@ -11,7 +11,7 @@ TARGET=aithena
 # Compiler settings
 
 CXX=g++
-CXXFLAGS=--std=c++17 -I$(DIRSRC) -Wall
+CXXFLAGS=--std=c++17 -I$(DIRSRC) -Wall -g
 
 # Rules
 
@@ -26,7 +26,7 @@ build: $(OFILES)
 .PHONY: test
 test: clean $(OFILES)
 	@mkdir -p $(DIRBUILD)
-	@$(CXX) $(CXXFLAGS) -Wl,--unresolved-symbols=ignore-in-object-files -g \
+	@$(CXX) $(CXXFLAGS) -Wl,--unresolved-symbols=ignore-in-object-files \
 		-o $(DIRBUILD)/test $(DIRTEST)/*.cc $(OFILES) -lgtest_main -lgtest \
 		-lpthread
 
