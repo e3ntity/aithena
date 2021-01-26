@@ -61,8 +61,8 @@ const std::array<Player, 2> Game::players{Player::kWhite, Player::kBlack};
 // Chess methods
 
 void Game::InitializeMagic() {
-  unsigned width = GetOption("board_width");
-  unsigned height = GetOption("board_height");
+  signed width = GetOption("board_width");
+  signed height = GetOption("board_height");
 
   assert(width <= 8 && height <= 8);
   static const Coordinate directions[] = {
@@ -72,7 +72,8 @@ void Game::InitializeMagic() {
     for (signed x = 0; x < width; ++x) {
       // Create directional move/capture bitmap
       for (Coordinate direction : directions) {
-        BoardPlane directional_plane{width, height};
+        BoardPlane directional_plane{static_cast<std::size_t>(width),
+          static_cast<std::size_t>(height)};
         Coordinate pos{x, y};
         pos.x += direction.x;
         pos.y += direction.y;
@@ -85,7 +86,8 @@ void Game::InitializeMagic() {
       }
 
       // Create knight move/capture bitmap
-      BoardPlane knight_bitmap{width, height};
+      BoardPlane knight_bitmap{static_cast<std::size_t>(width),
+        static_cast<std::size_t>(height)};
       if (x + 1 < width) {
         if (y + 2 < height) knight_bitmap.set(x + 1, y + 2);
         if (y - 2 >= 0) knight_bitmap.set(x + 1, y - 2);
@@ -94,25 +96,27 @@ void Game::InitializeMagic() {
         if (y + 1 < height) knight_bitmap.set(x + 2, y + 1);
         if (y - 1 >= 0) knight_bitmap.set(x + 2, y - 1);
       }
-      if (x - 1 < width) {
+      if (x - 1 >= 0) {
         if (y + 2 < height) knight_bitmap.set(x - 1, y + 2);
         if (y - 2 >= 0) knight_bitmap.set(x - 1, y - 2);
       }
-      if (x - 2 < width) {
+      if (x - 2 >= 0) {
         if (y + 1 < height) knight_bitmap.set(x - 2, y + 1);
         if (y - 1 >= 0) knight_bitmap.set(x - 2, y - 1);
       }
       magic_bit_planes_.push_back(knight_bitmap);
 
       // Create pawn capture bitmap(white then black)
-      BoardPlane white_pawn{width, height};
+      BoardPlane white_pawn{static_cast<std::size_t>(width),
+        static_cast<std::size_t>(height)};
       if (y + 1 < height) {
         if (x + 1 < width) white_pawn.set(x + 1, y + 1);
         if (x - 1 >= 0) white_pawn.set(x - 1, y + 1);
       }
       magic_bit_planes_.push_back(white_pawn);
 
-      BoardPlane black_pawn{width, height};
+      BoardPlane black_pawn{static_cast<std::size_t>(width),
+        static_cast<std::size_t>(height)};
       if (y - 1 >= 0) {
         if (x + 1 < width) black_pawn.set(x + 1, y - 1);
         if (x - 1 >= 0) black_pawn.set(x - 1, y - 1);
@@ -120,7 +124,8 @@ void Game::InitializeMagic() {
       magic_bit_planes_.push_back(black_pawn);
 
       // Kings move plane
-      BoardPlane king_plane{width, height};
+      BoardPlane king_plane{static_cast<std::size_t>(width),
+        static_cast<std::size_t>(height)};
       for (Coordinate direction : directions) {
         Coordinate pos{x, y};
         pos.x += direction.x;
@@ -185,6 +190,7 @@ State Game::GetInitialState() {
     state.SetCastleQueen(Player::kWhite);
     state.SetCastleQueen  (Player::kBlack);
   }
+  return state;
 }
 
 /*
@@ -288,7 +294,6 @@ bool Game::SearchForLineAttack(State* state, unsigned x, unsigned y,
                                BoardPlane* attack_path,
                                BoardPlane* pinned = nullptr) {
   signed width = GetOption("board_width");
-  signed height = GetOption("board_height");
 
   Board& current_board = state->GetBoard();
   unsigned current_player = static_cast<unsigned>(state->GetPlayer());
@@ -349,10 +354,8 @@ bool Game::SearchForLineAttack(State* state, unsigned x, unsigned y,
 unsigned Game::SearchForKnightAttack(State* state, unsigned x, unsigned y,
                                      BoardPlane* constrained_to) {
   signed width = GetOption("board_width");
-  signed height = GetOption("board_height");
 
   Board& current_board = state->GetBoard();
-  unsigned current_player = static_cast<unsigned>(state->GetPlayer());
   unsigned enemy = state->GetPlayer() == Player::kWhite
                        ? static_cast<unsigned>(Player::kBlack)
                        : static_cast<unsigned>(Player::kWhite);
@@ -381,12 +384,13 @@ unsigned Game::SearchForPawnAttack(State* state, unsigned x, unsigned y,
   BoardPlane enemy_pawns = current_board.GetPlayerFigurePlane(
       enemy, static_cast<unsigned>(Figure::kPawn));
   unsigned count = 0;
-  if (y + direction < height && y >= 0) {
-    if (x + 1 < width && enemy_pawns.get(x + 1, y + direction)) {
+  if (static_cast<signed>(y) + direction < height && static_cast<signed>(y)
+  + direction >= 0) {
+    if (static_cast<signed>(x + 1) < width && enemy_pawns.get(x + 1, y + direction)) {
       if (constrained_to) constrained_to->set(x + 1, y + direction);
       count++;
     }
-    if (x - 1 < width && enemy_pawns.get(x - 1, y + direction)) {
+    if (static_cast<signed>(x) - 1 >= 0 && enemy_pawns.get(x - 1, y + direction)) {
       if (constrained_to) constrained_to->set(x - 1, y + direction);
       count++;
     }
@@ -396,7 +400,6 @@ unsigned Game::SearchForPawnAttack(State* state, unsigned x, unsigned y,
 
 bool Game::SearchForKingAttack(State* state, unsigned x, unsigned y) {
   signed width = GetOption("board_width");
-  signed height = GetOption("board_height");
 
   Board& current_board = state->GetBoard();
   unsigned enemy = state->GetPlayer() == Player::kWhite
@@ -413,8 +416,6 @@ bool Game::SearchForKingAttack(State* state, unsigned x, unsigned y) {
 unsigned Game::GeneratePositionAttackers(State* state, unsigned x, unsigned y,
                                          BoardPlane* constrained_to,
                                          BoardPlane* pinned = nullptr) {
-  signed width = GetOption("board_width");
-  signed height = GetOption("board_height");
 
   Board current_board = state->GetBoard();
   unsigned current_player = static_cast<unsigned>(state->GetPlayer());
@@ -424,7 +425,6 @@ unsigned Game::GeneratePositionAttackers(State* state, unsigned x, unsigned y,
 
   BoardPlane player_figures = current_board.GetPlayerPlane(current_player);
   BoardPlane enemy_figures = current_board.GetPlayerPlane(enemy);
-  unsigned arr_pos = y * width + x;
 
   // Gather information about threads to the given position
   unsigned attacker_count = 0;
@@ -492,7 +492,8 @@ void Game::GenerateMoveFromBB(State* state, unsigned x, unsigned y,
 
   unsigned arr_pos = y * width + x;
 
-  BoardPlane possible_moves{width, height};
+  BoardPlane possible_moves{static_cast<std::size_t>(width),
+    static_cast<std::size_t>(height)};
   bool can_attack = false;
   BoardPlane player_figures = current_board.GetPlayerPlane(current_player);
   BoardPlane enemy_figures = current_board.GetPlayerPlane(enemy);
@@ -553,7 +554,7 @@ void Game::GenerateMoveFromBB(State* state, unsigned x, unsigned y,
     if (rook) {
       if (x == 0)
         moves->back().SetCastleQueen(current_player);
-      else if (x == width - 1)
+      else if (static_cast<signed>(x) == width - 1)
         moves->back().SetCastleKing(current_player);
     }
     viable_move = possible_moves.next(viable_move);
@@ -567,7 +568,7 @@ void Game::GenerateMoveFromBB(State* state, unsigned x, unsigned y,
     if (rook) {
       if (x == 0)
         moves->back().SetCastleQueen(current_player);
-      else if (x == width - 1)
+      else if (static_cast<signed>(x) == width - 1)
         moves->back().SetCastleKing(current_player);
     }
     state->ResetNoProgressCount();
@@ -578,8 +579,8 @@ void Game::GenPawnMoves(State* state, unsigned x, unsigned y,
                         std::vector<State>* moves,
                         const BoardPlane& constrained_to,
                         const BoardPlane& pinned, bool double_push = true) {
-  signed width{this->GetOption("board_width")};
-  signed height{this->GetOption("board_height")};
+  unsigned width{static_cast<unsigned>(this->GetOption("board_width"))};
+  unsigned height{static_cast<unsigned>(this->GetOption("board_height"))};
 
   Board& current_board = state->GetBoard();
   auto opponent =
@@ -590,7 +591,8 @@ void Game::GenPawnMoves(State* state, unsigned x, unsigned y,
   BoardPlane figure_plane = current_board.GetCompletePlane();
   BoardPlane enemy_figures =
       current_board.GetPlayerPlane(static_cast<unsigned>(opponent));
-  BoardPlane moveable_fields{width, height};
+  BoardPlane moveable_fields{static_cast<std::size_t>(width),
+    static_cast<std::size_t>(height)};
 
   signed tmp_dobule_push_pawn_x = state->GetDPushPawnX();
   state->SetDPushPawnX(-1);
@@ -624,7 +626,7 @@ void Game::GenPawnMoves(State* state, unsigned x, unsigned y,
     }
   }
 
-  if (x - 1 < width && enemy_figures.get(x - 1, y + direction)) {
+  if (static_cast<signed>(x) - 1 >= 0 && enemy_figures.get(x - 1, y + direction)) {
     // enemy on the right side is in capture range
     if ((constrained_to.empty() || constrained_to.get(x - 1, y + direction)) &&
         (!pinned.get(x, y) || pinned.get(x - 1, y + direction))) {
@@ -634,8 +636,8 @@ void Game::GenPawnMoves(State* state, unsigned x, unsigned y,
   }
 
   // en passant
-  if ((opponent == Player::kWhite ? 3 : height - 3) == y) {
-    if (static_cast<unsigned>(tmp_dobule_push_pawn_x) == x - 1 && x > 1) {
+  if (tmp_dobule_push_pawn_x > -1 && (opponent == Player::kWhite ? 3 : height - 3) == y) {
+    if (tmp_dobule_push_pawn_x == static_cast<signed>(x) - 1 && x > 1) {
       // enpassant on left side
       State new_state = State{*state};
       new_state.GetBoard().MoveField(x, y, x - 1, y + direction);
@@ -740,22 +742,21 @@ void Game::GenKingMoves(State* state, unsigned x, unsigned y,
   signed height = GetOption("board_height");
   Board& current_board = state->GetBoard();
   Player current_player = state->GetPlayer();
-  Player enemy =
-      state->GetPlayer() == Player::kWhite ? Player::kBlack : Player::kWhite;
 
   unsigned arr_pos = y * width + x;
   BoardPlane& king_bb = magic_bit_planes_[arr_pos * bb_per_pos + 11];
   BoardPlane potential_moves =
-      !(king_bb & current_board.GetPlayerPlane(current_player) &
-        attacked_fields) &
+      (!(king_bb & current_board.GetPlayerPlane(current_player) &
+        attacked_fields)) &
       king_bb;
 
   signed move_pos = potential_moves.find_first();
   while (move_pos >= 0) {
-    BoardPlane pinned{width, height};
-    unsigned attackers = GeneratePositionAttackers(
+    BoardPlane pinned{static_cast<std::size_t>(width),
+      static_cast<std::size_t>(height)};
+    signed attackers = GeneratePositionAttackers(
         state, move_pos % width, move_pos / width, nullptr, &pinned);
-    if (attackers < 1 & !pinned.get(x, y)) {
+    if (attackers < 1 && !pinned.get(x, y)) {
       moves->push_back(*state);
       moves->back().GetBoard().MoveField(x, y, move_pos % width,
                                          move_pos / width);
@@ -816,8 +817,7 @@ void Game::GenCastling(State* state, std::vector<State>* moves) {
   signed width = GetOption("board_width");
   signed height = GetOption("board_height");
   if (width < 8 || height < 8 || KingInCheck(state, state->GetPlayer())) return;
-  Board& current_board = state->GetBoard();
-  Player current_player = state->GetPlayer();
+
   unsigned c_height = state->GetPlayer() == Player::kWhite ? 0 : 7;
 
   if (state->GetCastleKing(state->GetPlayer())) {
@@ -868,8 +868,10 @@ std::vector<State> Game::GenMoves(State* state, bool pseudo) {
   Player enemy =
       state->GetPlayer() == Player::kWhite ? Player::kBlack : Player::kWhite;
 
-  BoardPlane constrained{width, height};
-  BoardPlane pinned{width, height};
+  BoardPlane constrained{static_cast<std::size_t>(width),
+    static_cast<std::size_t>(height)};
+  BoardPlane pinned{static_cast<std::size_t>(width),
+    static_cast<std::size_t>(height)};
 
   signed king_pos = state->GetBoard()
                         .GetPlayerFigurePlane(current_player, Figure::kKing)
