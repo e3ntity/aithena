@@ -160,9 +160,9 @@ State EvaluateUserInput(const std::string input, Game& game, State& state) {
                          std::get<0>(target), std::get<1>(target));
 
     if (piece.figure == static_cast<unsigned>(aithena::chess::Figure::kPawn)) {
-      if (static_cast<unsigned>(state.GetDPushPawnX()) == std::get<0>(target) &&
-              (2 == std::get<1>(target)) ||
-          (game.GetOption("board_height") - 3 == std::get<1>(target))) {
+      if ((static_cast<unsigned>(state.GetDPushPawnX()) == std::get<0>(target) &&
+              (2 == std::get<1>(target))) ||
+          (static_cast<unsigned>(game.GetOption("board_height")) - 3 == std::get<1>(target))) {
         move_board.ClearField(std::get<0>(target), std::get<1>(target));
       }
     }

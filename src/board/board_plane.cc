@@ -124,7 +124,7 @@ signed BoardPlane::next(unsigned pos) const {
 signed BoardPlane::prev(unsigned pos) const {
   signed index = -1;
   signed lookahead = plane_.find_first();
-  while (lookahead >= 0 && lookahead < pos) {
+  while (lookahead >= 0 && static_cast<unsigned>(lookahead) < pos) {
     index = lookahead;
     lookahead = plane_.find_next(lookahead);
   }
