@@ -2,33 +2,29 @@
 Copyright 2020 All rights reserved.
 */
 
-#include "mcts/mcts.h"
+#include "alphazero/neural_network.h"
+#include "alphazero/node.h"
 
 namespace aithena {
 namespace alphazero {
 
-template <typename Game>
-class AZMCTS : public MCTSNode<Game> {
+// Wraps an alpha zero MCTS node to learn over the tree generated from the node.
+class AZMCTS {
  public:
-  // TODO: implement
-  typename Node::NodePtr Select(
-      typename Node::NodePtr,
-      typename Node::NodePtr (*next)(typename Node::NodePtr)) override;
+  // Constructs an alpha zero MCTS object given an alpha zero root node.
+  AZMCTS(AZNodePtr);
 
-  // TODO: implement
-  int Simulate(typename Node::NodePtr,
-               typename Node::NodePtr (*next)(typename Node::NodePtr)) override;
+  void Simulate();
 
-  // TODO: implement
-  void Backpropagate(typename Node::NodePtr, int) override;
+ private:
+  // The root node wrapped by the MCTS object.
+  AZNodePtr root_;
 
   // Selects the next node according to the PUTCT algorithm.
   // Assumes that the node has already been expanded and that each child node
   // has been visited at least once.
-  static typename Node::NodePtr PUCTSelect(typename Node::NodePtr);
-
- private:
-}
+  AZNodePtr PUCTSelect(AZNodePtr node);
+};
 
 }  // namespace alphazero
 }

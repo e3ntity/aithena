@@ -9,14 +9,35 @@ Copyright 2020 All rights reserved.
 namespace aithena {
 namespace alphazero {
 
+AZMCTS::AZMCTS(AZNodePtr root) : root_{root} {}
+
+void AZMCTS::Simulate() {
+  auto current_node = root_;
+
+  while (current_node->IsExpanded()) current_node = PUCTSelect(current_node);
+
+  current_node->Expand();
+
+  // TODO: update nodes and feed leaf's state into neural network
+  // priors, value = nn.feed_forward(current_node.GetState())
+  // for child in current_node->GetChildren():
+  //   prior = None
+  //   for p in priors:
+  //     if p.state != child->GetState():
+  //       continue
+  //     prior = p
+  //     break
+  //   if not prior: // invalid action selected, ignore / penalize?
+  //   child.SetPrior(priors)
+  // nn_queue.add(current_node->GetState(), value)
+}
+
 // Exploration rates used for PUCT.
 // TODO: make configurable.
 double c_base = 0.05;
 double c_init = 0.1;
 
-template <typename Game>
-typename AZMCTSNode<Game>::NodePtr AZMCTS<Game>::PUCTSelect(
-    typename AZMCTSNode<Game>::NodePtr node) {
+AZNodePtr AZMCTS::PUCTSelect(AZNodePtr node) {
   assert(node->IsExpanded());
 
   unsigned index{0};
