@@ -2,6 +2,7 @@
 Copyright 2020 All rights reserved.
 */
 
+#include <iomanip>
 #include <memory>
 #include <stdlib.h>
 #include <time.h>
@@ -15,6 +16,7 @@ std::string PrintMarkedBoard(aithena::chess::State state,
 	aithena::Board board = state.GetBoard();
 	std::ostringstream repr;
 	aithena::Piece piece;
+	std::vector<std::string> letters = {"A", "B", "C", "D", "E", "F", "G", "H"};
 
 	std::string turn = state.GetPlayer() == aithena::chess::Player::kWhite
 	                   ? "White" : "Black";
@@ -71,7 +73,12 @@ std::string PrintMarkedBoard(aithena::chess::State state,
 			}
 		}
 	}
-	repr << std::endl << "   A  B  C  D" << std::endl;
+
+	repr << std::endl << " ";
+	for (int i = 0; i < int(board.GetWidth()); ++i)
+		repr << "  " << letters.at(i);
+
+	repr << std::endl;
 
 	return repr.str();
 }
@@ -81,6 +88,22 @@ std::string PrintBoard(aithena::chess::State state) {
 	aithena::BoardPlane marker{board.GetWidth(), board.GetHeight()};
 
 	return PrintMarkedBoard(state, marker);
+}
+
+void train(
+  aithena::MCTS<aithena::chess::Game>& mcts,
+  std::shared_ptr<aithena::MCTSNode<aithena::chess::Game>> node,
+  int rounds,
+  int simulations
+) {
+	for (int round = 0; round < rounds; ++round) {
+		mcts.Run(node, simulations);
+
+		double percentage = 100.0 * double(round) / double(rounds);
+		double remaining = double(rounds - round) * mcts.BenchmarkRun() / 60;
+		std::cout << "Running MCTS: " << std::setprecision(2) << percentage
+		          << "% (" << remaining << " min. remaining)\r" << std::flush;
+	}
 }
 
 int main(int argc, char **argv) {
@@ -96,9 +119,9 @@ int main(int argc, char **argv) {
 
 	aithena::chess::Game::Options options = {
 		{"board_width", 4},
-		{"board_height", 4},
-		{"max_no_progress", 10},
-		{"max_move_count", 5}
+		{"board_height", 5},
+		{"max_no_progress", 20},
+		{"max_move_count", 20}
 	};
 
 	auto game = aithena::chess::Game(options);
@@ -113,12 +136,18 @@ int main(int argc, char **argv) {
 
 	std::shared_ptr<aithena::MCTSNode<aithena::chess::Game>> current_ptr = root_ptr;
 	while (!game.IsTerminalState(current_ptr->GetState())) {
-		mcts.Run(current_ptr, rounds, simulations);
+		train(mcts, current_ptr, rounds, simulations);
 
 		current_ptr = mcts.GreedySelect(current_ptr);
 
 		std::cout << PrintBoard(current_ptr->GetState()) << std::endl;
+		std::cout << "Confidence: " << current_ptr->GetUCTConfidence() << std::endl;
 	}
+
+	std::cout << mcts.BenchmarkSelect() << " sec/select" << std::endl;
+	std::cout << mcts.BenchmarkSimulate() << " sec/simulate" << std::endl;
+	std::cout << mcts.BenchmarkBackpropagate()  << " sec/backprop" << std::endl;
+	std::cout << mcts.BenchmarkRun()  << " sec/run" << std::endl;
 
 	return 0;
 }

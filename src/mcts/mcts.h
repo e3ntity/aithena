@@ -23,7 +23,6 @@ class MCTS {
   // starting at the given node.
   void Run(
     typename Node::NodePtr,
-    int rounds = 1,
     int simulations = 1
   );
 
@@ -61,9 +60,13 @@ class MCTS {
   // Selects the next node greedily.
   static typename Node::NodePtr GreedySelect(typename Node::NodePtr);
 
+  // Returns the average time per select in seconds.
   double BenchmarkSelect();
+  // Returns the average time per simulation in seconds.
   double BenchmarkSimulate();
+  // Returns the average time per backpropagation in seconds.
   double BenchmarkBackpropagate();
+  double BenchmarkRun();
  private:
   std::shared_ptr<Game> game_;
 
@@ -71,6 +74,7 @@ class MCTS {
   std::vector<std::chrono::milliseconds> time_select{};
   std::vector<std::chrono::milliseconds> time_simulate{};
   std::vector<std::chrono::milliseconds> time_backpropagate{};
+  std::vector<std::chrono::milliseconds> time_run{};
 };
 
 template class MCTS<::aithena::chess::Game>;

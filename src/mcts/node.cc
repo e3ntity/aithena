@@ -75,6 +75,9 @@ void MCTSNode<Game>::Expand() {
     );
   }
 
+  for (auto child : children_)
+    child->SetUCTConfidence(1 / children_.size());
+
   expanded_ = true;
 }
 
@@ -137,5 +140,13 @@ template <typename Game>
 unsigned MCTSNode<Game>::GetVisits() {
   return visits_;
 }
+
+template <typename Game>
+void MCTSNode<Game>::SetUCTConfidence(double confidence) {
+  UCTConfidence_ = confidence;
+}
+
+template <typename Game>
+double MCTSNode<Game>::GetUCTConfidence() { return UCTConfidence_; }
 
 }  // namespace aithena

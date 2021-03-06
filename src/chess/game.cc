@@ -86,16 +86,36 @@ State Game::GetInitialState() {
   State state(GetOption("board_width"), GetOption("board_height"),
               GetOption("figure_count"));
 
-  assert(GetOption("board_width") == 4 && GetOption("board_height") == 4);
+  assert(GetOption("board_width") > 3 && GetOption("board_height") > 3);
+  assert(GetOption("board_width") < 9 && GetOption("board_height") < 9);
 
   Board& board = state.GetBoard();
 
-  // Queen
-  board.SetField(0, 2, make_piece(Figure::kQueen, Player::kWhite));
-
-  // Kings
   board.SetField(0, 0, make_piece(Figure::kKing, Player::kWhite));
   board.SetField(3, 3, make_piece(Figure::kKing, Player::kBlack));
+
+  board.SetField(0, 1, make_piece(Figure::kBishop, Player::kWhite));
+  board.SetField(0, 2, make_piece(Figure::kBishop, Player::kWhite));
+
+  /*
+  // Kings
+  board.SetField(2, 0, make_piece(Figure::kKing, Player::kWhite));
+  board.SetField(2, 5, make_piece(Figure::kKing, Player::kBlack));
+
+  // Queen
+  board.SetField(1, 0, make_piece(Figure::kQueen, Player::kWhite));
+  board.SetField(1, 5, make_piece(Figure::kQueen, Player::kBlack));
+
+  // Rooks
+  board.SetField(0, 0, make_piece(Figure::kRook, Player::kWhite));
+  board.SetField(3, 0, make_piece(Figure::kRook, Player::kWhite));
+  board.SetField(0, 5, make_piece(Figure::kRook, Player::kBlack));
+  board.SetField(3, 5, make_piece(Figure::kRook, Player::kBlack));
+
+  for (int i = 0; i < 4; ++i) {
+    board.SetField(i, 1, make_piece(Figure::kPawn, Player::kWhite));
+    board.SetField(i, 4, make_piece(Figure::kPawn, Player::kBlack));
+  }*/
 
   return state;
 }

@@ -60,6 +60,9 @@ class MCTSNode : public std::enable_shared_from_this<MCTSNode<Game>> {
   unsigned GetLosses();
   unsigned GetVisits();
 
+  void SetUCTConfidence(double confidence);
+  double GetUCTConfidence();
+
  private:
   // This node's child nodes.
   NodePtrList children_;
@@ -75,6 +78,8 @@ class MCTSNode : public std::enable_shared_from_this<MCTSNode<Game>> {
   unsigned wins_{0};
   unsigned draws_{0};
   unsigned visits_{0};
+
+  double UCTConfidence_{0};
 };
 
 template class MCTSNode<::aithena::chess::Game>;
