@@ -55,6 +55,9 @@ class Game : public ::aithena::Game<State> {
   bool IsTerminalState(State&) override;
   int GetStateResult(State&) override;
 
+  // Returns whether the player's king is in check.
+  bool KingInCheck(State state, Player player);
+
   // Generates all enxt moves for all pieces for a given state.
   // The pseudo parameter indicates whether to only generate pseudo moves.
   std::vector<State> GenMoves(State, bool pseudo = false);
@@ -107,19 +110,16 @@ class Game : public ::aithena::Game<State> {
   static const std::array<Player, 2> players;
 
  private:
-  // Returns whether the player's king is in check.
-  bool KingInCheck(State state, Player player);
-
   // Stores the magic bit boards computed by InitializeMagic.
   // magic_bit_planes_[2*i + 0] thereby stores the push bit planes for figure i
   // whereas magic_bit_planes[2*i + 1] stores the capture bit planes
   std::array<std::unique_ptr<BoardPlane[]>,
       static_cast<unsigned>(Figure::kCount) * 2> magic_bit_planes_;
   // For faster access to GetOption("max_no_progress")
-  unsigned int max_no_progress_;
+  unsigned max_no_progress_;
   // For faster access to GetOption("max_move_count")
   // Set to 0 to disable.
-  unsigned int max_move_count_;
+  unsigned max_move_count_;
 };
 
 }  // namespace chess

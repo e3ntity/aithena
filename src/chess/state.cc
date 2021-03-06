@@ -62,6 +62,9 @@ bool State::operator!=(const State& other) {
 }
 
 Player State::GetPlayer() { return player_; }
+Player State::GetOpponent() {
+  return player_ == Player::kWhite ? Player::kBlack : Player::kWhite;
+}
 void State::SetPlayer(Player p) { player_ = p; }
 
 bool State::GetCastleQueen(Player p) {

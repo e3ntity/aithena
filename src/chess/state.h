@@ -26,6 +26,7 @@ class State : public ::aithena::State {
   bool operator!=(const State&);
 
   Player GetPlayer();
+  Player GetOpponent();
   void SetPlayer(Player);
 
   bool GetCastleQueen(Player);

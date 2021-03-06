@@ -23,8 +23,8 @@ class MCTS {
   // starting at the given node.
   void Run(
     typename Node::NodePtr,
-    unsigned rounds = 1,
-    unsigned simulations = 1
+    int rounds = 1,
+    int simulations = 1
   );
 
   // MCTS Selection, starting at some node and selecting successive children

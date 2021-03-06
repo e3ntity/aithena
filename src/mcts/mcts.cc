@@ -7,6 +7,7 @@ Copyright 2020 All rights reserved.
 #include <chrono>
 #include <cmath>
 #include <iostream>
+#include <iomanip>
 
 namespace aithena {
 
@@ -18,26 +19,35 @@ MCTS<Game>::MCTS(std::shared_ptr<Game> game) : game_{game} {}
 template <typename Game>
 void MCTS<Game>::Run(
   typename MCTSNode<Game>::NodePtr root,
-  unsigned rounds,
-  unsigned simulations
+  int rounds,
+  int simulations
 ) {
-  for (unsigned round = 0; round < rounds; ++round) {
+  for (int round = 0; round < rounds; ++round) {
+    double percentage = 100.0 * double(round) / double(rounds);
+    std::cout << "Running MCTS: " << std::setprecision(3) << percentage
+              << "%   \r" << std::flush;
+
+    //for (auto child : root->GetChildren()) {
+    //  std::cout << std::setfill(' ') << std::setw(4) << child->GetVisits();
+    //  std::cout << "(" << std::setfill(' ') << std::setw(2) << child->GetWins() / child->GetVisits() << ")";
+    //}
+    //std::cout << std::endl;
+
     auto leaf = Select(root, UCTSelect);
 
-    if (leaf->IsTerminal()) continue;
-
-    if (!leaf->IsExpanded()) leaf->Expand();
+    if (leaf->IsTerminal()) {
+      Backpropagate(leaf, game_->GetStateResult(leaf->GetState()));
+      continue;
+    }
 
     auto child = RandomSelect(leaf);
 
-    for (unsigned simulation = 0; simulation < simulations; ++simulation) {
+    for (int simulation = 0; simulation < simulations; ++simulation) {
       int result = Simulate(child, RandomSelect);
       Backpropagate(child, result);
-
-      std::cout << "." << std::flush;
     }
-    std::cout << std::endl;
   }
+  std::cout << std::endl;
 }
 
 template <typename Game>
@@ -65,39 +75,45 @@ int MCTS<Game>::Simulate(
   typename MCTSNode<Game>::NodePtr start,
   typename MCTSNode<Game>::NodePtr (*next)(typename MCTSNode<Game>::NodePtr)
 ) {
-  auto current = start;
-
   auto bm_start = std::chrono::high_resolution_clock::now();
 
+  int i{0};
+  auto current = start;
   while (!game_->IsTerminalState(current->GetState())) {
     if (!current->IsExpanded()) current->Expand();
 
     current = next(current);
+    ++i;
   }
+
+  int result = game_->GetStateResult(current->GetState());
 
   auto bm_end = std::chrono::high_resolution_clock::now();
   time_simulate.push_back(
     std::chrono::duration_cast<std::chrono::milliseconds>(bm_end - bm_start)
   );
 
-  return game_->GetStateResult(current->GetState());
+  return i % 2 == 0 ? result : -result;
 }
 
 template <typename Game>
 void MCTS<Game>::Backpropagate(typename MCTSNode<Game>::NodePtr start, int result) {
-  auto current = start;
-
   auto bm_start = std::chrono::high_resolution_clock::now();
 
-  for (int i = 0; current->GetParent() != nullptr; ++i) {
-    if (result == 0)
+  auto current = start;
+  int i{0};
+
+  while (current != nullptr) {
+    if (result == 0) {
       current->IncDraws();
-    else if ((result > 0 && i % 2 == 0) || (result < 0 && i % 2 == 1))
-      current->IncWins();
-    else
+    } else if ((result > 0 && i % 2 == 0) || (result < 0 && i % 2 == 1)) {
       current->IncLosses();
+    } else {
+      current->IncWins();
+    }
 
     current = current->GetParent();
+    ++i;
   }
 
   auto bm_end = std::chrono::high_resolution_clock::now();
@@ -112,7 +128,7 @@ template <typename Game>
 typename MCTSNode<Game>::NodePtr MCTS<Game>::RandomSelect(
   typename MCTSNode<Game>::NodePtr node
 ) {
-  assert(node->IsExpanded());
+  if (!node->IsExpanded()) node->Expand();
 
   auto children = node->GetChildren();
 
@@ -123,10 +139,11 @@ template <typename Game>
 typename MCTSNode<Game>::NodePtr MCTS<Game>::UCTSelect(
   typename MCTSNode<Game>::NodePtr node
 ) {
-  assert(node->IsExpanded());
+  assert(!node->IsLeaf());
+  assert(node->GetVisits() > 0);
 
   unsigned index{0};
-  unsigned maximum{0};
+  double maximum{0};
 
   auto children = node->GetChildren();
 
@@ -136,9 +153,9 @@ typename MCTSNode<Game>::NodePtr MCTS<Game>::UCTSelect(
 
     assert(child->GetVisits() > 0);
 
-    unsigned exploitation = child->GetWins() / child->GetVisits();
-    unsigned exploration = sqrt(log(node->GetVisits()) / child->GetVisits());
-    unsigned value = exploitation + exploration;
+    double exploitation = child->GetWins() / child->GetVisits();
+    double exploration = sqrt(log(node->GetVisits()) / child->GetVisits());
+    double value = exploitation + exploration;
 
     if (value <= maximum) continue;
 
@@ -150,20 +167,23 @@ typename MCTSNode<Game>::NodePtr MCTS<Game>::UCTSelect(
 }
 
 template <typename Game>
-typename MCTSNode<Game>::NodePtr MCTS<Game>::GreedySelect(typename MCTSNode<Game>::NodePtr node) {
+typename MCTSNode<Game>::NodePtr MCTS<Game>::GreedySelect(
+  typename MCTSNode<Game>::NodePtr node
+) {
   if (!node->IsExpanded()) return RandomSelect(node);
 
-  unsigned index{0};
-  unsigned maximum{0};
+  int index{ -1};
+  double maximum{0};
 
   auto children = node->GetChildren();
 
-  for (unsigned i = 0; i < children.size(); ++i) {
+  int i{0};
+  for (; i < int(children.size()); ++i) {
     auto child = children.at(i);
 
     if (child->GetVisits() == 0) continue;
 
-    unsigned value = child->GetWins() / child->GetVisits();
+    double value = child->GetWins() / child->GetVisits();
 
     if (value <= maximum) continue;
 
@@ -172,8 +192,7 @@ typename MCTSNode<Game>::NodePtr MCTS<Game>::GreedySelect(typename MCTSNode<Game
   }
 
   // We dont want to always return the first node if none has been visited.
-  if (index == 0 && (children.at(index))->GetVisits() == 0)
-    return RandomSelect(node);
+  if (index < 0) return RandomSelect(node);
 
   return children.at(index);
 }

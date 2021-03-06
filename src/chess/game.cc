@@ -27,8 +27,8 @@ Game::Game(Options options) : ::aithena::Game<State> {options} {
   DefaultOption("max_move_count", 80);
   DefaultOption("figure_count", static_cast<unsigned>(Figure::kCount));
 
-  max_no_progress_ = GetOption("max_no_progress");
-  max_move_count_ = GetOption("max_move_count");
+  max_no_progress_ = unsigned(GetOption("max_no_progress"));
+  max_move_count_ = unsigned(GetOption("max_move_count"));
 
   assert(GetOption("board_width") <= 8 && GetOption("board_height") <= 8);
 
@@ -36,7 +36,8 @@ Game::Game(Options options) : ::aithena::Game<State> {options} {
 }
 
 Game::Game(const Game& other) : ::aithena::Game<State>(other) {
-  // InitializeMagic();
+  max_no_progress_ = other.max_no_progress_;
+  max_move_count_ = other.max_move_count_;
 }
 
 // Operators
@@ -93,7 +94,7 @@ State Game::GetInitialState() {
   board.SetField(0, 2, make_piece(Figure::kQueen, Player::kWhite));
 
   // Kings
-  board.SetField(2, 1, make_piece(Figure::kKing, Player::kWhite));
+  board.SetField(0, 0, make_piece(Figure::kKing, Player::kWhite));
   board.SetField(3, 3, make_piece(Figure::kKing, Player::kBlack));
 
   return state;
@@ -147,6 +148,8 @@ bool Game::KingInCheck(State state, Player player) {
   Board board = state.GetBoard();
   BoardPlane king_plane = board.GetPlane(make_piece(Figure::kKing, player));
   Player opponent = player == Player::kWhite ? Player::kBlack : Player::kWhite;
+
+  state.SetPlayer(opponent);
   std::vector<State> next_states = GenMoves(state, /*pseudo=*/ true);
 
   for (auto next_state : next_states) {
@@ -160,10 +163,10 @@ bool Game::KingInCheck(State state, Player player) {
 
 bool Game::IsTerminalState(State& state) {
   // Check for a draw
-  if (state.GetNoProgressCount() > max_no_progress_)
+  if (state.GetNoProgressCount() > unsigned(GetOption("max_no_progress")))
     return true;
 
-  if (state.GetMoveCount() > max_move_count_)
+  if (state.GetMoveCount() > unsigned(GetOption("max_move_count")))
     return true;
 
   // Check for checkmate
@@ -181,12 +184,14 @@ int Game::GetStateResult(State& state) {
       || state.GetMoveCount() > max_move_count_)
     return 0;
 
-  // Check if we are unable to move
-  if (GetLegalActions(state).size() == 0)
-    return -1;
+  // Check if we are unable to move and king is in check
+  if (GetLegalActions(state).size() == 0) {
+    if (KingInCheck(state, state.GetPlayer())) return -1;
 
-  // should never reach here (terminal but can move and not draw)
-  assert(false);
+    return 0;
+  }
+
+  assert(false); // Should never reach here.
 }
 
 // Move generation
@@ -196,8 +201,8 @@ std::vector<State> Game::GetLegalActions(State state) {
 }
 
 std::vector<State> Game::GenPawnMoves(State state, unsigned x, unsigned y) {
-  std::size_t width{this->GetOption("board_width")};
-  std::size_t height{this->GetOption("board_height")};
+  unsigned width{unsigned(this->GetOption("board_width"))};
+  unsigned height{unsigned(this->GetOption("board_height"))};
 
   Board board_before{state.GetBoard()};
 
