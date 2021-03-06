@@ -17,7 +17,7 @@ class MCTS {
  public:
   using Node = MCTSNode<Game>;
 
-  MCTS(Game);
+  MCTS(std::shared_ptr<Game>);
 
   // Runs the MCTS algorithms for n rounds, using m simulations each round,
   // starting at the given node.
@@ -65,7 +65,7 @@ class MCTS {
   double BenchmarkSimulate();
   double BenchmarkBackpropagate();
  private:
-  Game game_;
+  std::shared_ptr<Game> game_;
 
   // Stats
   std::vector<std::chrono::milliseconds> time_select{};

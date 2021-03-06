@@ -13,7 +13,7 @@ namespace aithena {
 // Constructors
 
 template <typename Game>
-MCTS<Game>::MCTS(Game game) : game_{game} {}
+MCTS<Game>::MCTS(std::shared_ptr<Game> game) : game_{game} {}
 
 template <typename Game>
 void MCTS<Game>::Run(
@@ -69,7 +69,7 @@ int MCTS<Game>::Simulate(
 
   auto bm_start = std::chrono::high_resolution_clock::now();
 
-  while (!game_.IsTerminalState(current->GetState())) {
+  while (!game_->IsTerminalState(current->GetState())) {
     if (!current->IsExpanded()) current->Expand();
 
     current = next(current);
@@ -80,7 +80,7 @@ int MCTS<Game>::Simulate(
     std::chrono::duration_cast<std::chrono::milliseconds>(bm_end - bm_start)
   );
 
-  return game_.GetStateResult(current->GetState());
+  return game_->GetStateResult(current->GetState());
 }
 
 template <typename Game>

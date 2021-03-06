@@ -20,9 +20,9 @@ class MCTSNode : public std::enable_shared_from_this<MCTSNode<Game>> {
   using NodePtrList = std::vector<NodePtr>;
 
   // Initialize with the default game state.
-  explicit MCTSNode(Game&);
+  explicit MCTSNode(std::shared_ptr<Game>);
   // Initialize with a specific state.
-  MCTSNode(Game&, typename Game::GameState, NodePtr parent);
+  MCTSNode(std::shared_ptr<Game>, typename Game::GameState, NodePtr parent);
 
   // Operators
   MCTSNode<Game>& operator=(const MCTSNode& node);
@@ -66,7 +66,7 @@ class MCTSNode : public std::enable_shared_from_this<MCTSNode<Game>> {
   // This node's parent.
   NodePtr parent_;
   // An object capturing the rules of the game.
-  Game& game_;
+  std::shared_ptr<Game> game_;
   // The state of the game that this node captures.
   typename Game::GameState state_;
   // Whether this node has all possible child nodes in children_.

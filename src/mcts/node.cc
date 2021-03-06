@@ -11,11 +11,15 @@ namespace aithena {
 // Constructors
 
 template <typename Game>
-MCTSNode<Game>::MCTSNode(Game& game)
-  : children_{}, parent_{nullptr}, game_{game}, state_{game.GetInitialState()} {}
+MCTSNode<Game>::MCTSNode(std::shared_ptr<Game> game)
+  : children_{},
+    parent_{nullptr},
+    game_{game},
+    state_{game->GetInitialState()} {}
 
 template <typename Game>
-MCTSNode<Game>::MCTSNode(Game& game, typename Game::GameState state, NodePtr parent)
+MCTSNode<Game>::MCTSNode(std::shared_ptr<Game> game,
+                         typename Game::GameState state, NodePtr parent)
   : children_{}, parent_{parent}, game_{game}, state_{state} {}
 
 // Operators
@@ -61,7 +65,7 @@ std::shared_ptr<MCTSNode<Game>> MCTSNode<Game>::GetParent() {
 
 template <typename Game>
 void MCTSNode<Game>::Expand() {
-  auto moves = game_.GetLegalActions(state_);
+  auto moves = game_->GetLegalActions(state_);
 
   for (auto state : moves) {
     children_.push_back(
@@ -94,7 +98,7 @@ template <typename Game>
 bool MCTSNode<Game>::IsTerminal() {
   //if (IsExpanded()) return children_.size() == 0;  // Cheap check
 
-  return game_.IsTerminalState(state_);
+  return game_->IsTerminalState(state_);
 }
 
 template <typename Game>
