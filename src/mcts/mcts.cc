@@ -23,15 +23,15 @@ void MCTS<Game>::Run(
   int simulations
 ) {
   for (int round = 0; round < rounds; ++round) {
-    double percentage = 100.0 * double(round) / double(rounds);
-    std::cout << "Running MCTS: " << std::setprecision(3) << percentage
-              << "%   \r" << std::flush;
+    //double percentage = 100.0 * double(round) / double(rounds);
+    //std::cout << "Running MCTS: " << std::setprecision(2) << percentage
+    //          << "%   \r" << std::flush;
 
-    //for (auto child : root->GetChildren()) {
-    //  std::cout << std::setfill(' ') << std::setw(4) << child->GetVisits();
-    //  std::cout << "(" << std::setfill(' ') << std::setw(2) << child->GetWins() / child->GetVisits() << ")";
-    //}
-    //std::cout << std::endl;
+    for (auto child : root->GetChildren()) {
+      std::cout << std::setfill(' ') << std::setw(4) << child->GetVisits();
+      std::cout << "(" << std::setfill(' ') << std::setw(2) << child->GetWins() << ")";
+    }
+    std::cout << std::endl;
 
     auto leaf = Select(root, UCTSelect);
 
@@ -153,9 +153,10 @@ typename MCTSNode<Game>::NodePtr MCTS<Game>::UCTSelect(
 
     assert(child->GetVisits() > 0);
 
-    double exploitation = child->GetWins() / child->GetVisits();
-    double exploration = sqrt(log(node->GetVisits()) / child->GetVisits());
-    double value = exploitation + exploration;
+    double exploitation = double(child->GetWins()) / double(child->GetVisits());
+    double exploration = sqrt(log(double(node->GetVisits()))
+                              / double(child->GetVisits()));
+    double value = exploitation + M_SQRT2 * exploration;
 
     if (value <= maximum) continue;
 
@@ -183,13 +184,15 @@ typename MCTSNode<Game>::NodePtr MCTS<Game>::GreedySelect(
 
     if (child->GetVisits() == 0) continue;
 
-    double value = child->GetWins() / child->GetVisits();
+    double value = double(child->GetWins()) / double(child->GetVisits());
 
     if (value <= maximum) continue;
 
     index = i;
     maximum = value;
   }
+
+  std::cout << "Chose node " << index << std::endl;
 
   // We dont want to always return the first node if none has been visited.
   if (index < 0) return RandomSelect(node);
