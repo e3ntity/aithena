@@ -132,7 +132,7 @@ int main(int argc, char **argv) {
 
 	std::cout << PrintBoard(root_ptr->GetState()) << std::endl;
 
-	auto mcts = aithena::MCTS(game_ptr);
+	auto mcts = aithena::MCTS<aithena::chess::Game>(game_ptr);
 
 	std::shared_ptr<aithena::MCTSNode<aithena::chess::Game>> current_ptr = root_ptr;
 	while (!game.IsTerminalState(current_ptr->GetState())) {
