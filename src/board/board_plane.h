@@ -45,8 +45,9 @@ class BoardPlane {
 
   // Converts the board to bytes.
   std::vector<char> ToBytes();
-  // Reads a byte representation of the board into a board object.
-  static BoardPlane FromBytes(std::vector<char>);
+  // Reads a byte representation of the board into a board object and returns
+  // the number of bytes read.
+  static std::tuple<BoardPlane, int> FromBytes(std::vector<char>);
 
  private:
   std::size_t width_, height_;
@@ -56,7 +57,7 @@ class BoardPlane {
   boost::dynamic_bitset<> plane_;
 
   struct BoardPlaneByteRepr {
-    std::size_t width, height;
+    int width, height;
   };
 };
 

@@ -4,12 +4,14 @@ Copyright 2020 All rights reserved.
 
 #include "board/board.h"
 
+#include <cstring>
+#include <iostream>
+
 namespace aithena {
 
 BoardPlane GetNewFields(const Board& before, const Board& after) {
-  assert(before.width_ == after.width_
-         && before.height_ == after.height_
-         && before.figure_count_ == after.figure_count_);
+  assert(before.width_ == after.width_ && before.height_ == after.height_ &&
+         before.figure_count_ == after.figure_count_);
 
   BoardPlane difference(before.width_, before.height_);
 
@@ -27,11 +29,11 @@ bool operator==(const Piece& a, const Piece& b) {
 }
 
 Board::Board(std::size_t width, std::size_t height, unsigned figure_count)
-  : width_(width),
-    height_(height),
-    figure_count_(figure_count),
-    planes_(figure_count * 2, BoardPlane(width, height)) {}
-Board::Board(const Board& other) {*this = other;}
+    : width_(width),
+      height_(height),
+      figure_count_(figure_count),
+      planes_(figure_count * 2, BoardPlane(width, height)) {}
+Board::Board(const Board& other) { *this = other; }
 
 Board& Board::operator=(const Board& other) {
   if (&other == this) return *this;
@@ -45,19 +47,15 @@ Board& Board::operator=(const Board& other) {
 }
 
 bool Board::operator==(const Board& other) const {
-  return width_ == other.width_
-         && height_ == other.height_
-         && figure_count_ == other.figure_count_
-         && planes_ == other.planes_;
+  return width_ == other.width_ && height_ == other.height_ &&
+         figure_count_ == other.figure_count_ && planes_ == other.planes_;
 }
 
-bool Board::operator!=(const Board& other) const {
-  return !(*this == other);
-}
+bool Board::operator!=(const Board& other) const { return !(*this == other); }
 
-std::size_t Board::GetWidth() {return width_;}
-std::size_t Board::GetHeight() {return height_;}
-unsigned Board::GetFigureCount() {return figure_count_;}
+std::size_t Board::GetWidth() { return width_; }
+std::size_t Board::GetHeight() { return height_; }
+unsigned Board::GetFigureCount() { return figure_count_; }
 
 BoardPlane& Board::GetPlane(Piece piece) {
   assert(piece.figure < figure_count_ && piece.player < 2);
@@ -71,8 +69,8 @@ BoardPlane Board::GetFigurePlane(unsigned figure) {
 BoardPlane Board::GetPlayerPlane(unsigned player) {
   BoardPlane plane{width_, height_};
 
-  for (unsigned i = player * figure_count_;
-          i < (player + 1) * figure_count_; ++i)
+  for (unsigned i = player * figure_count_; i < (player + 1) * figure_count_;
+       ++i)
     plane |= planes_[i];
 
   return plane;
@@ -81,8 +79,7 @@ BoardPlane Board::GetPlayerPlane(unsigned player) {
 BoardPlane Board::GetCompletePlane() {
   BoardPlane plane{width_, height_};
 
-  for (auto plane_ : planes_)
-    plane |= plane_;
+  for (auto plane_ : planes_) plane |= plane_;
 
   return plane;
 }
@@ -92,8 +89,7 @@ void Board::SetField(unsigned x, unsigned y, Piece piece) {
 
   ClearField(x, y);
 
-  if (piece == kEmptyPiece)
-    return;
+  if (piece == kEmptyPiece) return;
 
   assert(piece.figure < figure_count_ && piece.player < 2);
 
@@ -114,14 +110,64 @@ Piece Board::GetField(unsigned x, unsigned y) {
 void Board::ClearField(unsigned x, unsigned y) {
   assert(x < width_ && y < height_);
 
-  for (unsigned i = 0; i < planes_.size(); ++i)
-    planes_[i].clear(x, y);
+  for (unsigned i = 0; i < planes_.size(); ++i) planes_[i].clear(x, y);
 }
 
 void Board::MoveField(unsigned x, unsigned y, unsigned x_, unsigned y_) {
   Piece piece = GetField(x, y);
   ClearField(x, y);
   SetField(x_, y_, piece);
+}
+
+std::vector<char> Board::ToBytes() {
+  struct BoardByteRepr board_struct;
+
+  board_struct.width = int(width_);
+  board_struct.height = int(height_);
+  board_struct.figure_count = int(figure_count_);
+
+  std::vector<char> output(sizeof board_struct);
+
+  std::memcpy(&output[0], static_cast<void*>(&board_struct),
+              sizeof board_struct);
+
+  for (auto plane : planes_) {
+    auto plane_bytes = plane.ToBytes();
+    output.insert(output.end(), plane_bytes.begin(), plane_bytes.end());
+  }
+
+  return output;
+}
+
+std::tuple<Board, int> Board::FromBytes(std::vector<char> bytes) {
+  int bytes_read = 0;
+
+  // Gather board settings
+  struct BoardByteRepr* board_struct =
+      static_cast<struct BoardByteRepr*>(static_cast<void*>(&bytes[0]));
+  bytes_read += sizeof *board_struct;
+
+  assert(board_struct->width > 0 && board_struct->width < 256);
+  assert(board_struct->height > 0 && board_struct->height < 256);
+  assert(board_struct->figure_count > 0 && board_struct->figure_count < 256);
+
+  Board board(board_struct->width, board_struct->height,
+              board_struct->figure_count);
+
+  // Collect board planes
+  std::vector<BoardPlane> planes;
+  BoardPlane plane;
+
+  for (int i = 0; i < int(board.GetFigureCount()) * 2; ++i) {
+    std::vector<char> plane_bytes(bytes.begin() + bytes_read, bytes.end());
+    auto result = BoardPlane::FromBytes(plane_bytes);
+
+    planes.push_back(std::get<0>(result));
+    bytes_read += std::get<1>(result);
+  }
+  board.planes_ = planes;
+
+  return std::make_tuple(board, bytes_read);
 }
 
 }  // namespace aithena

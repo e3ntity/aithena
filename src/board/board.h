@@ -64,6 +64,12 @@ class Board {
   // overriding a piece on the destination position.
   void MoveField(unsigned x, unsigned y, unsigned x_, unsigned y_);
 
+  // Converts the board to bytes.
+  std::vector<char> ToBytes();
+  // Reads a byte representation of the board into a board object. Additionally
+  // returns the number of bytes read.
+  static std::tuple<Board, int> FromBytes(std::vector<char>);
+
   friend BoardPlane GetNewFields(const Board&, const Board&);
 
  private:
@@ -75,6 +81,10 @@ class Board {
   // The board planes managed by the board, two for each piece (one for each
   // player).
   std::vector<BoardPlane> planes_;
+
+  struct BoardByteRepr {
+    int width, height, figure_count;
+  };
 };
 
 // Returns a board plane highlighting all fields that contain a different
