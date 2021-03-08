@@ -44,9 +44,9 @@ class BoardPlane {
   bool empty() const;
 
   // Converts the board to bytes.
-  std::unique_ptr<char[]> ToBytes();
+  std::vector<char> ToBytes();
   // Reads a byte representation of the board into a board object.
-  static BoardPlane FromBytes(std::unique_ptr<char[]>);
+  static BoardPlane FromBytes(std::vector<char>);
 
  private:
   std::size_t width_, height_;
