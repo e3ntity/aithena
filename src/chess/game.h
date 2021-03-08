@@ -18,19 +18,23 @@ namespace chess {
 // Defines the figures used in chess. GhostPawn is used to keep track of
 // "en-passant".
 enum class Figure : unsigned {
-  kKing, kQueen, kRook,
-  kKnight, kBishop, kPawn,
-  /*kGhostPawn, */kCount
+  kKing,
+  kQueen,
+  kRook,
+  kKnight,
+  kBishop,
+  kPawn,
+  /*kGhostPawn, */ kCount
 };
 
-enum Player : unsigned {kWhite, kBlack};
+enum Player : unsigned { kWhite, kBlack };
 
 }  // namespace chess
 }  // namespace aithena
 
 // Needs to be imported here as state needs Figure & Player
-#include "chess/state.h"
 #include "chess/moves.h"
+#include "chess/state.h"
 
 namespace aithena {
 namespace chess {
@@ -114,7 +118,8 @@ class Game : public ::aithena::Game<State> {
   // magic_bit_planes_[2*i + 0] thereby stores the push bit planes for figure i
   // whereas magic_bit_planes[2*i + 1] stores the capture bit planes
   std::array<std::unique_ptr<BoardPlane[]>,
-      static_cast<unsigned>(Figure::kCount) * 2> magic_bit_planes_;
+             static_cast<unsigned>(Figure::kCount) * 2>
+      magic_bit_planes_;
   // For faster access to GetOption("max_no_progress")
   unsigned max_no_progress_;
   // For faster access to GetOption("max_move_count")

@@ -3,6 +3,7 @@ Copyright 2020 All rights reserved.
 */
 
 #include "chess/game.h"
+#include "chess/state.h"
 
 #include "board/board.h"
 #include "chess/moves.h"
@@ -20,7 +21,7 @@ Piece make_piece(Figure figure, Player player) {
 
 Game::Game() : Game{Options{}} {}
 
-Game::Game(Options options) : ::aithena::Game<State> {options} {
+Game::Game(Options options) : ::aithena::Game<State>{options} {
   DefaultOption("board_width", 8);
   DefaultOption("board_height", 8);
   DefaultOption("max_no_progress", 30);
@@ -52,10 +53,9 @@ Game& Game::operator=(const Game& other) {
 
 // Static attributes
 
-const std::array<Figure, 6> Game::figures{
-  Figure::kKing, Figure::kQueen, Figure::kRook,
-  Figure::kKnight, Figure::kBishop, Figure::kPawn
-};
+const std::array<Figure, 6> Game::figures{Figure::kKing,   Figure::kQueen,
+                                          Figure::kRook,   Figure::kKnight,
+                                          Figure::kBishop, Figure::kPawn};
 
 const std::array<Player, 2> Game::players{Player::kWhite, Player::kBlack};
 
@@ -74,9 +74,9 @@ void Game::InitializeMagic() {
     for (unsigned x = 0; x < width; ++x) {
       for (unsigned y = 0; y < height; ++y) {
         magic_bit_planes_[2 * f][y * width + x] =
-          BoardPlane(kPawnPushes[y * 8 + x]);
+            BoardPlane(kPawnPushes[y * 8 + x]);
         magic_bit_planes_[2 * f + 1][y * width + x] =
-          BoardPlane(kPawnPushes[y * 8 + x]);
+            BoardPlane(kPawnPushes[y * 8 + x]);
       }
     }
   }
@@ -91,11 +91,10 @@ State Game::GetInitialState() {
 
   Board& board = state.GetBoard();
 
-  board.SetField(0, 0, make_piece(Figure::kKing, Player::kWhite));
-  board.SetField(3, 3, make_piece(Figure::kKing, Player::kBlack));
+  board.SetField(1, 2, make_piece(Figure::kKing, Player::kWhite));
+  board.SetField(4, 4, make_piece(Figure::kKing, Player::kBlack));
 
-  board.SetField(0, 1, make_piece(Figure::kBishop, Player::kWhite));
-  board.SetField(0, 2, make_piece(Figure::kBishop, Player::kWhite));
+  // board.SetField(0, 2, make_piece(Figure::kBishop, Player::kWhite));
 
   /*
   // Kings
@@ -170,7 +169,7 @@ bool Game::KingInCheck(State state, Player player) {
   Player opponent = player == Player::kWhite ? Player::kBlack : Player::kWhite;
 
   state.SetPlayer(opponent);
-  std::vector<State> next_states = GenMoves(state, /*pseudo=*/ true);
+  std::vector<State> next_states = GenMoves(state, /*pseudo=*/true);
 
   for (auto next_state : next_states) {
     if ((king_plane & next_state.GetBoard().GetPlayerPlane(opponent)).empty())
@@ -186,12 +185,10 @@ bool Game::IsTerminalState(State& state) {
   if (state.GetNoProgressCount() > unsigned(GetOption("max_no_progress")))
     return true;
 
-  if (state.GetMoveCount() > unsigned(GetOption("max_move_count")))
-    return true;
+  if (state.GetMoveCount() > unsigned(GetOption("max_move_count"))) return true;
 
   // Check for checkmate
-  if (GetLegalActions(state).size() == 0)
-    return true;
+  if (GetLegalActions(state).size() == 0) return true;
 
   return false;
 }
@@ -200,8 +197,8 @@ int Game::GetStateResult(State& state) {
   assert(IsTerminalState(state));
 
   // Check for a draw
-  if (state.GetNoProgressCount() > max_no_progress_
-      || state.GetMoveCount() > max_move_count_)
+  if (state.GetNoProgressCount() > max_no_progress_ ||
+      state.GetMoveCount() > max_move_count_)
     return 0;
 
   // Check if we are unable to move and king is in check
@@ -211,13 +208,13 @@ int Game::GetStateResult(State& state) {
     return 0;
   }
 
-  assert(false); // Should never reach here.
+  assert(false);  // Should never reach here.
 }
 
 // Move generation
 
 std::vector<State> Game::GetLegalActions(State state) {
-  return GenMoves(state, /*pseudo=*/ false);
+  return GenMoves(state, /*pseudo=*/false);
 }
 
 std::vector<State> Game::GenPawnMoves(State state, unsigned x, unsigned y) {
@@ -254,8 +251,8 @@ std::vector<State> Game::GenPawnMoves(State state, unsigned x, unsigned y) {
       moves.back().GetBoard().MoveField(x, y, x, y + direction);
 
       // Move forward twice
-      if (y == (state.GetPlayer() == Player::kWhite ? 1 : height - 2)
-          && !figure_plane.get(x, y + 2 * direction)) {
+      if (y == (state.GetPlayer() == Player::kWhite ? 1 : height - 2) &&
+          !figure_plane.get(x, y + 2 * direction)) {
         moves.push_back(state);
         moves.back().GetBoard().MoveField(x, y, x, y + direction * 2);
         moves.back().SetDPushPawnX(static_cast<signed>(x));
@@ -265,10 +262,10 @@ std::vector<State> Game::GenPawnMoves(State state, unsigned x, unsigned y) {
   }
 
   // Generate captures
-  auto opponent = state.GetPlayer() == Player::kWhite
-                  ? Player::kBlack : Player::kWhite;
-  BoardPlane enemy_figures = board_before.GetPlayerPlane(
-                               static_cast<unsigned>(opponent));
+  auto opponent =
+      state.GetPlayer() == Player::kWhite ? Player::kBlack : Player::kWhite;
+  BoardPlane enemy_figures =
+      board_before.GetPlayerPlane(static_cast<unsigned>(opponent));
 
   if (x + 1 < width && enemy_figures.get(x + 1, y + direction)) {
     if (y + direction == height - 1 || y + direction == 0) {
@@ -318,10 +315,10 @@ std::vector<State> Game::GenPawnMoves(State state, unsigned x, unsigned y) {
   }
 
   // ANy pawn move resets no progress counter
-  std::for_each(
-    moves.begin(),
-    moves.end(),
-  [&](State & s) { s.ResetNoProgressCount(); s.GetBoard().ClearField(x, y); });
+  std::for_each(moves.begin(), moves.end(), [&](State& s) {
+    s.ResetNoProgressCount();
+    s.GetBoard().ClearField(x, y);
+  });
 
   state.SetDPushPawnX(tmp_dobule_push_pawn_x);
   state.SetDPushPawnY(tmp_dobule_push_pawn_y);
@@ -330,33 +327,35 @@ std::vector<State> Game::GenPawnMoves(State state, unsigned x, unsigned y) {
 }
 
 std::vector<State> Game::GenRookMoves(State state, unsigned x, unsigned y) {
-  return aithena::chess::GenDirectionalMoves(state, x,
-         y, {up, down, left, right}, 8);
+  return aithena::chess::GenDirectionalMoves(state, x, y,
+                                             {up, down, left, right}, 8);
 }
 
 std::vector<State> Game::GenBishopMoves(State state, unsigned x, unsigned y) {
-  return aithena::chess::GenDirectionalMoves(state, x, y,
-  {up + left, up + right, down + left, down + right}, 8);
+  return aithena::chess::GenDirectionalMoves(
+      state, x, y, {up + left, up + right, down + left, down + right}, 8);
 }
 
 std::vector<State> Game::GenKingMoves(State state, unsigned x, unsigned y) {
-  return aithena::chess::GenDirectionalMoves(state, x, y,
-  {up, right, down, left, up + right, up + left, down + right, down + left},
-  1);
+  return aithena::chess::GenDirectionalMoves(
+      state, x, y,
+      {up, right, down, left, up + right, up + left, down + right, down + left},
+      1);
 }
 
 std::vector<State> Game::GenQueenMoves(State state, unsigned x, unsigned y) {
-  return aithena::chess::GenDirectionalMoves(state, x, y,
-  {up + left, up + right, down + left, down + right, up, down, left, right}, 8);
+  return aithena::chess::GenDirectionalMoves(
+      state, x, y,
+      {up + left, up + right, down + left, down + right, up, down, left, right},
+      8);
 }
 
 std::vector<State> Game::GenKnightMoves(State state, unsigned x, unsigned y) {
-  return aithena::chess::GenDirectionalMoves(state, x, y, {
-    up + up + left, up + up + right,
-    down + down + left, down + down + right,
-    up + left + left, up + right + right,
-    down + left + left, down + right + right
-  }, 1);
+  return aithena::chess::GenDirectionalMoves(
+      state, x, y, {up + up + left, up + up + right, down + down + left,
+                    down + down + right, up + left + left, up + right + right,
+                    down + left + left, down + right + right},
+      1);
 }
 
 std::vector<State> Game::GenMoves(State state, bool pseudo) {
@@ -384,8 +383,8 @@ std::vector<State> Game::GenMoves(State state, unsigned x, unsigned y,
 
   // Make checks
 
-  if (piece.player != static_cast<unsigned>(state.GetPlayer())
-      || piece == kEmptyPiece)
+  if (piece.player != static_cast<unsigned>(state.GetPlayer()) ||
+      piece == kEmptyPiece)
     return moves;
 
   // Generate pseudo-moves
@@ -393,40 +392,37 @@ std::vector<State> Game::GenMoves(State state, unsigned x, unsigned y,
   state.IncNoProgressCount();
 
   switch (piece.figure) {
-  case static_cast<unsigned>(Figure::kPawn):
-    moves = GenPawnMoves(state, x, y);
-    break;
-  case static_cast<unsigned>(Figure::kRook):
-    moves = GenRookMoves(state, x, y);
-    break;
-  case static_cast<unsigned>(Figure::kBishop):
-    moves = GenBishopMoves(state, x, y);
-    break;
-  case static_cast<unsigned>(Figure::kQueen):
-    moves = GenQueenMoves(state, x, y);
-    break;
-  case static_cast<unsigned>(Figure::kKnight):
-    moves = GenKnightMoves(state, x, y);
-    break;
-  case static_cast<unsigned>(Figure::kKing):
-    moves = GenKingMoves(state, x, y);
-    break;
-  case kEmptyPiece.figure:
-    break;
-  default:
-    assert(false);
+    case static_cast<unsigned>(Figure::kPawn):
+      moves = GenPawnMoves(state, x, y);
+      break;
+    case static_cast<unsigned>(Figure::kRook):
+      moves = GenRookMoves(state, x, y);
+      break;
+    case static_cast<unsigned>(Figure::kBishop):
+      moves = GenBishopMoves(state, x, y);
+      break;
+    case static_cast<unsigned>(Figure::kQueen):
+      moves = GenQueenMoves(state, x, y);
+      break;
+    case static_cast<unsigned>(Figure::kKnight):
+      moves = GenKnightMoves(state, x, y);
+      break;
+    case static_cast<unsigned>(Figure::kKing):
+      moves = GenKingMoves(state, x, y);
+      break;
+    case kEmptyPiece.figure:
+      break;
+    default:
+      assert(false);
   }
 
   // Update player turn
 
   Player next_player = piece.player == static_cast<unsigned>(Player::kWhite)
-                       ? Player::kBlack
-                       : Player::kWhite;
+                           ? Player::kBlack
+                           : Player::kWhite;
 
-  std::for_each(
-    moves.begin(),
-    moves.end(),
-  [&next_player, &state](State & s) {
+  std::for_each(moves.begin(), moves.end(), [&next_player, &state](State& s) {
     s.IncMoveCount();
     s.SetPlayer(next_player);
 
