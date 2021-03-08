@@ -32,7 +32,7 @@ class BoardPlane {
   BoardPlane& operator|=(const BoardPlane&);
   BoardPlane& operator^=(const BoardPlane&);
 
-  BoardPlane operator&(const BoardPlane&) const;
+  BoardPlane operator&(const BoardPlane&)const;
   BoardPlane operator|(const BoardPlane&) const;
   BoardPlane operator^(const BoardPlane&) const;
   BoardPlane operator!() const;
@@ -43,12 +43,21 @@ class BoardPlane {
   // Returns true if no bits are set, otherwise false.
   bool empty() const;
 
+  // Converts the board to bytes.
+  char* ToBytes();
+  // Reads a byte representation of the board into a board object.
+  static BoardPlane FromBytes(char*);
+
  private:
   std::size_t width_, height_;
   // A 2D bit plane specified rows to columns.
   // Example:
   //  plane_[5 + 2 * width_] // returns the fifth element of the second row
   boost::dynamic_bitset<> plane_;
+
+  struct BoardPlaneByteRepr {
+    std::size_t width, height;
+  };
 };
 
 }  // namespace aithena
