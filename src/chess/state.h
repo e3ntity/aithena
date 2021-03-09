@@ -6,6 +6,7 @@ Copyright 2020 All rights reserved.
 #define SRC_CHESS_STATE_H_
 
 #include "game/state.h"
+
 #include "chess/game.h"
 
 namespace aithena {
@@ -46,6 +47,9 @@ class State : public ::aithena::State {
   void SetDPushPawnX(unsigned);
   void SetDPushPawnY(unsigned);
 
+  std::vector<char> ToBytes();
+  static std::tuple<::aithena::chess::State, int> FromBytes(std::vector<char>);
+
  private:
   // Indicates the player that has to make the next move.
   Player player_;
@@ -60,6 +64,11 @@ class State : public ::aithena::State {
   unsigned int no_progress_count_;
   signed double_push_pawn_x;
   signed double_push_pawn_y;
+
+  struct StateByteRepr {
+    int player, move_count, no_progress_count, double_push_pawn[2];
+    bool castle[4];
+  };
 };
 
 }  // namespace chess
