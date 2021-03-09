@@ -5,6 +5,7 @@ Copyright 2020 All rights reserved.
 #ifndef SRC_BOARD_BOARD_PLANE_H_
 #define SRC_BOARD_BOARD_PLANE_H_
 
+#include <torch/torch.h>
 #include <vector>
 
 #include "boost/dynamic_bitset.hpp"
@@ -42,6 +43,9 @@ class BoardPlane {
 
   // Returns true if no bits are set, otherwise false.
   bool empty() const;
+
+  // Returns a tensor representation of the board plane.
+  torch::Tensor AsTensor() const;
 
   // Converts the board to bytes.
   std::vector<char> ToBytes();

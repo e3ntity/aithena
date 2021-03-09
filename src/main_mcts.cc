@@ -8,8 +8,8 @@ Copyright 2020 All rights reserved.
 #include <iomanip>
 #include <memory>
 
-#include "alphazero/alphazero.h"
 #include "chess/game.h"
+#include "mcts/mcts.h"
 
 std::string PrintMarkedBoard(aithena::chess::State state,
                              aithena::BoardPlane marker,
@@ -89,6 +89,19 @@ std::string PrintBoard(aithena::chess::State state) {
   return PrintMarkedBoard(state, marker);
 }
 
+void train(aithena::MCTS<aithena::chess::Game>& mcts,
+           std::shared_ptr<aithena::MCTSNode<aithena::chess::Game>> node,
+           int rounds, int simulations) {
+  for (int round = 0; round < rounds; ++round) {
+    mcts.Run(node, simulations);
+
+    double percentage = 100.0 * double(round) / double(rounds);
+    double remaining = double(rounds - round) * mcts.BenchmarkRun() / 60;
+    std::cout << "Running MCTS: " << std::setprecision(2) << percentage << "% ("
+              << remaining << " min. remaining)\r" << std::flush;
+  }
+}
+
 int main(int argc, char** argv) {
   if (argc != 3) {
     std::cout << "Usage: " << argv[0] << " <rounds> <simulations>" << std::endl;
@@ -108,25 +121,29 @@ int main(int argc, char** argv) {
   auto game = aithena::chess::Game(options);
   auto game_ptr = std::make_shared<aithena::chess::Game>(game);
 
-  aithena::alphazero::AZNeuralNetwork nn(5, 5, 5, torch::Device(torch::kCPU),
-                                         true);
-  aithena::alphazero::AlphaZero az(game_ptr, nn);
+  auto root = aithena::MCTSNode<aithena::chess::Game>(game_ptr);
+  auto root_ptr =
+      std::make_shared<aithena::MCTSNode<aithena::chess::Game>>(root);
 
-  auto root = aithena::alphazero::AZNode(game_ptr, nn);
+  std::cout << PrintBoard(root_ptr->GetState()) << std::endl;
 
-  aithena::alphazero::AlphaZero::ReplayMemory mem;
-  auto mem_ptr =
-      std::make_shared<aithena::alphazero::AlphaZero::ReplayMemory>(mem);
+  auto mcts = aithena::MCTS<aithena::chess::Game>(game_ptr);
 
-  for (int round = 0; round < rounds; ++round) {
-    bool has_trained =
-        az.Train(game.GetInitialState(), mem_ptr, 50, simulations);
+  std::shared_ptr<aithena::MCTSNode<aithena::chess::Game>> current_ptr =
+      root_ptr;
+  while (!game.IsTerminalState(current_ptr->GetState())) {
+    train(mcts, current_ptr, rounds, simulations);
 
-    std::cout << "Value for round " << round << ": "
-              << nn->forward(root.GetNNInput()) << " (" << mem_ptr->size()
-              << " samples"
-              << ")" << std::endl;
+    current_ptr = mcts.GreedySelect(current_ptr);
+
+    std::cout << PrintBoard(current_ptr->GetState()) << std::endl;
+    std::cout << "Confidence: " << current_ptr->GetUCTConfidence() << std::endl;
   }
+
+  std::cout << mcts.BenchmarkSelect() << " sec/select" << std::endl;
+  std::cout << mcts.BenchmarkSimulate() << " sec/simulate" << std::endl;
+  std::cout << mcts.BenchmarkBackpropagate() << " sec/backprop" << std::endl;
+  std::cout << mcts.BenchmarkRun() << " sec/run" << std::endl;
 
   return 0;
 }

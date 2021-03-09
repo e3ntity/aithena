@@ -1,20 +1,52 @@
 #ifndef AITHENA_ALPHAZERO_ALPHAZERO
 #define AITHENA_ALPHAZERO_ALPHAZERO
 
-#include "mcts/mcts.h"
+#include "alphazero/neural_network.h"
+#include "alphazero/node.h"
+
+#include <chrono>
 
 namespace aithena {
 namespace alphazero {
 
-class AlphaZero : ::aithena::MCTS<::aithena::chess::Game> {
+class AlphaZero {
  public:
-  void Run(typename Node::NodePtr, int simulations) = delete;
-  void Run(typename Node::NodePtr);
+  using ReplayMemory = std::vector<std::tuple<AZNode::NodePtr, int>>;
 
-  void Backpropagate(typename Node::NodePtr, int);
-  static typename Node::NodePtr PUCTSelect(typename Node::NodePtr);
+  AlphaZero(std::shared_ptr<chess::Game>, AZNeuralNetwork);
+
+  // Runs a single simulation for alphazero starting from a root node.
+  void Run(AZNode::NodePtr);
+
+  // Runs a training game against itself and returns the final node.
+  AZNode::NodePtr SelfPlayGame(AZNode::NodePtr, int);
+
+  // Trains the network for a single self play game. Returns whether the NN was
+  // updates or if the sample count was too small for batch size.
+  bool Train(chess::Game::GameState, std::shared_ptr<ReplayMemory>, int, int);
+
+  void Backpropagate(AZNode::NodePtr, int);
+  AZNode::NodePtr Select(AZNode::NodePtr node,
+                         AZNode::NodePtr (*next)(AZNode::NodePtr));
+  static AZNode::NodePtr PUCTSelect(AZNode::NodePtr);
+
+  // Returns the average time per select in seconds.
+  double BenchmarkSelect();
+  // Returns the average time per backpropagation in seconds.
+  double BenchmarkBackprop();
+  // Returns the average time per run in seconds.
+  double BenchmarkRun();
 
  private:
+  double Benchmark(std::vector<std::chrono::milliseconds>);
+
+  std::shared_ptr<chess::Game> game_;
+  AZNeuralNetwork nn_;
+
+  // Stats
+  std::vector<std::chrono::milliseconds> time_select_{};
+  std::vector<std::chrono::milliseconds> time_backprop_{};
+  std::vector<std::chrono::milliseconds> time_run_{};
 };
 
 }  // alphazero

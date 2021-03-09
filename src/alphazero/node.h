@@ -28,10 +28,14 @@ class AZNode : public std::enable_shared_from_this<AZNode> {
   bool operator==(const AZNode& node) = delete;
   bool operator!=(const AZNode& node) = delete;
 
-  torch::Tensor GetNNInput();
+  torch::Tensor GetNNInput(int history_length = 8);
+  torch::Tensor GetChildrenPriors();
 
   // Tree node functions
-  void Expand();
+
+  // Expands the node by generating all possible child nodes and initializing
+  // them. Returns the value for the current state, evaluated by the NN.
+  double Expand();
 
   bool IsExpanded();
   bool IsLeaf();
@@ -47,6 +51,7 @@ class AZNode : public std::enable_shared_from_this<AZNode> {
   void IncVisits();
   double GetPrior();
   double GetValue();
+  double GetMeanValue();
   int GetVisits();
 
  private:

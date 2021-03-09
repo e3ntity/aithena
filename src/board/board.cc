@@ -4,6 +4,7 @@ Copyright 2020 All rights reserved.
 
 #include "board/board.h"
 
+#include <torch/torch.h>
 #include <cstring>
 #include <iostream>
 
@@ -168,6 +169,20 @@ std::tuple<Board, int> Board::FromBytes(std::vector<char> bytes) {
   board.planes_ = planes;
 
   return std::make_tuple(board, bytes_read);
+}
+
+torch::Tensor Board::AsTensor() const {
+  torch::Tensor first_plane_as_tensor = planes_[0].AsTensor();
+  torch::IntArrayRef shape = first_plane_as_tensor.sizes();
+  torch::Tensor res =
+      torch::reshape(first_plane_as_tensor, {1, shape[0], shape[1]});
+
+  unsigned num_planes = planes_.size();
+  for (int i = 1; i < num_planes; ++i) {
+    res = torch::cat(
+        {res, torch::reshape(planes_[i].AsTensor(), {1, shape[0], shape[1]})});
+  }
+  return res;
 }
 
 }  // namespace aithena

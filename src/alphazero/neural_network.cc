@@ -1,5 +1,7 @@
 #include "alphazero/neural_network.h"
 
+#include <iostream>
+
 #include "alphazero/move.h"
 
 namespace aithena {
@@ -161,6 +163,7 @@ torch::Tensor AZNeuralNetworkImpl::forward(torch::Tensor x) {
 }
 
 void AZNeuralNetworkImpl::SetUniform(bool uniform) { uniform_ = uniform; }
+bool AZNeuralNetworkImpl::GetUniform() { return uniform_; }
 
 }  // namespace alphazero
 }  // namespace aithena

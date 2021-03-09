@@ -5,6 +5,7 @@ Copyright 2020 All rights reserved.
 #ifndef SRC_BOARD_BOARD_H_
 #define SRC_BOARD_BOARD_H_
 
+#include <torch/torch.h>
 #include <climits>
 #include <vector>
 
@@ -63,6 +64,9 @@ class Board {
   // Moves The piece on field (x, y) to field (x_, y_) thereby possibly
   // overriding a piece on the destination position.
   void MoveField(unsigned x, unsigned y, unsigned x_, unsigned y_);
+
+  // Returns a tensor representatio of the board.
+  torch::Tensor AsTensor() const;
 
   // Converts the board to bytes.
   std::vector<char> ToBytes();

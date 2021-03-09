@@ -4,6 +4,7 @@ Copyright 2020 All rights reserved.
 
 #include "chess/state.h"
 
+#include <torch/torch.h>
 #include <cstring>
 
 #include "chess/game.h"
@@ -91,6 +92,72 @@ unsigned State::GetDPushPawnY() { return double_push_pawn_y; }
 void State::SetDPushPawnX(unsigned x) { double_push_pawn_x = x; }
 
 void State::SetDPushPawnY(unsigned y) { double_push_pawn_y = y; }
+
+torch::Tensor State::PlanesAsTensor() {
+  unsigned width = GetBoard().GetWidth();
+  unsigned height = GetBoard().GetHeight();
+
+  torch::Tensor board_tensor = GetBoard().AsTensor();
+  torch::IntArrayRef shape = board_tensor.sizes();
+
+  torch::Tensor repetition0 = torch::zeros({1, width, height});
+  torch::Tensor repetition1 = torch::zeros({1, width, height});
+
+  return torch::cat({board_tensor, repetition1, repetition0})
+      .reshape({1, shape[0] + 2, shape[1], shape[2]});
+}
+
+torch::Tensor State::DetailsAsTensor() {
+  unsigned width = GetBoard().GetWidth();
+  unsigned height = GetBoard().GetHeight();
+
+  torch::Tensor color;
+  torch::Tensor move_count;
+  torch::Tensor p1castling;
+  torch::Tensor p2castling;
+  torch::Tensor no_progress_count;
+
+  if (GetPlayer() == Player::kBlack)
+    color = torch::zeros({1, width, height});
+  else
+    color = torch::ones({1, width, height});
+
+  move_count = torch::reshape(BoardPlane(count_lut[move_count_])
+                                  .AsTensor()
+                                  .slice(0, 0, width)
+                                  .slice(1, 0, height),
+                              {1, width, height});
+
+  if (castle_queen_[0])
+    p1castling = torch::ones({1, width, height});
+  else
+    p1castling = torch::zeros({1, width, height});
+
+  if (castle_king_[0])
+    p1castling = torch::cat({p1castling, torch::ones({1, width, height})});
+  else
+    p1castling = torch::cat({p1castling, torch::zeros({1, width, height})});
+
+  if (castle_queen_[1])
+    p2castling = torch::ones({1, width, height});
+  else
+    p2castling = torch::zeros({1, width, height});
+
+  if (castle_king_[1])
+    p2castling = torch::cat({p2castling, torch::ones({1, width, height})});
+  else
+    p2castling = torch::cat({p2castling, torch::zeros({1, width, height})});
+
+  no_progress_count = torch::reshape(BoardPlane(count_lut[no_progress_count_])
+                                         .AsTensor()
+                                         .slice(0, 0, width)
+                                         .slice(1, 0, height),
+                                     {1, width, height});
+
+  return torch::cat(
+             {color, move_count, p1castling, p2castling, no_progress_count})
+      .reshape({1, 7, width, height});
+}
 
 std::vector<char> State::ToBytes() {
   struct StateByteRepr state_struct;

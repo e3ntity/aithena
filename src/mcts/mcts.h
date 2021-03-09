@@ -62,7 +62,7 @@ class MCTS {
   double BenchmarkBackpropagate();
   double BenchmarkRun();
 
- private:
+ protected:
   std::shared_ptr<Game> game_;
 
   // Stats

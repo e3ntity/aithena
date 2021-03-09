@@ -4,6 +4,7 @@ Copyright 2020 All rights reserved.
 
 #include "board/board_plane.h"
 
+#include <torch/torch.h>
 #include <cstring>
 #include <iostream>
 
@@ -154,6 +155,17 @@ std::tuple<BoardPlane, int> BoardPlane::FromBytes(std::vector<char> bytes) {
   }
 
   return std::make_tuple(plane, bytes_read);
+}
+
+torch::Tensor BoardPlane::AsTensor() const {
+  torch::Tensor res =
+      torch::zeros({static_cast<int>(width_), static_cast<int>(height_)});
+  for (int y = 0; y < height_; ++y) {
+    for (int x = 0; x < width_; ++x) {
+      if (plane_[y * width_ + x]) res.index_put_({x, y}, 1);
+    }
+  }
+  return res;
 }
 
 }  // namespace aithena

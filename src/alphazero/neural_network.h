@@ -73,6 +73,7 @@ class AZNeuralNetworkImpl : public torch::nn::Cloneable<AZNeuralNetworkImpl> {
                       bool uniform = false);
   void reset();
   void SetUniform(bool uniform);
+  bool GetUniform();
   torch::Tensor forward(torch::Tensor);
 
  private:
