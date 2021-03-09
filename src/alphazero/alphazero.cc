@@ -20,15 +20,12 @@ bool AlphaZero::Train(chess::Game::GameState start,
                       std::shared_ptr<AlphaZero::ReplayMemory> mem,
                       int batch_size = 100000, int simulations = 800) {
   // Play training game
-  std::cout << "play training game" << std::endl;
 
   AZNode::NodePtr root = std::shared_ptr<AZNode>(
       new AZNode(game_, start, static_cast<AZNode::NodePtr>(nullptr), nn_));
 
   AZNode::NodePtr node = SelfPlayGame(root, simulations);
 
-  // Insert game into replay memory
-  std::cout << "insert game into replay memory" << std::endl;
 
   int value = game_->GetStateResult(node->GetState());
   for (int i = 0; node != nullptr; ++i) {
@@ -41,7 +38,6 @@ bool AlphaZero::Train(chess::Game::GameState start,
   if (mem->size() < batch_size) return false;
 
   // Update neural network
-  std::cout << "update neural network" << std::endl;
 
   if (nn_->GetUniform()) nn_->SetUniform(false);
 
@@ -69,13 +65,16 @@ bool AlphaZero::Train(chess::Game::GameState start,
 
   torch::Tensor output = nn_->forward(input);
 
+
   torch::Tensor prediction_prior = prediction.slice(1, 0, -1);
   torch::Tensor prediction_value = prediction.slice(1, -1);
   torch::Tensor output_prior = output.slice(1, 0, -1);
   torch::Tensor output_value = output.slice(1, -1);
 
-  torch::Tensor loss = -(output_prior * torch::log(prediction_prior)).sum() +
-                       torch::square(output_value - prediction_value).sum();
+  torch::Tensor loss = torch::sqrt(torch::square(output - prediction).sum());
+  
+  //-(output_prior * torch::log(prediction_prior)).sum() +
+  //                    torch::square(output_value - prediction_value).sum();
 
   // loss.set_requires_grad(true);
 
