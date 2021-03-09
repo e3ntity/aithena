@@ -15,16 +15,18 @@ template <typename Game>
 MCTS<Game>::MCTS(std::shared_ptr<Game> game) : game_{game} {}
 
 template <typename Game>
-void MCTS<Game>::Run(
-  typename MCTSNode<Game>::NodePtr root,
-  int simulations
-) {
+void MCTS<Game>::Run(typename MCTSNode<Game>::NodePtr root, int simulations) {
   auto run_start = std::chrono::high_resolution_clock::now();
 
   auto leaf = Select(root, UCTSelect);
 
   if (leaf->IsTerminal()) {
     Backpropagate(leaf, game_->GetStateResult(leaf->GetState()));
+
+    auto run_end = std::chrono::high_resolution_clock::now();
+    time_run.push_back(std::chrono::duration_cast<std::chrono::milliseconds>(
+        run_end - run_start));
+
     return;
   }
 
@@ -36,36 +38,32 @@ void MCTS<Game>::Run(
   }
 
   auto run_end = std::chrono::high_resolution_clock::now();
-  time_run.push_back(
-    std::chrono::duration_cast<std::chrono::milliseconds>(run_end - run_start)
-  );
+  time_run.push_back(std::chrono::duration_cast<std::chrono::milliseconds>(
+      run_end - run_start));
 }
 
 template <typename Game>
 typename MCTSNode<Game>::NodePtr MCTS<Game>::Select(
-  typename MCTSNode<Game>::NodePtr start,
-  typename MCTSNode<Game>::NodePtr (*next)(typename MCTSNode<Game>::NodePtr)
-) {
+    typename MCTSNode<Game>::NodePtr start,
+    typename MCTSNode<Game>::NodePtr (*next)(
+        typename MCTSNode<Game>::NodePtr)) {
   auto bm_start = std::chrono::high_resolution_clock::now();
 
   typename MCTSNode<Game>::NodePtr current = start;
 
-  while (!current->IsLeaf())
-    current = next(current);
+  while (!current->IsLeaf()) current = next(current);
 
   auto bm_end = std::chrono::high_resolution_clock::now();
   time_select.push_back(
-    std::chrono::duration_cast<std::chrono::milliseconds>(bm_end - bm_start)
-  );
+      std::chrono::duration_cast<std::chrono::milliseconds>(bm_end - bm_start));
 
   return current;
 }
 
 template <typename Game>
-int MCTS<Game>::Simulate(
-  typename MCTSNode<Game>::NodePtr start,
-  typename MCTSNode<Game>::NodePtr (*next)(typename MCTSNode<Game>::NodePtr)
-) {
+int MCTS<Game>::Simulate(typename MCTSNode<Game>::NodePtr start,
+                         typename MCTSNode<Game>::NodePtr (*next)(
+                             typename MCTSNode<Game>::NodePtr)) {
   auto bm_start = std::chrono::high_resolution_clock::now();
 
   int i{0};
@@ -81,14 +79,14 @@ int MCTS<Game>::Simulate(
 
   auto bm_end = std::chrono::high_resolution_clock::now();
   time_simulate.push_back(
-    std::chrono::duration_cast<std::chrono::milliseconds>(bm_end - bm_start)
-  );
+      std::chrono::duration_cast<std::chrono::milliseconds>(bm_end - bm_start));
 
   return i % 2 == 0 ? result : -result;
 }
 
 template <typename Game>
-void MCTS<Game>::Backpropagate(typename MCTSNode<Game>::NodePtr start, int result) {
+void MCTS<Game>::Backpropagate(typename MCTSNode<Game>::NodePtr start,
+                               int result) {
   auto bm_start = std::chrono::high_resolution_clock::now();
 
   auto current = start;
@@ -109,16 +107,14 @@ void MCTS<Game>::Backpropagate(typename MCTSNode<Game>::NodePtr start, int resul
 
   auto bm_end = std::chrono::high_resolution_clock::now();
   time_backpropagate.push_back(
-    std::chrono::duration_cast<std::chrono::milliseconds>(bm_end - bm_start)
-  );
+      std::chrono::duration_cast<std::chrono::milliseconds>(bm_end - bm_start));
 }
 
 // Select strategies
 
 template <typename Game>
 typename MCTSNode<Game>::NodePtr MCTS<Game>::RandomSelect(
-  typename MCTSNode<Game>::NodePtr node
-) {
+    typename MCTSNode<Game>::NodePtr node) {
   if (!node->IsExpanded()) node->Expand();
 
   auto children = node->GetChildren();
@@ -128,8 +124,7 @@ typename MCTSNode<Game>::NodePtr MCTS<Game>::RandomSelect(
 
 template <typename Game>
 typename MCTSNode<Game>::NodePtr MCTS<Game>::UCTSelect(
-  typename MCTSNode<Game>::NodePtr node
-) {
+    typename MCTSNode<Game>::NodePtr node) {
   assert(!node->IsLeaf());
   assert(node->GetVisits() > 0);
 
@@ -147,8 +142,8 @@ typename MCTSNode<Game>::NodePtr MCTS<Game>::UCTSelect(
     assert(child->GetVisits() > 0);
 
     double exploitation = double(child->GetWins()) / double(child->GetVisits());
-    double exploration = sqrt(log(double(node->GetVisits()))
-                              / double(child->GetVisits()));
+    double exploration =
+        sqrt(log(double(node->GetVisits())) / double(child->GetVisits()));
     double value = exploitation + M_SQRT2 * exploration;
 
     uct.push_back(value);
@@ -168,11 +163,10 @@ typename MCTSNode<Game>::NodePtr MCTS<Game>::UCTSelect(
 
 template <typename Game>
 typename MCTSNode<Game>::NodePtr MCTS<Game>::GreedySelect(
-  typename MCTSNode<Game>::NodePtr node
-) {
+    typename MCTSNode<Game>::NodePtr node) {
   if (!node->IsExpanded()) return RandomSelect(node);
 
-  int index{ -1};
+  int index{-1};
   double maximum{0};
 
   auto children = node->GetChildren();
@@ -203,7 +197,8 @@ double MCTS<Game>::BenchmarkSelect() {
 
   for (auto point : time_select) sum += point;
 
-  auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(sum / time_select.size());
+  auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(
+      sum / time_select.size());
 
   return static_cast<double>(duration.count()) / 1000.;
 }
@@ -214,7 +209,8 @@ double MCTS<Game>::BenchmarkSimulate() {
 
   for (auto point : time_simulate) sum += point;
 
-  auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(sum / time_simulate.size());
+  auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(
+      sum / time_simulate.size());
 
   return static_cast<double>(duration.count()) / 1000.;
 }
@@ -225,7 +221,8 @@ double MCTS<Game>::BenchmarkBackpropagate() {
 
   for (auto point : time_backpropagate) sum += point;
 
-  auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(sum / time_backpropagate.size());
+  auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(
+      sum / time_backpropagate.size());
 
   return static_cast<double>(duration.count()) / 1000.;
 }
@@ -236,7 +233,8 @@ double MCTS<Game>::BenchmarkRun() {
 
   for (auto point : time_run) sum += point;
 
-  auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(sum / time_run.size());
+  auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(
+      sum / time_run.size());
 
   return static_cast<double>(duration.count()) / 1000.;
 }
