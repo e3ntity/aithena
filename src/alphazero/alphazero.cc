@@ -19,6 +19,8 @@ AlphaZero::AlphaZero(std::shared_ptr<chess::Game> game, AZNeuralNetwork nn)
 bool AlphaZero::Train(chess::Game::GameState start,
                       std::shared_ptr<AlphaZero::ReplayMemory> mem,
                       int batch_size = 100000, int simulations = 800) {
+  auto bm_start = std::chrono::high_resolution_clock::now();
+
   // Play training game
 
   AZNode::NodePtr root = std::shared_ptr<AZNode>(
@@ -34,7 +36,7 @@ bool AlphaZero::Train(chess::Game::GameState start,
 
   // Info: works correctly until here
 
-  if (mem->size() < batch_size) return false;
+  if (mem->size() < batch_size) return false;  // Discard benchmark
 
   // Update neural network
 
@@ -81,6 +83,10 @@ bool AlphaZero::Train(chess::Game::GameState start,
   loss.backward();
   optimizer.step();
 
+  auto bm_end = std::chrono::high_resolution_clock::now();
+  time_train_.push_back(
+      std::chrono::duration_cast<std::chrono::milliseconds>(bm_end - bm_start));
+
   return true;
 }
 
@@ -110,6 +116,8 @@ void AlphaZero::Run(AZNode::NodePtr root) {
 }
 
 void AlphaZero::Backpropagate(AZNode::NodePtr node, int value) {
+  auto bm_start = std::chrono::high_resolution_clock::now();
+
   AZNode::NodePtr current = node;
 
   for (int i = 0; current != nullptr; ++i) {
@@ -118,6 +126,10 @@ void AlphaZero::Backpropagate(AZNode::NodePtr node, int value) {
 
     current = current->GetParent();
   }
+
+  auto bm_end = std::chrono::high_resolution_clock::now();
+  time_backprop_.push_back(
+      std::chrono::duration_cast<std::chrono::milliseconds>(bm_end - bm_start));
 }
 
 AZNode::NodePtr AlphaZero::Select(AZNode::NodePtr node,
@@ -173,6 +185,7 @@ AZNode::NodePtr AlphaZero::PUCTSelect(AZNode::NodePtr node) {
 double AlphaZero::BenchmarkSelect() { return Benchmark(time_select_); }
 double AlphaZero::BenchmarkBackprop() { return Benchmark(time_backprop_); }
 double AlphaZero::BenchmarkRun() { return Benchmark(time_run_); }
+double AlphaZero::BenchmarkTrain() { return Benchmark(time_train_); }
 
 double AlphaZero::Benchmark(
     std::vector<std::chrono::milliseconds> time_vector) {

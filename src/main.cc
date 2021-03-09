@@ -120,7 +120,11 @@ int main(int argc, char** argv) {
   std::ifstream nn_file;
   nn_file.open(NN_SAVE_PATH);
 
-  if (nn_file) az.Load(NN_SAVE_PATH);
+  if (nn_file) {
+    az.Load(NN_SAVE_PATH);
+    std::cout << "Loaded neural network from \"" << NN_SAVE_PATH << "\""
+              << std::endl;
+  }
 
   nn_file.close();
 
@@ -131,14 +135,20 @@ int main(int argc, char** argv) {
   auto mem_ptr =
       std::make_shared<aithena::alphazero::AlphaZero::ReplayMemory>(mem);
 
+  do {
+    std::cout << "\rCollecting samples (" << mem_ptr->size() << "/"
+              << batch_size << ")" << std::flush;
+  } while (!az.Train(game.GetInitialState(), mem_ptr, batch_size, simulations));
+
   for (int round = 0; round < rounds; ++round) {
     az.Train(game.GetInitialState(), mem_ptr, batch_size, simulations);
     az.Save(NN_SAVE_PATH);
 
-    std::cout << "Value for round " << round << ": "
-              << nn->forward(root.GetNNInput())[0][-1].item<double>() << " ("
-              << mem_ptr->size() << " samples"
-              << ")" << std::endl;
+    double remaining = az.BenchmarkTrain() * (rounds - round) / 60;
+    std::cout << std::setprecision(2) << "#" << round + 1 << " [Value: "
+              << nn->forward(root.GetNNInput())[0][-1].item<double>()
+              << "] [Samples: " << mem_ptr->size() << "] [" << remaining
+              << " min. Remaining]" << std::endl;
   }
 
   // Run a game with AlphaZero

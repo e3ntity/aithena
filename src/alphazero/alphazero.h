@@ -36,6 +36,8 @@ class AlphaZero {
   double BenchmarkBackprop();
   // Returns the average time per run in seconds.
   double BenchmarkRun();
+  // Returns the average time per training in seconds.
+  double BenchmarkTrain();
 
   void Save(std::string path);
   void Load(std::string path);
@@ -50,6 +52,7 @@ class AlphaZero {
   std::vector<std::chrono::milliseconds> time_select_{};
   std::vector<std::chrono::milliseconds> time_backprop_{};
   std::vector<std::chrono::milliseconds> time_run_{};
+  std::vector<std::chrono::milliseconds> time_train_{};
 };
 
 }  // alphazero
