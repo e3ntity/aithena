@@ -19,7 +19,7 @@ class AlphaZero {
   void Run(AZNode::NodePtr);
 
   // Runs a training game against itself and returns the final node.
-  AZNode::NodePtr SelfPlayGame(AZNode::NodePtr, int);
+  AZNode::NodePtr SelfPlayGame(AZNode::NodePtr, int simulations = 800);
 
   // Trains the network for a single self play game. Returns whether the NN was
   // updates or if the sample count was too small for batch size.
@@ -36,6 +36,9 @@ class AlphaZero {
   double BenchmarkBackprop();
   // Returns the average time per run in seconds.
   double BenchmarkRun();
+
+  void Save(std::string path);
+  void Load(std::string path);
 
  private:
   double Benchmark(std::vector<std::chrono::milliseconds>);

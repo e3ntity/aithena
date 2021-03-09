@@ -5,11 +5,14 @@ Copyright 2020 All rights reserved.
 #include <stdlib.h>
 #include <time.h>
 #include <bitset>
+#include <fstream>
 #include <iomanip>
 #include <memory>
 
 #include "alphazero/alphazero.h"
 #include "chess/game.h"
+
+#define NN_SAVE_PATH "./neural_net.pt"
 
 std::string PrintMarkedBoard(aithena::chess::State state,
                              aithena::BoardPlane marker,
@@ -90,16 +93,17 @@ std::string PrintBoard(aithena::chess::State state) {
 }
 
 int main(int argc, char** argv) {
-  if (argc != 3) {
-    std::cout << "Usage: " << argv[0] << " <rounds> <simulations>" << std::endl;
+  if (argc != 4) {
+    std::cout << "Usage: " << argv[0] << " <rounds> <simulations> <batch size>"
+              << std::endl;
     return -1;
   }
 
   int rounds = std::stoi(argv[1]);
   int simulations = std::stoi(argv[2]);
+  int batch_size = std::stoi(argv[3]);
 
-  srand(time(NULL));
-
+  // Setup game
   aithena::chess::Game::Options options = {{"board_width", 5},
                                            {"board_height", 5},
                                            {"max_no_progress", 20},
@@ -112,6 +116,15 @@ int main(int argc, char** argv) {
                                          true);
   aithena::alphazero::AlphaZero az(game_ptr, nn);
 
+  // Load saved NN
+  std::ifstream nn_file;
+  nn_file.open(NN_SAVE_PATH);
+
+  if (nn_file) az.Load(NN_SAVE_PATH);
+
+  nn_file.close();
+
+  // Train AlphaZero
   auto root = aithena::alphazero::AZNode(game_ptr, nn);
 
   aithena::alphazero::AlphaZero::ReplayMemory mem;
@@ -119,14 +132,29 @@ int main(int argc, char** argv) {
       std::make_shared<aithena::alphazero::AlphaZero::ReplayMemory>(mem);
 
   for (int round = 0; round < rounds; ++round) {
-    bool has_trained =
-        az.Train(game.GetInitialState(), mem_ptr, 50, simulations);
+    az.Train(game.GetInitialState(), mem_ptr, batch_size, simulations);
+    az.Save(NN_SAVE_PATH);
 
     std::cout << "Value for round " << round << ": "
-              << nn->forward(root.GetNNInput()) << " (" << mem_ptr->size()
-              << " samples"
+              << nn->forward(root.GetNNInput())[0][-1].item<double>() << " ("
+              << mem_ptr->size() << " samples"
               << ")" << std::endl;
   }
+
+  // Run a game with AlphaZero
+
+  auto current_ptr = std::make_shared<aithena::alphazero::AZNode>(root);
+
+  while (!current_ptr->IsTerminal()) {
+    std::cout << PrintBoard(current_ptr->GetState()) << std::endl;
+
+    az.SelfPlayGame(current_ptr, simulations);
+    std::cout << "done selfplay" << std::endl;
+    current_ptr = az.PUCTSelect(current_ptr);
+    std::cout << "done select" << std::endl;
+  }
+
+  std::cout << PrintBoard(current_ptr->GetState()) << std::endl;
 
   return 0;
 }

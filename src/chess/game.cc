@@ -91,10 +91,10 @@ State Game::GetInitialState() {
 
   Board& board = state.GetBoard();
 
-  board.SetField(1, 2, make_piece(Figure::kKing, Player::kWhite));
   board.SetField(4, 4, make_piece(Figure::kKing, Player::kBlack));
 
-  // board.SetField(0, 2, make_piece(Figure::kBishop, Player::kWhite));
+  board.SetField(0, 1, make_piece(Figure::kKing, Player::kWhite));
+  board.SetField(0, 2, make_piece(Figure::kRook, Player::kWhite));
 
   /*
   // Kings

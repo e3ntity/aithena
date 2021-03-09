@@ -26,7 +26,6 @@ bool AlphaZero::Train(chess::Game::GameState start,
 
   AZNode::NodePtr node = SelfPlayGame(root, simulations);
 
-
   int value = game_->GetStateResult(node->GetState());
   for (int i = 0; node != nullptr; ++i) {
     mem->push_back(std::make_tuple(node, i % 2 == 0 ? value : 1 - value));
@@ -65,14 +64,13 @@ bool AlphaZero::Train(chess::Game::GameState start,
 
   torch::Tensor output = nn_->forward(input);
 
-
   torch::Tensor prediction_prior = prediction.slice(1, 0, -1);
   torch::Tensor prediction_value = prediction.slice(1, -1);
   torch::Tensor output_prior = output.slice(1, 0, -1);
   torch::Tensor output_value = output.slice(1, -1);
 
   torch::Tensor loss = torch::sqrt(torch::square(output - prediction).sum());
-  
+
   //-(output_prior * torch::log(prediction_prior)).sum() +
   //                    torch::square(output_value - prediction_value).sum();
 
@@ -86,8 +84,7 @@ bool AlphaZero::Train(chess::Game::GameState start,
   return true;
 }
 
-AZNode::NodePtr AlphaZero::SelfPlayGame(AZNode::NodePtr root,
-                                        int simulations = 800) {
+AZNode::NodePtr AlphaZero::SelfPlayGame(AZNode::NodePtr root, int simulations) {
   AZNode::NodePtr node = root;
 
   while (!node->IsTerminal()) {
@@ -188,6 +185,9 @@ double AlphaZero::Benchmark(
 
   return static_cast<double>(duration.count()) / 1000.;
 }
+
+void AlphaZero::Save(std::string path) { torch::save(nn_, path); }
+void AlphaZero::Load(std::string path) { torch::load(nn_, path); }
 
 }  // alphazero
 }  // aithena
