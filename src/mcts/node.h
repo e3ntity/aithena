@@ -8,8 +8,8 @@ Copyright 2020 All rights reserved.
 #include <memory>
 #include <vector>
 
-#include "game/game.h"
 #include "chess/game.h"
+#include "game/game.h"
 
 namespace aithena {
 
@@ -63,7 +63,7 @@ class MCTSNode : public std::enable_shared_from_this<MCTSNode<Game>> {
   void SetUCTConfidence(double confidence);
   double GetUCTConfidence();
 
- private:
+ protected:
   // This node's child nodes.
   NodePtrList children_;
   // This node's parent.

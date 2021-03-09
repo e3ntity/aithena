@@ -31,3 +31,15 @@ target_include_directories(mcts_lib
     PUBLIC .
 )
 target_link_libraries(mcts_lib generic_lib chess_lib)
+
+add_library(alphazero_lib
+    alphazero/alphazero.cc
+    alphazero/move.cc
+    alphazero/neural_network.cc
+    alphazero/node.cc
+)
+target_include_directories(alphazero_lib
+    PUBLIC .
+)
+
+target_link_libraries(alphazero_lib chess_lib mcts_lib "${TORCH_LIBRARIES}")

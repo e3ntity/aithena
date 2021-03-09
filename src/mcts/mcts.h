@@ -21,26 +21,20 @@ class MCTS {
 
   // Runs the MCTS algorithms for n rounds, using m simulations each round,
   // starting at the given node.
-  void Run(
-    typename Node::NodePtr,
-    int simulations = 1
-  );
+  void Run(typename Node::NodePtr, int simulations = 1);
 
   // MCTS Selection, starting at some node and selecting successive children
   // according to the search strategy until a leaf node / terminal node is
   // reached.
   typename Node::NodePtr Select(
-    typename Node::NodePtr,
-    typename Node::NodePtr (*next)(typename Node::NodePtr)
-  );
+      typename Node::NodePtr,
+      typename Node::NodePtr (*next)(typename Node::NodePtr));
 
   // Simulates a playout using some selection strategy, starting from some node.
   // Returns the result of the playout from the perspective of the node from
   // which it was started.
-  int Simulate(
-    typename Node::NodePtr,
-    typename Node::NodePtr (*next)(typename Node::NodePtr)
-  );
+  int Simulate(typename Node::NodePtr,
+               typename Node::NodePtr (*next)(typename Node::NodePtr));
 
   // Backpropagates the result of a playout from the node where it was started
   // to the root.
@@ -67,6 +61,7 @@ class MCTS {
   // Returns the average time per backpropagation in seconds.
   double BenchmarkBackpropagate();
   double BenchmarkRun();
+
  private:
   std::shared_ptr<Game> game_;
 
