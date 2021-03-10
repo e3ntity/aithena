@@ -23,10 +23,6 @@ void MCTS<Game>::Run(typename MCTSNode<Game>::NodePtr root, int simulations) {
   if (leaf->IsTerminal()) {
     Backpropagate(leaf, game_->GetStateResult(leaf->GetState()));
 
-    auto run_end = std::chrono::high_resolution_clock::now();
-    time_run.push_back(std::chrono::duration_cast<std::chrono::milliseconds>(
-        run_end - run_start));
-
     return;
   }
 
