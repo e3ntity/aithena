@@ -115,10 +115,7 @@ void AlphaZero::Run(AZNode::NodePtr root) {
       run_end - run_start));
 }
 
-void AlphaZero::Backpropagate(AZNode::NodePtr node, int value,
-                              double discount_factor) {
-  assert(discount_factor >= 0 && discount_factor < 1);
-
+void AlphaZero::Backpropagate(AZNode::NodePtr node, int value) {
   auto bm_start = std::chrono::high_resolution_clock::now();
 
   AZNode::NodePtr current = node;
@@ -126,7 +123,7 @@ void AlphaZero::Backpropagate(AZNode::NodePtr node, int value,
   for (int i = 0; current != nullptr; ++i) {
     current->IncVisits();
     current->SetValue(current->GetValue() +
-                      (i % 2 == 0 ? value : 1 - value) * (1 - discount_factor));
+                      (i % 2 == 0 ? value : 1 - value) * discount_factor_);
 
     current = current->GetParent();
   }
@@ -185,6 +182,13 @@ AZNode::NodePtr AlphaZero::PUCTSelect(AZNode::NodePtr node) {
 
   return children.at(index);
 }
+
+void AlphaZero::SetDiscountFactor(double discount_factor) {
+  assert(discount_factor_ > 0 && discount_factor_ <= 1);
+
+  discount_factor_ = discount_factor;
+}
+double AlphaZero::GetDiscountFactor() { return discount_factor_; }
 
 double AlphaZero::BenchmarkSelect() { return Benchmark(time_select_); }
 double AlphaZero::BenchmarkBackprop() { return Benchmark(time_backprop_); }

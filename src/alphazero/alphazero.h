@@ -25,10 +25,13 @@ class AlphaZero {
   // updates or if the sample count was too small for batch size.
   bool Train(chess::Game::GameState, std::shared_ptr<ReplayMemory>, int, int);
 
-  void Backpropagate(AZNode::NodePtr, int, double discount_factor = 0);
+  void Backpropagate(AZNode::NodePtr, int);
   AZNode::NodePtr Select(AZNode::NodePtr node,
                          AZNode::NodePtr (*next)(AZNode::NodePtr));
   static AZNode::NodePtr PUCTSelect(AZNode::NodePtr);
+
+  void SetDiscountFactor(double);
+  double GetDiscountFactor();
 
   // Returns the average time per select in seconds.
   double BenchmarkSelect();
@@ -47,6 +50,8 @@ class AlphaZero {
 
   std::shared_ptr<chess::Game> game_;
   AZNeuralNetwork nn_;
+
+  double discount_factor_{1.};
 
   // Stats
   std::vector<std::chrono::milliseconds> time_select_{};
