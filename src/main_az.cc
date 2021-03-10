@@ -116,6 +116,8 @@ int main(int argc, char** argv) {
                                          true);
   aithena::alphazero::AlphaZero az(game_ptr, nn);
 
+  az.SetDiscountFactor(0.99);
+
   // Load saved NN
   std::ifstream nn_file;
   nn_file.open(NN_SAVE_PATH);
@@ -135,10 +137,13 @@ int main(int argc, char** argv) {
   auto mem_ptr =
       std::make_shared<aithena::alphazero::AlphaZero::ReplayMemory>(mem);
 
-  do {
-    std::cout << "\rCollecting samples (" << mem_ptr->size() << "/"
-              << batch_size << ")" << std::flush;
-  } while (!az.Train(game.GetInitialState(), mem_ptr, batch_size, simulations));
+  if (rounds > 0) {
+    do {
+      std::cout << "\rCollecting samples (" << mem_ptr->size() << "/"
+                << batch_size << ")" << std::flush;
+    } while (
+        !az.Train(game.GetInitialState(), mem_ptr, batch_size, simulations));
+  }
 
   for (int round = 0; round < rounds; ++round) {
     az.Train(game.GetInitialState(), mem_ptr, batch_size, simulations);
@@ -159,9 +164,7 @@ int main(int argc, char** argv) {
     std::cout << PrintBoard(current_ptr->GetState()) << std::endl;
 
     az.SelfPlayGame(current_ptr, simulations);
-    std::cout << "done selfplay" << std::endl;
     current_ptr = az.PUCTSelect(current_ptr);
-    std::cout << "done select" << std::endl;
   }
 
   std::cout << PrintBoard(current_ptr->GetState()) << std::endl;
