@@ -115,14 +115,18 @@ void AlphaZero::Run(AZNode::NodePtr root) {
       run_end - run_start));
 }
 
-void AlphaZero::Backpropagate(AZNode::NodePtr node, int value) {
+void AlphaZero::Backpropagate(AZNode::NodePtr node, int value,
+                              double discount_factor) {
+  assert(discount_factor >= 0 && discount_factor < 1);
+
   auto bm_start = std::chrono::high_resolution_clock::now();
 
   AZNode::NodePtr current = node;
 
   for (int i = 0; current != nullptr; ++i) {
     current->IncVisits();
-    current->SetValue(current->GetValue() + (i % 2 == 0 ? value : 1 - value));
+    current->SetValue(current->GetValue() +
+                      (i % 2 == 0 ? value : 1 - value) * (1 - discount_factor));
 
     current = current->GetParent();
   }

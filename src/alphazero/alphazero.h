@@ -25,7 +25,7 @@ class AlphaZero {
   // updates or if the sample count was too small for batch size.
   bool Train(chess::Game::GameState, std::shared_ptr<ReplayMemory>, int, int);
 
-  void Backpropagate(AZNode::NodePtr, int);
+  void Backpropagate(AZNode::NodePtr, int, double discount_factor = 0);
   AZNode::NodePtr Select(AZNode::NodePtr node,
                          AZNode::NodePtr (*next)(AZNode::NodePtr));
   static AZNode::NodePtr PUCTSelect(AZNode::NodePtr);
