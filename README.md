@@ -23,5 +23,5 @@ aithena/ $ mkdir extern/ && cd extern/
 aithena/extern/ $ git clone https://github.com/google/googletest
 aithena/extern/ $ mkdir ../build/ && cd ../build/
 aithena/build/ $ cmake -DCMAKE_PREFIX_PATH=<path_to_libtorch> ..
-aithena/build/ $ make test
+aithena/build/ $ ARGS=<gtest_args> make test
 ```
