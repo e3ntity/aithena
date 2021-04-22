@@ -16,6 +16,7 @@ namespace chess {
 
 class State : public ::aithena::State {
  public:
+  using StatePtr = std::shared_ptr<State>;
   // Initializes to the chess starting state.
   State(std::size_t width, std::size_t height, unsigned figure_count);
   // Initializes to a give state.
@@ -39,10 +40,12 @@ class State : public ::aithena::State {
 
   unsigned int GetMoveCount();
   void IncMoveCount();
+  void SetMoveCount(unsigned int);
 
   unsigned int GetNoProgressCount();
   void IncNoProgressCount();
   void ResetNoProgressCount();
+  void SetNoProgressCount(unsigned int);
 
   unsigned GetDPushPawnX();
   unsigned GetDPushPawnY();
@@ -53,6 +56,13 @@ class State : public ::aithena::State {
   torch::Tensor DetailsAsTensor();
 
   std::vector<char> ToBytes();
+
+  // Represents the state as a string in FEN notation
+  std::string ToFEN();
+
+  // Loads a state from a string, represented in FEN notation.
+  // Returns nullptr if the string is invalid.
+  static StatePtr FromFEN(std::string);
   static std::tuple<::aithena::chess::State, int> FromBytes(std::vector<char>);
 
  private:
@@ -127,6 +137,11 @@ constexpr uint64_t count_lut[] = {0x0,
                                   0xffffffffffff,
                                   0x1ffffffffffff,
                                   0x3ffffffffffff};
+
+constexpr char fen_figures[] = {'k', 'q', 'r', 'n', 'b', 'p'};
+constexpr char alphabet[] = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i',
+                             'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r',
+                             's', 't', 'u', 'v', 'w', 'x', 'y', 'z'};
 
 }  // namespace chess
 }  // namespace aithena
