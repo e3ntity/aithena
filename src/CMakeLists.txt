@@ -18,6 +18,7 @@ add_library(chess_lib
     chess/game.cc
     chess/moves.cc
     chess/state.cc
+    chess/util.cc
 )
 
 target_include_directories(chess_lib
