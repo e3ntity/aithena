@@ -52,6 +52,9 @@ class Board {
   BoardPlane GetPlayerPlane(unsigned player);
   BoardPlane GetCompletePlane();
 
+  // Returns the coordinates of all pieces of some kind in format (x, y).
+  Coords FindPiece(Piece);
+
   // Sets the piece of field (x, y). If piece is kEmptyPiece, the field is
   // simply cleared.
   void SetField(unsigned x, unsigned y, Piece);
@@ -93,7 +96,7 @@ class Board {
 
 // Returns a board plane highlighting all fields that contain a different
 // figure in the after board than they did in the before board.
-// If a figure was removed and is not kEmptyPiece, no indication is given.
+// If a figure was removed and is now kEmptyPiece, no indication is given.
 BoardPlane GetNewFields(const Board& before, const Board& after);
 
 }  // namespace aithena

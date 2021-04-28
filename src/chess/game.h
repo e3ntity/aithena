@@ -29,6 +29,8 @@ enum class Figure : unsigned {
 
 enum Player : unsigned { kWhite, kBlack };
 
+Player GetOpponent(Player);
+
 }  // namespace chess
 }  // namespace aithena
 
@@ -62,14 +64,17 @@ class Game : public ::aithena::Game<State> {
   // Returns whether the player's king is in check.
   bool KingInCheck(State state, Player player);
 
-  // Generates all enxt moves for all pieces for a given state.
-  // The pseudo parameter indicates whether to only generate pseudo moves.
-  std::vector<State> GenMoves(State, bool pseudo = false);
+  // Takes in a previous state and a list of next-states from that state and
+  // updates player turn, no progress counter, and turn counter.
+  std::vector<State> PreparePseudoMoves(State state, std::vector<State> moves);
 
-  // Generates all next moves for any piece at field (x, y) for a given state.
-  // The pseudo parameter indicates whether to only generate pseudo moves.
-  std::vector<State> GenMoves(State, unsigned x, unsigned y,
-                              bool pseudo = false);
+  // Generates all pseudo-moves for all pieces for a given state.
+  std::vector<State> GenPseudoMoves(State);
+  // Generates all pseudo-moves for any piece at field (x, y) for a given state.
+  std::vector<State> GenPseudoMoves(State, unsigned x, unsigned y);
+
+  // Generates all legal moves for a given state.
+  std::vector<State> GenMoves(State);
 
   // Generates the next moves for a single pawn at field (x, y) for a given
   // state.
@@ -77,6 +82,12 @@ class Game : public ::aithena::Game<State> {
   // field (x, y).
   // * Does not switch the player turn.
   std::vector<State> GenPawnMoves(State, unsigned x, unsigned y);
+  std::vector<State> GenPawnPushes(State, int x, int y);
+  std::vector<State> GenPawnCaptures(State, int x, int y);
+
+  // Same as GenPawnCaptures but does not check whether there is a piece to
+  // capture.
+  std::vector<State> GenRawPawnCaptures(State, int x, int y);
 
   // Generates the next moves for a single rook at field (x, y) for a given
   // state.
@@ -107,8 +118,28 @@ class Game : public ::aithena::Game<State> {
   // state.
   std::vector<State> GenKingMoves(State state, unsigned x, unsigned y);
 
+  // Returns a board plane highlighting all the squares that contain pieces
+  // attacking the piece at field (x, y).
+  // Does not take en-passant moves into account!
+  BoardPlane GetAttackers(State state, int x, int y);
+
+  // Returns a board plane highlighting all the squares with pieces that are
+  // pinned to the piece at field (x, y).
+
+  // Returns a vector of coord tuples indicating pins, with the first coordinate
+  // entry highlighting the pinning piece and the second entry highlighting the
+  // pinned piece.
+  std::vector<std::tuple<Coord, Coord>> GetPins(State state, int x, int y);
+
+  // Returns whether the move represented by a change from board b1 to board b2
+  // is a capture move.
+  bool IsCapture(Board& b1, Board& b2);
+
   // An array of all figures.
   static const std::array<Figure, 6> figures;
+
+  // An array of all slider figures.
+  static const std::array<Figure, 3> slider_figures;
 
   // An array of all players.
   static const std::array<Player, 2> players;

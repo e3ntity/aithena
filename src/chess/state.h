@@ -18,7 +18,8 @@ class State : public ::aithena::State {
  public:
   using StatePtr = std::shared_ptr<State>;
   // Initializes to the chess starting state.
-  State(std::size_t width, std::size_t height, unsigned figure_count);
+  State(std::size_t width, std::size_t height,
+        unsigned figure_count = static_cast<unsigned>(Figure::kCount));
   // Initializes to a give state.
   State(const State&);
 
@@ -47,10 +48,12 @@ class State : public ::aithena::State {
   void ResetNoProgressCount();
   void SetNoProgressCount(unsigned int);
 
-  unsigned GetDPushPawnX();
-  unsigned GetDPushPawnY();
-  void SetDPushPawnX(unsigned);
-  void SetDPushPawnY(unsigned);
+  Coord GetDPushPawn();
+  int GetDPushPawnX();
+  int GetDPushPawnY();
+  void SetDPushPawn(Coord);
+  void SetDPushPawnX(int);
+  void SetDPushPawnY(int);
 
   torch::Tensor PlanesAsTensor();
   torch::Tensor DetailsAsTensor();
@@ -77,8 +80,7 @@ class State : public ::aithena::State {
   // Counts the moves without progress (neither a pawn moved, nor a piece
   // captured) up util this state.
   unsigned int no_progress_count_;
-  signed double_push_pawn_x;
-  signed double_push_pawn_y;
+  Coord double_push_pawn_;
 
   struct StateByteRepr {
     int player, move_count, no_progress_count, double_push_pawn[2];

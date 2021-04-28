@@ -12,15 +12,20 @@ namespace aithena {
 
 template <typename Game>
 MCTSNode<Game>::MCTSNode(std::shared_ptr<Game> game)
-  : children_{},
-    parent_{nullptr},
-    game_{game},
-    state_{game->GetInitialState()} {}
+    : children_{},
+      parent_{nullptr},
+      game_{game},
+      state_{game->GetInitialState()} {}
+
+template <typename Game>
+MCTSNode<Game>::MCTSNode(std::shared_ptr<Game> game,
+                         typename Game::GameState state)
+    : children_{}, parent_{nullptr}, game_{game}, state_{state} {}
 
 template <typename Game>
 MCTSNode<Game>::MCTSNode(std::shared_ptr<Game> game,
                          typename Game::GameState state, NodePtr parent)
-  : children_{}, parent_{parent}, game_{game}, state_{state} {}
+    : children_{}, parent_{parent}, game_{game}, state_{state} {}
 
 // Operators
 
@@ -68,15 +73,11 @@ void MCTSNode<Game>::Expand() {
   auto moves = game_->GetLegalActions(state_);
 
   for (auto state : moves) {
-    children_.push_back(
-      std::shared_ptr<MCTSNode<Game>>(
-        new MCTSNode<Game>(game_, state, this->shared_from_this())
-      )
-    );
+    children_.push_back(std::shared_ptr<MCTSNode<Game>>(
+        new MCTSNode<Game>(game_, state, this->shared_from_this())));
   }
 
-  for (auto child : children_)
-    child->SetUCTConfidence(1 / children_.size());
+  for (auto child : children_) child->SetUCTConfidence(1 / children_.size());
 
   expanded_ = true;
 }
@@ -99,7 +100,7 @@ bool MCTSNode<Game>::IsLeaf() {
 
 template <typename Game>
 bool MCTSNode<Game>::IsTerminal() {
-  //if (IsExpanded()) return children_.size() == 0;  // Cheap check
+  // if (IsExpanded()) return children_.size() == 0;  // Cheap check
 
   return game_->IsTerminalState(state_);
 }
@@ -147,6 +148,8 @@ void MCTSNode<Game>::SetUCTConfidence(double confidence) {
 }
 
 template <typename Game>
-double MCTSNode<Game>::GetUCTConfidence() { return UCTConfidence_; }
+double MCTSNode<Game>::GetUCTConfidence() {
+  return UCTConfidence_;
+}
 
 }  // namespace aithena

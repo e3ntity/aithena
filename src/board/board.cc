@@ -85,6 +85,18 @@ BoardPlane Board::GetCompletePlane() {
   return plane;
 }
 
+Coords Board::FindPiece(Piece piece) {
+  Coords coords;
+
+  for (int y = 0; y < height_; ++y) {
+    for (int x = 0; x < width_; ++x) {
+      if (GetField(x, y) == piece) coords.push_back({x, y});
+    }
+  }
+
+  return coords;
+}
+
 void Board::SetField(unsigned x, unsigned y, Piece piece) {
   assert(x < width_ && y < height_);
 

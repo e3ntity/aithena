@@ -14,16 +14,14 @@ Copyright 2020 All rights reserved.
 namespace aithena {
 namespace chess {
 
-State::State(std::size_t width, std::size_t height,
-             unsigned figure_count = static_cast<unsigned>(Figure::kCount))
+State::State(std::size_t width, std::size_t height, unsigned figure_count)
     : ::aithena::State(width, height, figure_count),
       player_{Player::kWhite},
       castle_queen_{true, true},
       castle_king_{true, true},
       move_count_{0},
       no_progress_count_{0},
-      double_push_pawn_x{-1},
-      double_push_pawn_y{-1} {}
+      double_push_pawn_{-1, -1} {};
 
 State::State(const State& other)
     : ::aithena::State(other),
@@ -32,8 +30,7 @@ State::State(const State& other)
       castle_king_{other.castle_king_},
       move_count_{other.move_count_},
       no_progress_count_{other.no_progress_count_},
-      double_push_pawn_x{other.double_push_pawn_x},
-      double_push_pawn_y{other.double_push_pawn_y} {}
+      double_push_pawn_{other.double_push_pawn_} {};
 
 State& State::operator=(const State& other) {
   if (this == &other) return *this;
@@ -45,8 +42,7 @@ State& State::operator=(const State& other) {
   castle_king_ = other.castle_king_;
   move_count_ = other.move_count_;
   no_progress_count_ = other.no_progress_count_;
-  double_push_pawn_x = other.double_push_pawn_x;
-  double_push_pawn_y = other.double_push_pawn_y;
+  double_push_pawn_ = other.double_push_pawn_;
 
   return *this;
 }
@@ -55,8 +51,8 @@ bool State::operator==(const State& other) {
   return ::aithena::State::operator==(other) && player_ == other.player_ &&
          castle_queen_ == other.castle_queen_ &&
          castle_king_ == other.castle_king_ &&
-         double_push_pawn_x == other.double_push_pawn_x &&
-         double_push_pawn_y == other.double_push_pawn_y;
+         double_push_pawn_.x == other.double_push_pawn_.x &&
+         double_push_pawn_.y == other.double_push_pawn_.y;
 }
 
 bool State::operator!=(const State& other) { return !operator==(other); }
@@ -89,13 +85,12 @@ void State::IncNoProgressCount() { ++no_progress_count_; }
 void State::ResetNoProgressCount() { no_progress_count_ = 0; }
 void State::SetNoProgressCount(unsigned count) { no_progress_count_ = count; };
 
-unsigned State::GetDPushPawnX() { return double_push_pawn_x; }
-
-unsigned State::GetDPushPawnY() { return double_push_pawn_y; }
-
-void State::SetDPushPawnX(unsigned x) { double_push_pawn_x = x; }
-
-void State::SetDPushPawnY(unsigned y) { double_push_pawn_y = y; }
+Coord State::GetDPushPawn() { return double_push_pawn_; }
+int State::GetDPushPawnX() { return double_push_pawn_.x; }
+int State::GetDPushPawnY() { return double_push_pawn_.y; }
+void State::SetDPushPawn(Coord c) { double_push_pawn_ = c; }
+void State::SetDPushPawnX(int x) { double_push_pawn_.x = x; }
+void State::SetDPushPawnY(int y) { double_push_pawn_.y = y; }
 
 torch::Tensor State::PlanesAsTensor() {
   unsigned width = GetBoard().GetWidth();
@@ -169,8 +164,8 @@ std::vector<char> State::ToBytes() {
   state_struct.player = static_cast<int>(player_);
   state_struct.move_count = static_cast<int>(move_count_);
   state_struct.no_progress_count = static_cast<int>(no_progress_count_);
-  state_struct.double_push_pawn[0] = static_cast<int>(double_push_pawn_x);
-  state_struct.double_push_pawn[1] = static_cast<int>(double_push_pawn_y);
+  state_struct.double_push_pawn[0] = static_cast<int>(double_push_pawn_.x);
+  state_struct.double_push_pawn[1] = static_cast<int>(double_push_pawn_.y);
   state_struct.castle[0] = castle_queen_[0];
   state_struct.castle[1] = castle_queen_[1];
   state_struct.castle[2] = castle_king_[0];
@@ -216,8 +211,8 @@ std::tuple<::aithena::chess::State, int> State::FromBytes(
   state.move_count_ = static_cast<unsigned>(state_struct->move_count);
   state.no_progress_count_ =
       static_cast<unsigned>(state_struct->no_progress_count);
-  state.double_push_pawn_x = state_struct->double_push_pawn[0];
-  state.double_push_pawn_y = state_struct->double_push_pawn[1];
+  state.double_push_pawn_.x = state_struct->double_push_pawn[0];
+  state.double_push_pawn_.y = state_struct->double_push_pawn[1];
 
   return std::make_tuple(state, bytes_read);
 }
@@ -287,9 +282,9 @@ std::string State::ToFEN() {
 
   // en passant
 
-  if (double_push_pawn_x >= 0 && double_push_pawn_y >= 0)
+  if (double_push_pawn_.x >= 0 && double_push_pawn_.y >= 0)
     output +=
-        alphabet[double_push_pawn_x] + std::to_string(double_push_pawn_y + 1);
+        alphabet[double_push_pawn_.x] + std::to_string(double_push_pawn_.y + 1);
   else
     output += "-";
 
@@ -310,19 +305,20 @@ State::StatePtr State::FromFEN(std::string fen) {
 
   boost::split(parts, fen, boost::is_any_of(" "));
 
+  if (parts.size() != 6) return nullptr;
+
   // Board configuration
 
   std::vector<Piece> pieces;
 
   // Counts subsequent numbers to allow for numbers with multiple digits
-  // e.g. 18 =
   int number = 0;
   int height = 1;
   for (auto& c : parts.at(0)) {
     if (isdigit(c)) {
       // Copy c to buffer because otherwise atoi will read directly on string.
-      char num = c;
-      number = 10 * number + std::atoi(&num);
+      char num[2]{c, 0};
+      number = 10 * number + std::atoi(num);
       continue;
     }
 
@@ -365,6 +361,10 @@ State::StatePtr State::FromFEN(std::string fen) {
     pieces.push_back(make_piece(fig, player));
   }
 
+  if (number > 0) {
+    for (int i = 0; i < number; ++i) pieces.push_back(kEmptyPiece);
+  }
+
   int width = pieces.size() / height;
 
   if (width * height != pieces.size()) return nullptr;
@@ -403,7 +403,7 @@ State::StatePtr State::FromFEN(std::string fen) {
   if (parts.at(3) != "-") {
     auto itr =
         std::find(alphabet, alphabet + sizeof(alphabet) / sizeof(alphabet[0]),
-                  parts.at(3).at(0));
+                  std::tolower(parts.at(3).at(0)));
 
     if (itr == std::end(alphabet)) return nullptr;
 

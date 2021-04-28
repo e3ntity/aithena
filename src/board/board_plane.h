@@ -12,6 +12,13 @@ Copyright 2020 All rights reserved.
 
 namespace aithena {
 
+struct Coord {
+  int x;
+  int y;
+};
+
+using Coords = std::vector<Coord>;
+
 class BoardPlane {
  public:
   BoardPlane(std::size_t width, std::size_t height);
@@ -20,12 +27,22 @@ class BoardPlane {
   explicit BoardPlane(std::uint64_t);
   BoardPlane() = default;
 
+  // Returns the number of set bits.
+  int count();
   // Sets the bit of the board at the specified location.
   void set(unsigned int x, unsigned int y);
   // Clears the bit of the board at the specified location.
   void clear(unsigned int x, unsigned int y);
   // Returns the bit of the board at the specified location.
   bool get(unsigned int x, unsigned int y) const;
+
+  // Returns the coordinates (x, y) of all set bits.
+  Coords GetCoords();
+
+  // Sets all bits in the line connecting (x1, y1) and (x2, y2).
+  // If there exists no direct vertical / horizontal / diagonal line, the
+  // board remains unmodified.
+  void ScanLine(int x1, int y1, int x2, int y2);
 
   BoardPlane& operator=(const BoardPlane&);
 

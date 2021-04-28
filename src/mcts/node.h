@@ -22,6 +22,7 @@ class MCTSNode : public std::enable_shared_from_this<MCTSNode<Game>> {
   // Initialize with the default game state.
   explicit MCTSNode(std::shared_ptr<Game>);
   // Initialize with a specific state.
+  MCTSNode(std::shared_ptr<Game>, typename Game::GameState);
   MCTSNode(std::shared_ptr<Game>, typename Game::GameState, NodePtr parent);
 
   // Operators

@@ -20,6 +20,8 @@ BoardPlane::BoardPlane(std::uint64_t plane)
   for (int i = 0; i < 64; i++) plane_[i] = (plane << i);
 }
 
+int BoardPlane::count() { return plane_.count(); }
+
 // Sets the bit of the board at the specified location.
 void BoardPlane::set(unsigned x, unsigned y) {
   assert(x < width_ && y < height_);
@@ -38,6 +40,41 @@ bool BoardPlane::get(unsigned x, unsigned y) const {
   return plane_[x + y * width_];
 }
 
+Coords BoardPlane::GetCoords() {
+  Coords coords;
+
+  for (int y = 0; y < height_; ++y) {
+    for (int x = 0; x < width_; ++x) {
+      if (get(x, y) == 1) coords.push_back({x, y});
+    }
+  }
+
+  return coords;
+}
+
+void BoardPlane::ScanLine(int x1, int y1, int x2, int y2) {
+  int dx = x2 - x1;
+  int dy = y2 - y1;
+
+  if (dx == 0 && dy == 0) {
+    return;
+  } else if (dx == 0) {
+    // vertical
+    dy = dy / abs(dy);
+  } else if (dy == 0) {
+    // horizontal
+    dx = dx / abs(dx);
+  } else if (abs(dx) == abs(dy)) {
+    // diagonal
+    dx = dx / abs(dx);
+    dy = dy / abs(dy);
+  } else {
+    return;
+  }
+
+  for (int x = x1, y = y1; x != x2 || y != y2; x += dx, y += dy) set(x, y);
+}  // namespace aithena
+
 // Overloaded operators go here
 
 BoardPlane& BoardPlane::operator=(const BoardPlane& other) {
@@ -51,7 +88,7 @@ BoardPlane& BoardPlane::operator=(const BoardPlane& other) {
 }
 
 BoardPlane& BoardPlane::operator&=(const BoardPlane& other) {
-  plane_ |= other.plane_;
+  plane_ &= other.plane_;
   return *this;
 }
 
@@ -87,7 +124,7 @@ BoardPlane BoardPlane::operator^(const BoardPlane& other) const {
 }
 
 BoardPlane BoardPlane::operator!() const {
-  BoardPlane result{width_, height_};
+  BoardPlane result(*this);
   result.plane_ = ~plane_;
 
   return result;

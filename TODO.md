@@ -1,0 +1,2 @@
+- Generate castling moves
+- Check for discovered checks in en-passant moves

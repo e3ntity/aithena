@@ -65,6 +65,7 @@ int MCTS<Game>::Simulate(typename MCTSNode<Game>::NodePtr start,
   int i{0};
   auto current = start;
   while (!game_->IsTerminalState(current->GetState())) {
+    std::cout << "A" << std::endl;
     if (!current->IsExpanded()) current->Expand();
 
     current = next(current);

@@ -22,6 +22,7 @@ macro(add_gtest TESTNAME GTESTFILE)
 endmacro(add_gtest)
 
 add_gtest(BOARD_TEST test_board.cc board_lib)
+add_gtest(CHESS_FEN_TEST test_chess_fen.cc chess_lib)
 add_gtest(CHESS_TEST test_chess.cc board_lib chess_lib generic_lib)
 add_gtest(DIRECTION_TEST test_direction.cc chess_lib)
 add_gtest(PERFT_TEST test_perft.cc chess_lib)

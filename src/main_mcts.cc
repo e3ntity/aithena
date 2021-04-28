@@ -103,6 +103,28 @@ void train(aithena::MCTS<aithena::chess::Game>& mcts,
 }
 
 int main(int argc, char** argv) {
+  aithena::chess::Game::Options options = {{"board_width", 8},
+                                           {"board_height", 8}};
+
+  auto game = aithena::chess::Game(options);
+
+  auto start = *aithena::chess::State::FromFEN(
+      "rnb2k1r/pp1Pbppp/2p5/q7/2B5/8/PPPQNnPP/RNB1K2R w KQ - 3 9");
+  aithena::Board board = start.GetBoard();
+
+  std::cout << start.ToFEN() << std::endl;
+
+  auto moves = game.GenMoves(start);
+
+  std::cout << PrintBoard(start) << std::endl;
+  for (auto move : moves) {
+    aithena::BoardPlane markup = GetNewFields(move.GetBoard(), board);
+    std::cout << PrintMarkedBoard(move, markup) << std::endl;
+  }
+}
+
+/*
+int main(int argc, char** argv) {
   if (argc != 3) {
     std::cout << "Usage: " << argv[0] << " <rounds> <simulations>" << std::endl;
     return -1;
@@ -121,7 +143,9 @@ int main(int argc, char** argv) {
   auto game = aithena::chess::Game(options);
   auto game_ptr = std::make_shared<aithena::chess::Game>(game);
 
-  auto root = aithena::MCTSNode<aithena::chess::Game>(game_ptr);
+  auto start = aithena::chess::State::FromFEN("4k/5/R4/RK3 w - - 0 1");
+
+  auto root = aithena::MCTSNode<aithena::chess::Game>(game_ptr, *start);
   auto root_ptr =
       std::make_shared<aithena::MCTSNode<aithena::chess::Game>>(root);
 
@@ -146,4 +170,4 @@ int main(int argc, char** argv) {
   std::cout << mcts.BenchmarkRun() << " sec/run" << std::endl;
 
   return 0;
-}
+}*/
