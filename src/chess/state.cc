@@ -259,19 +259,19 @@ std::string State::ToFEN() {
   // castling
 
   bool castling = false;
-  if (castle_king_[static_cast<int>(Player::kWhite)]) {
+  if (GetCastleKing(Player::kWhite)) {
     output += "K";
     castling = true;
   }
-  if (castle_queen_[static_cast<int>(Player::kWhite)]) {
+  if (GetCastleQueen(Player::kWhite)) {
     output += "Q";
     castling = true;
   }
-  if (castle_king_[static_cast<int>(Player::kBlack)]) {
+  if (GetCastleKing(Player::kBlack)) {
     output += "k";
     castling = true;
   }
-  if (castle_queen_[static_cast<int>(Player::kBlack)]) {
+  if (GetCastleQueen(Player::kBlack)) {
     output += "q";
     castling = true;
   }

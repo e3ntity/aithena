@@ -115,8 +115,11 @@ class Game : public ::aithena::Game<State> {
   std::vector<State> GenQueenMoves(State state, unsigned x, unsigned y);
 
   // Generates the next moves for a single king at field (x, y) for a given
-  // state.
+  // state. This does not include castling moves (use GenCastlingMoves).
   std::vector<State> GenKingMoves(State state, unsigned x, unsigned y);
+
+  // Generates castling moves for a piece at (x, y), assumed to be a king.
+  std::vector<State> GenCastlingMoves(State state, int x, int y);
 
   // Returns a board plane highlighting all the squares that contain pieces
   // attacking the piece at field (x, y).
@@ -135,6 +138,10 @@ class Game : public ::aithena::Game<State> {
   // is a capture move.
   bool IsCapture(Board& b1, Board& b2);
 
+  // Returns whether the move represented by a change from board b1 to board b2
+  // is an en-passant move.
+  bool IsEnPassant(Board& b1, Board& b2);
+
   // An array of all figures.
   static const std::array<Figure, 6> figures;
 
@@ -145,6 +152,11 @@ class Game : public ::aithena::Game<State> {
   static const std::array<Player, 2> players;
 
  private:
+  // Helper function for filtering out en-passant discovered check moves
+  bool IsEnPassantDiscoveredCheck(Board& b1, Board& b2);
+  // Flips the player to player of all pieces but the one specified by place.
+  State FlipMostPieces(State state, Player player, Coord place);
+
   // Stores the magic bit boards computed by InitializeMagic.
   // magic_bit_planes_[2*i + 0] thereby stores the push bit planes for figure i
   // whereas magic_bit_planes[2*i + 1] stores the capture bit planes

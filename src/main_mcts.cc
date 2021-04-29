@@ -109,7 +109,7 @@ int main(int argc, char** argv) {
   auto game = aithena::chess::Game(options);
 
   auto start = *aithena::chess::State::FromFEN(
-      "rnb2k1r/pp1Pbppp/2p5/q7/2B5/8/PPPQNnPP/RNB1K2R w KQ - 3 9");
+      "n1n5/PPPk4/8/8/8/8/4Kp1p/5NqN w - - 0 1");
   aithena::Board board = start.GetBoard();
 
   std::cout << start.ToFEN() << std::endl;

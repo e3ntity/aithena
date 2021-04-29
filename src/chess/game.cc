@@ -334,8 +334,22 @@ std::vector<State> Game::GenPawnMoves(State state, unsigned x, unsigned y) {
 }
 
 std::vector<State> Game::GenRookMoves(State state, unsigned x, unsigned y) {
-  return aithena::chess::GenDirectionalMoves(state, x, y,
-                                             {up, down, left, right}, 8);
+  std::vector<State> moves = aithena::chess::GenDirectionalMoves(
+      state, x, y, {up, down, left, right}, 8);
+
+  int width = state.GetBoard().GetWidth();
+  Player player = state.GetPlayer();
+
+  if (x == 0 && state.GetCastleQueen(player)) {
+    std::for_each(moves.begin(), moves.end(), [&player, &state](State& s) {
+      state.SetCastleQueen(player);
+    });
+  } else if (x == width - 1 && state.GetCastleKing(player)) {
+    std::for_each(moves.begin(), moves.end(),
+                  [&player, &state](State& s) { state.SetCastleKing(player); });
+  }
+
+  return moves;
 }
 
 std::vector<State> Game::GenBishopMoves(State state, unsigned x, unsigned y) {
@@ -343,11 +357,84 @@ std::vector<State> Game::GenBishopMoves(State state, unsigned x, unsigned y) {
       state, x, y, {up + left, up + right, down + left, down + right}, 8);
 }
 
+std::vector<State> Game::GenCastlingMoves(State state, int x, int y) {
+  std::vector<State> moves;
+
+  Board& board = state.GetBoard();
+
+  int height = board.GetHeight();
+  int width = board.GetWidth();
+
+  if (width < 6 || width > 8) return moves;
+  if (y > 0 && y < height - 1) return moves;
+
+  int x_rook_left = -1;
+  int x_rook_right = -1;
+
+  for (int i = 0; i < width; ++i) {
+    Piece p = board.GetField(i, y);
+
+    if (p.figure != static_cast<int>(Figure::kRook) ||
+        p.player != state.GetPlayer())
+      continue;
+
+    // Take rooks closest to king
+    if (i < x) {
+      x_rook_left = i;
+    } else {
+      x_rook_right = i;
+      break;
+    }
+  }
+
+  BoardPlane player_plane = board.GetPlayerPlane(state.GetPlayer());
+
+  if (x_rook_right >= 0 && state.GetCastleKing(state.GetPlayer())) {
+    BoardPlane occupied_king(width, height);
+
+    occupied_king.ScanLine(x + 1, y, x_rook_right, y);
+    occupied_king &= player_plane;
+
+    if (occupied_king.count() == 0) {
+      moves.push_back(state);
+      moves.back().GetBoard().MoveField(x_rook_right, y, x + 1, y);
+      moves.back().GetBoard().MoveField(x, y, x + 2, y);
+      moves.back().SetCastleKing(state.GetPlayer());
+      moves.back().SetCastleQueen(state.GetPlayer());
+    }
+  }
+
+  if (x_rook_left >= 0 && state.GetCastleQueen(state.GetPlayer())) {
+    BoardPlane occupied_queen(width, height);
+
+    occupied_queen.ScanLine(x - 1, y, x_rook_left, y);
+    occupied_queen &= player_plane;
+
+    if (occupied_queen.count() == 0) {
+      moves.push_back(state);
+      moves.back().GetBoard().MoveField(x_rook_left, y, x - 1, y);
+      moves.back().GetBoard().MoveField(x, y, x - 2, y);
+      moves.back().SetCastleKing(state.GetPlayer());
+      moves.back().SetCastleQueen(state.GetPlayer());
+    }
+  }
+
+  return moves;
+}
+
 std::vector<State> Game::GenKingMoves(State state, unsigned x, unsigned y) {
-  return aithena::chess::GenDirectionalMoves(
+  std::vector<State> moves = aithena::chess::GenDirectionalMoves(
       state, x, y,
       {up, right, down, left, up + right, up + left, down + right, down + left},
       1);
+
+  // Any king move disables futher castling
+  std::for_each(moves.begin(), moves.end(), [&state](State& s) {
+    s.SetCastleKing(state.GetPlayer());
+    s.SetCastleQueen(state.GetPlayer());
+  });
+
+  return moves;
 }
 
 std::vector<State> Game::GenQueenMoves(State state, unsigned x, unsigned y) {
@@ -462,10 +549,10 @@ BoardPlane Game::GetAttackers(State state, int x, int y) {
 }
 
 std::vector<std::tuple<Coord, Coord>> Game::GetPins(State state, int x, int y) {
-  // Find all pieces that 1) belong to player and can be atacked by an opponent
-  // sliding piece, 2) lie on a straight line between an opponent sliding piece
-  // and the piece at (x, y) and 3) can be moved to by queen moves from the
-  // piece at (x, y).
+  // Find all pieces that 1) belong to player and can be atacked by an
+  // opponent sliding piece, 2) lie on a straight line between an opponent
+  // sliding piece and the piece at (x, y) and 3) can be moved to by queen
+  // moves from the piece at (x, y).
 
   Board& board = state.GetBoard();
   // Bitboard with pinned pieces (to be created & returned)
@@ -532,6 +619,43 @@ bool Game::IsCapture(Board& b1, Board& b2) {
   return b1.GetCompletePlane().count() > b2.GetCompletePlane().count();
 }
 
+bool Game::IsEnPassant(Board& b1, Board& b2) {
+  BoardPlane before = b1.GetFigurePlane(static_cast<int>(Figure::kPawn));
+  BoardPlane after = b2.GetFigurePlane(static_cast<int>(Figure::kPawn));
+
+  // Not a pawn-capture
+  if (before.count() <= after.count()) return false;
+  // An extra field is involved in en-passant captures
+  if ((before | after).count() == before.count()) return false;
+
+  return true;
+}
+
+bool Game::IsEnPassantDiscoveredCheck(Board& b1, Board& b2) {
+  if (!IsEnPassant(b1, b2)) return false;
+
+  // TODO: implement
+
+  return false;
+}
+
+State Game::FlipMostPieces(State state, Player player, Coord place) {
+  Board& board = state.GetBoard();
+
+  for (int y = 0; y < board.GetHeight(); ++y) {
+    for (int x = 0; x < board.GetWidth(); ++x) {
+      if (place.x == x && place.y == y) continue;
+
+      Piece p = board.GetField(x, y);
+
+      if (p == kEmptyPiece || p.player == player) continue;
+
+      board.SetField(x, y, make_piece(static_cast<Figure>(p.figure), player));
+    }
+  }
+  return state;
+}
+
 std::vector<State> Game::GenMoves(State state) {
   // Vector of all legal moves (to be returned)
   std::vector<State> moves;
@@ -556,15 +680,27 @@ std::vector<State> Game::GenMoves(State state) {
   int king_x = king_coords.at(0).x;
   int king_y = king_coords.at(0).y;
 
-  // Remove player's king from board before generating
-  // king_danger_squares so that the king doesn't "block" a
-  // field that would give him check.
-  State no_king_state(state);
-  no_king_state.GetBoard().SetField(king_x, king_y, kEmptyPiece);
-  no_king_state.SetPlayer(state.GetOpponent());
+  // Remove player's king from board and set all pieces to belong to player.
+  // Then, loop through the opponent's pieces and compute all possible attacks
+  // to generate a bitboard of all fields, dangerous to the king.
+  State king_danger_state(state);
+  king_danger_state.GetBoard().SetField(king_x, king_y, kEmptyPiece);
+  king_danger_state.SetPlayer(state.GetOpponent());
 
-  // TODO: collect all piece moves + pawn capture moves in no_king_moves
-  std::vector<State> no_king_moves;
+  for (int y = 0; y < height; ++y) {
+    for (int x = 0; x < width; ++x) {
+      Piece p = king_danger_state.GetBoard().GetField(x, y);
+
+      if (p == kEmptyPiece || p.player == static_cast<int>(state.GetPlayer()))
+        continue;
+
+      king_danger_state.GetBoard().SetField(
+          x, y, make_piece(static_cast<Figure>(p.figure), state.GetPlayer()));
+    }
+  }
+
+  // Squares that the king should never move to
+  BoardPlane king_danger_squares(width, height);
 
   for (int y = 0; y < height; ++y) {
     for (int x = 0; x < width; ++x) {
@@ -574,24 +710,25 @@ std::vector<State> Game::GenMoves(State state) {
 
       if (piece.player != state.GetOpponent()) continue;
 
+      // Copy state and set figure at (x, y) to be opponent's for computing
+      // possible attacks
+      State danger_state(king_danger_state);
+      danger_state.GetBoard().SetField(
+          x, y,
+          make_piece(static_cast<Figure>(piece.figure), state.GetOpponent()));
+
       if (piece.figure == static_cast<int>(Figure::kPawn)) {
-        nk_moves = PreparePseudoMoves(no_king_state,
-                                      GenRawPawnCaptures(no_king_state, x, y));
+        nk_moves = PreparePseudoMoves(danger_state,
+                                      GenRawPawnCaptures(danger_state, x, y));
       } else {
-        nk_moves = GenPseudoMoves(no_king_state, x, y);
+        nk_moves = GenPseudoMoves(danger_state, x, y);
       }
 
-      no_king_moves.insert(no_king_moves.end(), nk_moves.begin(),
-                           nk_moves.end());
+      for (auto move : nk_moves) {
+        king_danger_squares |=
+            GetNewFields(danger_state.GetBoard(), move.GetBoard());
+      }
     }
-  }
-
-  // Squares that the king should never move to
-  BoardPlane king_danger_squares(width, height);
-
-  for (auto move : no_king_moves) {
-    king_danger_squares |=
-        GetNewFields(no_king_state.GetBoard(), move.GetBoard());
   }
 
   // Add all moves the king can make without getting into check
@@ -609,7 +746,8 @@ std::vector<State> Game::GenMoves(State state) {
   if (king_checks.count() > 1) return moves;
 
   // Capture mask indicates on which squares pieces can be captured,
-  // and push mask indicates on which squares pieces can be moved to avoid check
+  // and push mask indicates on which squares pieces can be moved to avoid
+  // check
   BoardPlane capture_mask(width, height);
   BoardPlane push_mask(width, height);
 
@@ -663,6 +801,8 @@ std::vector<State> Game::GenMoves(State state) {
   }
 
   /*
+  std::cout << "king danger squares" << std::endl;
+  std::cout << PrintMarkedBoard(state, king_danger_squares) << std::endl;
   std::cout << "king checks" << std::endl;
   std::cout << PrintMarkedBoard(state, king_checks) << std::endl;
   std::cout << "pin mask" << std::endl;
@@ -676,11 +816,26 @@ std::vector<State> Game::GenMoves(State state) {
   // Generate all other moves
   for (int y = 0; y < height; ++y) {
     for (int x = 0; x < width; ++x) {
-      // Skip already generated moves
-      if (x == king_x && y == king_y) continue;
+      std::vector<State> pseudo_moves;
+      // Skip pinned pieces
       if (pin_mask.get(x, y) == 1) continue;
 
-      auto pseudo_moves = GenPseudoMoves(state, x, y);
+      if (x == king_x && y == king_y) {
+        if (king_checks.count() > 0) continue;
+
+        auto king_pseudo_moves = GenCastlingMoves(state, x, y);
+
+        // Remove castle through check
+        for (auto move : king_pseudo_moves) {
+          auto passed_fields = GetNewFields(board, move.GetBoard());
+
+          if (!((passed_fields & king_danger_squares).empty())) continue;
+
+          pseudo_moves.push_back(move);
+        }
+      } else {
+        pseudo_moves = GenPseudoMoves(state, x, y);
+      }
 
       for (auto move : pseudo_moves) {
         BoardPlane target_field(width, height);
@@ -694,6 +849,9 @@ std::vector<State> Game::GenMoves(State state) {
 
         // Not a valid move
         if (target_field.count() == 0) continue;
+
+        // Filter out en-passant discovered checks
+        if (IsEnPassantDiscoveredCheck(board, move.GetBoard())) continue;
 
         moves.push_back(move);
       }

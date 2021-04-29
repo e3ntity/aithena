@@ -33,32 +33,58 @@ int ChessPerftTest::perft(chess::State& state, int max_depth, int depth) {
   return counter;
 }
 
-TEST_F(ChessPerftTest, Default1) {
+TEST_F(ChessPerftTest, DefaultStart1) {
   auto state = chess::State::FromFEN(
       "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
 
   EXPECT_EQ(perft(*state, 1), 20);
 }
 
-TEST_F(ChessPerftTest, Default2) {
+TEST_F(ChessPerftTest, DefaultStart2) {
   auto state = chess::State::FromFEN(
       "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
 
   EXPECT_EQ(perft(*state, 2), 420);
 }
 
-TEST_F(ChessPerftTest, Default3) {
+TEST_F(ChessPerftTest, DefaultStart3) {
   auto state = chess::State::FromFEN(
       "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
 
   EXPECT_EQ(perft(*state, 3), 9322);
 }
 
-TEST_F(ChessPerftTest, Default4) {
+/*
+TEST_F(ChessPerftTest, DefaultStart4) {
   auto state = chess::State::FromFEN(
       "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
 
   EXPECT_EQ(perft(*state, 4), 206603);
+}
+*/
+
+TEST_F(ChessPerftTest, CastleThroughCheck) {
+  auto state = chess::State::FromFEN("7k/8/8/8/8/1b6/8/R3K3 w Q - 0 1");
+
+  EXPECT_EQ(perft(*state, 1), 14);
+}
+
+TEST_F(ChessPerftTest, CastleQueenBlocked) {
+  auto state = chess::State::FromFEN("6k1/8/8/8/8/8/8/R1B1K2R w KQ - 0 1");
+
+  EXPECT_EQ(perft(*state, 1), 30);
+}
+
+TEST_F(ChessPerftTest, EnPassantDiscoveredCheck) {
+  auto state = chess::State::FromFEN("7k/8/8/K1pP3q/8/8/8/8 w - c6 0 2");
+
+  EXPECT_EQ(perft(*state, 1), 5);
+}
+
+TEST_F(ChessPerftTest, PromotionCheck) {
+  auto state = chess::State::FromFEN("n1n5/PPPk4/8/8/8/8/4Kppp/5N1N b - - 0 1");
+
+  EXPECT_EQ(perft(*state, 2), 520);
 }
 
 // Custom test positions:
