@@ -8,9 +8,12 @@ Copyright 2020 All rights reserved.
 #include <iomanip>
 #include <memory>
 
+#include "benchmark/benchmark.h"
 #include "chess/game.h"
 #include "chess/util.h"
 #include "mcts/mcts.h"
+
+int unit = aithena::Benchmark::UNIT_USEC;
 
 int main(int argc, char** argv) {
   aithena::chess::Game::Options options = {{"board_width", 8},
@@ -21,20 +24,45 @@ int main(int argc, char** argv) {
 
   auto start = *aithena::chess::State::FromFEN(
       "rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8");
-  aithena::Board board = start.GetBoard();
 
-  std::cout << start.ToFEN() << std::endl;
+  aithena::Benchmark b;
 
-  auto moves = game.GenMoves(start);
+  b.Start();
 
-  std::cout << "Possible moves: " << moves.size() << std::endl;
+  int nodes = aithena::chess::perft(game_ptr, start, 3);
 
-  std::cout << PrintBoard(start) << std::endl;
-  for (auto move : moves) {
-    std::cout << move.ToFEN() << std::endl;
-    aithena::BoardPlane markup = GetNewFields(move.GetBoard(), board);
-    std::cout << PrintMarkedBoard(move, markup) << std::endl;
-  }
+  b.End();
+
+  double nps = 1000 * nodes / b.GetLast(unit);
+
+  std::cout << "Speed: " << nps << " nodes / sec" << std::endl;
+
+  double total_time = game_ptr->benchmark_gen_moves_.GetAvg(unit);
+  double find_king_time = game_ptr->benchmark_find_king_.GetAvg(unit);
+  double danger_time = game_ptr->benchmark_danger_squares_.GetAvg(unit);
+  double king_moves_time = game_ptr->benchmark_king_moves_.GetAvg(unit);
+  double checks_time = game_ptr->benchmark_checks_.GetAvg(unit);
+  double move_masks_time = game_ptr->benchmark_move_masks_.GetAvg(unit);
+  double pin_moves_time = game_ptr->benchmark_pin_moves_.GetAvg(unit);
+  double other_moves_time = game_ptr->benchmark_other_moves_.GetAvg(unit);
+
+  std::cout << "Total time:  " << total_time << " usec" << std::endl;
+  std::cout << "Find king:   " << find_king_time << " usec ("
+            << 100 * find_king_time / total_time << "%)" << std::endl;
+  std::cout << "Calc danger: " << danger_time << " usec ("
+            << 100 * danger_time / total_time << "%)" << std::endl;
+  std::cout << "King moves:  " << king_moves_time << " usec ("
+            << 100 * king_moves_time / total_time << "%)" << std::endl;
+  std::cout << "Checks:      " << checks_time << " usec ("
+            << 100 * checks_time / total_time << "%)" << std::endl;
+  std::cout << "Move masks:  " << move_masks_time << " usec ("
+            << 100 * move_masks_time / total_time << "%)" << std::endl;
+  std::cout << "Pin moves:   " << pin_moves_time << " usec ("
+            << 100 * pin_moves_time / total_time << "%)" << std::endl;
+  std::cout << "Other moves: " << other_moves_time << " usec ("
+            << 100 * other_moves_time / total_time << "%)" << std::endl;
+
+  return 0;
 }
 
 /*

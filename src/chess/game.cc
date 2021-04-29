@@ -5,6 +5,7 @@ Copyright 2020 All rights reserved.
 #include "chess/game.h"
 #include "chess/state.h"
 
+#include "benchmark/benchmark.h"
 #include "board/board.h"
 #include "chess/moves.h"
 #include "chess/util.h"
@@ -721,11 +722,15 @@ State Game::FlipMostPieces(State state, Player player, Coord place) {
 }
 
 std::vector<State> Game::GenMoves(State state) {
+  benchmark_gen_moves_.Start();
+
   // Vector of all legal moves (to be returned)
   std::vector<State> moves;
 
   if (state.GetMoveCount() > GetOption("max_move_count")) return moves;
   if (state.GetNoProgressCount() > GetOption("max_no_progress")) return moves;
+
+  benchmark_find_king_.Start();
 
   Board& board = state.GetBoard();
   int width = board.GetWidth();
@@ -743,6 +748,9 @@ std::vector<State> Game::GenMoves(State state) {
 
   int king_x = king_coords.at(0).x;
   int king_y = king_coords.at(0).y;
+
+  benchmark_find_king_.End();
+  benchmark_danger_squares_.Start();
 
   // Remove player's king from board and set all pieces to belong to player.
   // Then, loop through the opponent's pieces and compute all possible attacks
@@ -795,6 +803,9 @@ std::vector<State> Game::GenMoves(State state) {
     }
   }
 
+  benchmark_danger_squares_.End();
+  benchmark_king_moves_.Start();
+
   // Add all moves the king can make without getting into check
   for (auto move : GenPseudoMoves(state, king_x, king_y)) {
     if (!(move.GetBoard().GetPlane(player_king) & king_danger_squares).empty())
@@ -803,11 +814,21 @@ std::vector<State> Game::GenMoves(State state) {
     moves.push_back(move);
   }
 
+  benchmark_king_moves_.End();
+  benchmark_checks_.Start();
+
   // Squares with pieces that attack the king
   BoardPlane king_checks = GetAttackers(state, king_x, king_y);
 
+  benchmark_checks_.End();
+
   // If there is more than one check on the king, only king moves are valid
-  if (king_checks.count() > 1) return moves;
+  if (king_checks.count() > 1) {
+    benchmark_gen_moves_.End();
+    return moves;
+  }
+
+  benchmark_move_masks_.Start();
 
   // Capture mask indicates on which squares pieces can be captured,
   // and push mask indicates on which squares pieces can be moved to avoid
@@ -841,6 +862,9 @@ std::vector<State> Game::GenMoves(State state) {
     }
   }
 
+  benchmark_move_masks_.End();
+  benchmark_pin_moves_.Start();
+
   // Generate moves for pinned pieces and remove them from the board.
   std::vector<std::tuple<Coord, Coord>> pins = GetPins(state, king_x, king_y);
   BoardPlane pin_mask(width, height);
@@ -868,6 +892,8 @@ std::vector<State> Game::GenMoves(State state) {
     pin_mask.set(pinned.x, pinned.y);
   }
 
+  benchmark_pin_moves_.End();
+
   /*
   std::cout << "king danger squares" << std::endl;
   std::cout << PrintMarkedBoard(state, king_danger_squares) << std::endl;
@@ -880,6 +906,8 @@ std::vector<State> Game::GenMoves(State state) {
   std::cout << "push mask" << std::endl;
   std::cout << PrintMarkedBoard(state, push_mask) << std::endl;
   */
+
+  benchmark_other_moves_.Start();
 
   // Generate all other moves
   for (int y = 0; y < height; ++y) {
@@ -926,6 +954,9 @@ std::vector<State> Game::GenMoves(State state) {
       }
     }
   }
+
+  benchmark_other_moves_.End();
+  benchmark_gen_moves_.End();
 
   return moves;
 }

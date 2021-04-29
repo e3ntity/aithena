@@ -5,6 +5,7 @@ Copyright 2020 All rights reserved.
 #ifndef SRC_CHESS_GAME_H_
 #define SRC_CHESS_GAME_H_
 
+#include "benchmark/benchmark.h"
 #include "game/game.h"
 
 #include <assert.h>
@@ -150,6 +151,15 @@ class Game : public ::aithena::Game<State> {
 
   // An array of all players.
   static const std::array<Player, 2> players;
+
+  Benchmark benchmark_gen_moves_;
+  Benchmark benchmark_find_king_;
+  Benchmark benchmark_danger_squares_;
+  Benchmark benchmark_king_moves_;
+  Benchmark benchmark_checks_;
+  Benchmark benchmark_move_masks_;
+  Benchmark benchmark_pin_moves_;
+  Benchmark benchmark_other_moves_;
 
  private:
   // Returns the x-coordinates of the rooks available for castling.
