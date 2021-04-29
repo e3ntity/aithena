@@ -340,13 +340,17 @@ std::vector<State> Game::GenRookMoves(State state, unsigned x, unsigned y) {
   int width = state.GetBoard().GetWidth();
   Player player = state.GetPlayer();
 
-  if (x == 0 && state.GetCastleQueen(player)) {
-    std::for_each(moves.begin(), moves.end(), [&player, &state](State& s) {
-      state.SetCastleQueen(player);
-    });
-  } else if (x == width - 1 && state.GetCastleKing(player)) {
+  auto castle_rooks = GetCastlingRooks(state);
+
+  Coord rook_left = std::get<0>(castle_rooks);
+  Coord rook_right = std::get<1>(castle_rooks);
+
+  if (rook_left.x == x && rook_left.y == y) {
     std::for_each(moves.begin(), moves.end(),
-                  [&player, &state](State& s) { state.SetCastleKing(player); });
+                  [&player, &state](State& s) { s.SetCastleQueen(player); });
+  } else if (rook_right.x == x && rook_right.y == y) {
+    std::for_each(moves.begin(), moves.end(),
+                  [&player, &state](State& s) { s.SetCastleKing(player); });
   }
 
   return moves;
@@ -355,6 +359,47 @@ std::vector<State> Game::GenRookMoves(State state, unsigned x, unsigned y) {
 std::vector<State> Game::GenBishopMoves(State state, unsigned x, unsigned y) {
   return aithena::chess::GenDirectionalMoves(
       state, x, y, {up + left, up + right, down + left, down + right}, 8);
+}
+
+std::tuple<Coord, Coord> Game::GetCastlingRooks(State state) {
+  Board& board = state.GetBoard();
+  Coord left{-1, -1};
+  Coord right{-1, -1};
+
+  Coords kings = board.FindPiece(make_piece(Figure::kKing, state.GetPlayer()));
+
+  if (kings.size() != 1) return std::make_tuple(left, right);
+
+  Coord king = kings.at(0);
+
+  if (king.y > 0 && king.y < board.GetHeight() - 1)
+    return std::make_tuple(left, right);
+
+  int left_x = -1;
+  int right_x = -1;
+
+  for (int i = 0; i < board.GetWidth(); ++i) {
+    Piece p = board.GetField(i, king.y);
+
+    if (p.figure != static_cast<int>(Figure::kRook) ||
+        p.player != state.GetPlayer())
+      continue;
+
+    // Take rooks closest to king
+    if (i < king.x) {
+      left_x = i;
+    } else {
+      right_x = i;
+      break;
+    }
+  }
+
+  if (state.GetCastleKing(state.GetPlayer()) && right_x >= 0)
+    right = {right_x, king.y};
+  if (state.GetCastleQueen(state.GetPlayer()) && left_x >= 0)
+    left = {left_x, king.y};
+
+  return std::make_tuple(left, right);
 }
 
 std::vector<State> Game::GenCastlingMoves(State state, int x, int y) {
@@ -368,28 +413,14 @@ std::vector<State> Game::GenCastlingMoves(State state, int x, int y) {
   if (width < 6 || width > 8) return moves;
   if (y > 0 && y < height - 1) return moves;
 
-  int x_rook_left = -1;
-  int x_rook_right = -1;
+  auto castle_rooks = GetCastlingRooks(state);
 
-  for (int i = 0; i < width; ++i) {
-    Piece p = board.GetField(i, y);
-
-    if (p.figure != static_cast<int>(Figure::kRook) ||
-        p.player != state.GetPlayer())
-      continue;
-
-    // Take rooks closest to king
-    if (i < x) {
-      x_rook_left = i;
-    } else {
-      x_rook_right = i;
-      break;
-    }
-  }
+  int x_rook_left = std::get<0>(castle_rooks).x;
+  int x_rook_right = std::get<1>(castle_rooks).x;
 
   BoardPlane player_plane = board.GetPlayerPlane(state.GetPlayer());
 
-  if (x_rook_right >= 0 && state.GetCastleKing(state.GetPlayer())) {
+  if (x_rook_right >= 0) {
     BoardPlane occupied_king(width, height);
 
     occupied_king.ScanLine(x + 1, y, x_rook_right, y);
@@ -404,7 +435,7 @@ std::vector<State> Game::GenCastlingMoves(State state, int x, int y) {
     }
   }
 
-  if (x_rook_left >= 0 && state.GetCastleQueen(state.GetPlayer())) {
+  if (x_rook_left >= 0) {
     BoardPlane occupied_queen(width, height);
 
     occupied_queen.ScanLine(x - 1, y, x_rook_left, y);
@@ -631,10 +662,43 @@ bool Game::IsEnPassant(Board& b1, Board& b2) {
   return true;
 }
 
-bool Game::IsEnPassantDiscoveredCheck(Board& b1, Board& b2) {
+bool Game::IsEnPassantDiscoveredCheck(State& s1, State& s2) {
+  Board& b1 = s1.GetBoard();
+  Board& b2 = s2.GetBoard();
+
   if (!IsEnPassant(b1, b2)) return false;
 
-  // TODO: implement
+  Coords kings = b2.FindPiece(make_piece(Figure::kKing, s1.GetPlayer()));
+
+  if (kings.size() != 1) assert(false);
+
+  Coord king = kings.at(0);
+
+  for (int x = king.x + 1; x < b2.GetWidth(); ++x) {
+    Piece p = b2.GetField(x, king.y);
+
+    if (p == kEmptyPiece) continue;
+
+    if (p.player == s1.GetPlayer()) break;
+    if (p.figure != static_cast<int>(Figure::kQueen) &&
+        p.figure != static_cast<int>(Figure::kRook))
+      break;
+
+    return true;
+  }
+
+  for (int x = king.x - 1; x >= 0; --x) {
+    Piece p = b2.GetField(x, king.y);
+
+    if (p == kEmptyPiece) continue;
+
+    if (p.player == s1.GetPlayer()) break;
+    if (p.figure != static_cast<int>(Figure::kQueen) &&
+        p.figure != static_cast<int>(Figure::kRook))
+      break;
+
+    return true;
+  }
 
   return false;
 }
@@ -786,8 +850,12 @@ std::vector<State> Game::GenMoves(State state) {
     auto pinner = std::get<0>(pin);
     auto pinned = std::get<1>(pin);
 
-    pin_move_mask.ScanLine(pinner.x, pinner.y, pinned.x, pinned.y);
+    pin_move_mask.ScanLine(pinner.x, pinner.y, king_x, king_y);
+
+    if (!pin_move_mask.get(pinned.x, pinned.y)) continue;
+
     pin_move_mask.clear(pinned.x, pinned.y);
+    pin_move_mask.clear(king_x, king_y);
 
     auto pin_moves = GenPseudoMoves(state, pinned.x, pinned.y);
 
@@ -823,7 +891,8 @@ std::vector<State> Game::GenMoves(State state) {
       if (x == king_x && y == king_y) {
         if (king_checks.count() > 0) continue;
 
-        auto king_pseudo_moves = GenCastlingMoves(state, x, y);
+        auto king_pseudo_moves =
+            PreparePseudoMoves(state, GenCastlingMoves(state, x, y));
 
         // Remove castle through check
         for (auto move : king_pseudo_moves) {
@@ -851,7 +920,7 @@ std::vector<State> Game::GenMoves(State state) {
         if (target_field.count() == 0) continue;
 
         // Filter out en-passant discovered checks
-        if (IsEnPassantDiscoveredCheck(board, move.GetBoard())) continue;
+        if (IsEnPassantDiscoveredCheck(state, move)) continue;
 
         moves.push_back(move);
       }

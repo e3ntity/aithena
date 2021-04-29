@@ -152,8 +152,10 @@ class Game : public ::aithena::Game<State> {
   static const std::array<Player, 2> players;
 
  private:
+  // Returns the x-coordinates of the rooks available for castling.
+  std::tuple<Coord, Coord> GetCastlingRooks(State state);
   // Helper function for filtering out en-passant discovered check moves
-  bool IsEnPassantDiscoveredCheck(Board& b1, Board& b2);
+  bool IsEnPassantDiscoveredCheck(State& s1, State& s2);
   // Flips the player to player of all pieces but the one specified by place.
   State FlipMostPieces(State state, Player player, Coord place);
 

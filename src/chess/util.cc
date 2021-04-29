@@ -83,5 +83,30 @@ std::string PrintBoard(State state) {
   return PrintMarkedBoard(state, marker);
 }
 
+int perft(std::shared_ptr<Game> game, chess::State& state, int max_depth,
+          int depth) {
+  if (depth >= max_depth) return 0;
+
+  int counter = 0;
+  auto moves = game->GetLegalActions(state);
+
+  for (auto move : moves) {
+    counter += perft(game, move, max_depth, depth + 1) + 1;
+  }
+
+  return counter;
+}
+
+std::vector<std::tuple<State, int>> divide(std::shared_ptr<Game> game,
+                                           State& state, int depth) {
+  std::vector<std::tuple<State, int>> output;
+  auto moves = game->GenMoves(state);
+
+  for (auto move : moves)
+    output.push_back(std::make_tuple(move, perft(game, move, depth)));
+
+  return output;
+}
+
 }  // namespace chess
 }  // namespace aithena
