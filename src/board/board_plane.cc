@@ -10,7 +10,7 @@ Copyright 2020 All rights reserved.
 
 namespace aithena {
 
-BoardPlane::BoardPlane(std::size_t width, std::size_t height)
+BoardPlane::BoardPlane(int width, int height)
     : width_{width},
       height_{height},
       plane_{/*num_bits=*/width * height, /*long value=*/0} {}
@@ -23,19 +23,19 @@ BoardPlane::BoardPlane(std::uint64_t plane)
 int BoardPlane::count() { return plane_.count(); }
 
 // Sets the bit of the board at the specified location.
-void BoardPlane::set(unsigned x, unsigned y) {
+void BoardPlane::set(int x, int y) {
   assert(x < width_ && y < height_);
   plane_.set(x + y * width_);
 }
 
 // Clears the bit of the board at the specified location.
-void BoardPlane::clear(unsigned x, unsigned y) {
+void BoardPlane::clear(int x, int y) {
   assert(x < width_ && y < height_);
   plane_.reset(x + y * width_);
 }
 
 // Returns the bit of the board at the specified location.
-bool BoardPlane::get(unsigned x, unsigned y) const {
+bool BoardPlane::get(int x, int y) const {
   assert(x < width_ && y < height_);
   return plane_[x + y * width_];
 }

@@ -21,34 +21,34 @@ std::string PrintMarkedBoard(State state, BoardPlane marker,
 
   for (int y = board.GetHeight() - 1; y >= 0; --y) {
     repr << std::endl << y + 1 << " ";
-    for (unsigned x = 0; x < board.GetWidth(); ++x) {
+    for (int x = 0; x < board.GetWidth(); ++x) {
       // field color
       std::string s_color = ((x + y) % 2 == 1) ? "\033[1;47m" : "\033[1;45m";
 
       piece = board.GetField(x, y);
 
       // Player indication
-      bool white = piece.player == static_cast<unsigned>(Player::kWhite);
+      bool white = piece.player == static_cast<int>(Player::kWhite);
       std::string s_piece;
 
       // Figure icon
       switch (piece.figure) {
-        case static_cast<unsigned>(Figure::kKing):
+        case static_cast<int>(Figure::kKing):
           s_piece = white ? "♔" : "♚";
           break;
-        case static_cast<unsigned>(Figure::kQueen):
+        case static_cast<int>(Figure::kQueen):
           s_piece = white ? "♕" : "♛";
           break;
-        case static_cast<unsigned>(Figure::kRook):
+        case static_cast<int>(Figure::kRook):
           s_piece = white ? "♖" : "♜";
           break;
-        case static_cast<unsigned>(Figure::kBishop):
+        case static_cast<int>(Figure::kBishop):
           s_piece = white ? "♗" : "♝";
           break;
-        case static_cast<unsigned>(Figure::kKnight):
+        case static_cast<int>(Figure::kKnight):
           s_piece = white ? "♘" : "♞";
           break;
-        case static_cast<unsigned>(Figure::kPawn):
+        case static_cast<int>(Figure::kPawn):
           s_piece = white ? "♙" : "♟︎";
           break;
         default:

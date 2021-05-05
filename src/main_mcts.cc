@@ -33,34 +33,30 @@ int main(int argc, char** argv) {
 
   b.End();
 
-  double nps = 1000 * nodes / b.GetLast(unit);
+  double nps = 1000000.0 * static_cast<double>(nodes) /
+               static_cast<double>(b.GetLast(unit));
 
   std::cout << "Speed: " << nps << " nodes / sec" << std::endl;
 
-  double total_time = game_ptr->benchmark_gen_moves_.GetAvg(unit);
-  double find_king_time = game_ptr->benchmark_find_king_.GetAvg(unit);
-  double danger_time = game_ptr->benchmark_danger_squares_.GetAvg(unit);
-  double king_moves_time = game_ptr->benchmark_king_moves_.GetAvg(unit);
-  double checks_time = game_ptr->benchmark_checks_.GetAvg(unit);
-  double move_masks_time = game_ptr->benchmark_move_masks_.GetAvg(unit);
-  double pin_moves_time = game_ptr->benchmark_pin_moves_.GetAvg(unit);
-  double other_moves_time = game_ptr->benchmark_other_moves_.GetAvg(unit);
+  std::cout << "## Game functions benchmark ##" << std::endl;
 
-  std::cout << "Total time:  " << total_time << " usec" << std::endl;
-  std::cout << "Find king:   " << find_king_time << " usec ("
-            << 100 * find_king_time / total_time << "%)" << std::endl;
-  std::cout << "Calc danger: " << danger_time << " usec ("
-            << 100 * danger_time / total_time << "%)" << std::endl;
-  std::cout << "King moves:  " << king_moves_time << " usec ("
-            << 100 * king_moves_time / total_time << "%)" << std::endl;
-  std::cout << "Checks:      " << checks_time << " usec ("
-            << 100 * checks_time / total_time << "%)" << std::endl;
-  std::cout << "Move masks:  " << move_masks_time << " usec ("
-            << 100 * move_masks_time / total_time << "%)" << std::endl;
-  std::cout << "Pin moves:   " << pin_moves_time << " usec ("
-            << 100 * pin_moves_time / total_time << "%)" << std::endl;
-  std::cout << "Other moves: " << other_moves_time << " usec ("
-            << 100 * other_moves_time / total_time << "%)" << std::endl;
+  for (auto time : game_ptr->benchmark_.GetAvg(unit)) {
+    auto b = game_ptr->benchmark_.Get(std::get<0>(time));
+
+    std::cout << std::get<0>(time) << ": " << std::get<1>(time) << " usec ("
+              << b->GetSize() << " times called)" << std::endl;
+  }
+
+  std::cout << "## GenMoves benchmark ##" << std::endl;
+
+  double total_time = game_ptr->benchmark_.Get("GenMoves()")->GetAvg(unit);
+  auto timings = game_ptr->benchmark_gen_moves_.GetAvg(unit);
+
+  for (auto time : timings) {
+    std::cout << std::setprecision(2) << std::get<0>(time) << ": "
+              << std::get<1>(time) << " usec ("
+              << 100 * std::get<1>(time) / total_time << "%)" << std::endl;
+  }
 
   return 0;
 }

@@ -21,7 +21,7 @@ using Coords = std::vector<Coord>;
 
 class BoardPlane {
  public:
-  BoardPlane(std::size_t width, std::size_t height);
+  BoardPlane(int width, int height);
 
   // Special constructor for chess.
   explicit BoardPlane(std::uint64_t);
@@ -30,11 +30,11 @@ class BoardPlane {
   // Returns the number of set bits.
   int count();
   // Sets the bit of the board at the specified location.
-  void set(unsigned int x, unsigned int y);
+  void set(int x, int y);
   // Clears the bit of the board at the specified location.
-  void clear(unsigned int x, unsigned int y);
+  void clear(int x, int y);
   // Returns the bit of the board at the specified location.
-  bool get(unsigned int x, unsigned int y) const;
+  bool get(int x, int y) const;
 
   // Returns the coordinates (x, y) of all set bits.
   Coords GetCoords();
@@ -71,7 +71,7 @@ class BoardPlane {
   static std::tuple<BoardPlane, int> FromBytes(std::vector<char>);
 
  private:
-  std::size_t width_, height_;
+  int width_, height_;
   // A 2D bit plane specified rows to columns.
   // Example:
   //  plane_[5 + 2 * width_] // returns the fifth element of the second row

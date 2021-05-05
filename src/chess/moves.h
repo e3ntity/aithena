@@ -29,9 +29,9 @@ const Direction right{1, 0};
 Direction operator+(Direction d1, Direction d2);
 
 // Generate pseudo moves in the given directions
-std::vector<State> GenDirectionalMoves(State state, unsigned x, unsigned y,
+std::vector<State> GenDirectionalMoves(State state, int x, int y,
                                        std::vector<Direction> directions,
-                                       unsigned range);
+                                       int range);
 
 // Move patterns define how a piece may move starting from a given position.
 // Each entry in the array gives the pattern for the starting position at the

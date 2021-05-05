@@ -18,8 +18,8 @@ class State : public ::aithena::State {
  public:
   using StatePtr = std::shared_ptr<State>;
   // Initializes to the chess starting state.
-  State(std::size_t width, std::size_t height,
-        unsigned figure_count = static_cast<unsigned>(Figure::kCount));
+  State(int width, int height,
+        int figure_count = static_cast<int>(Figure::kCount));
   // Initializes to a give state.
   State(const State&);
 
@@ -39,14 +39,14 @@ class State : public ::aithena::State {
   void SetCastleQueen(Player);
   void SetCastleKing(Player);
 
-  unsigned int GetMoveCount();
+  int GetMoveCount();
   void IncMoveCount();
-  void SetMoveCount(unsigned int);
+  void SetMoveCount(int);
 
-  unsigned int GetNoProgressCount();
+  int GetNoProgressCount();
   void IncNoProgressCount();
   void ResetNoProgressCount();
-  void SetNoProgressCount(unsigned int);
+  void SetNoProgressCount(int);
 
   Coord GetDPushPawn();
   int GetDPushPawnX();
@@ -76,10 +76,10 @@ class State : public ::aithena::State {
   // Indicates for each player whether king-side castling is allowed.
   std::array<bool, 2> castle_king_;
   // The count of moves made up until this state.
-  unsigned int move_count_;
+  int move_count_;
   // Counts the moves without progress (neither a pawn moved, nor a piece
   // captured) up util this state.
-  unsigned int no_progress_count_;
+  int no_progress_count_;
   Coord double_push_pawn_;
 
   struct StateByteRepr {

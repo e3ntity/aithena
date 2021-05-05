@@ -18,7 +18,7 @@ namespace chess {
 
 // Defines the figures used in chess. GhostPawn is used to keep track of
 // "en-passant".
-enum class Figure : unsigned {
+enum class Figure : int {
   kKing,
   kQueen,
   kRook,
@@ -28,7 +28,7 @@ enum class Figure : unsigned {
   /*kGhostPawn, */ kCount
 };
 
-enum Player : unsigned { kWhite, kBlack };
+enum Player : int { kWhite, kBlack };
 
 Player GetOpponent(Player);
 
@@ -52,10 +52,6 @@ class Game : public ::aithena::Game<State> {
 
   Game& operator=(const Game&);
 
-  // Crops bitboards to the specified size of the board.
-  // Bitboards are later used for legal move generation.
-  void InitializeMagic();
-
   State GetInitialState() override;
   std::vector<State> GetLegalActions(State) override;
 
@@ -72,7 +68,7 @@ class Game : public ::aithena::Game<State> {
   // Generates all pseudo-moves for all pieces for a given state.
   std::vector<State> GenPseudoMoves(State);
   // Generates all pseudo-moves for any piece at field (x, y) for a given state.
-  std::vector<State> GenPseudoMoves(State, unsigned x, unsigned y);
+  std::vector<State> GenPseudoMoves(State, int x, int y);
 
   // Generates all legal moves for a given state.
   std::vector<State> GenMoves(State);
@@ -82,7 +78,7 @@ class Game : public ::aithena::Game<State> {
   // * Assumes that there is a pawn of the player who's turn it is at
   // field (x, y).
   // * Does not switch the player turn.
-  std::vector<State> GenPawnMoves(State, unsigned x, unsigned y);
+  std::vector<State> GenPawnMoves(State, int x, int y);
   std::vector<State> GenPawnPushes(State, int x, int y);
   std::vector<State> GenPawnCaptures(State, int x, int y);
 
@@ -95,29 +91,29 @@ class Game : public ::aithena::Game<State> {
   // * Assumes that there is a pawn of the player who's turn it is at
   // field (x, y).
   // * Does not switch the player turn.
-  std::vector<State> GenRookMoves(State state, unsigned x, unsigned y);
+  std::vector<State> GenRookMoves(State state, int x, int y);
 
   // Generates the next moves for a single bishop at field (x, y) for a given
   // state.
   // * Assumes that there is a rook of the player who's turn it is at
   // field (x, y).
   // * Does not switch the player turn.
-  std::vector<State> GenBishopMoves(State state, unsigned x, unsigned y);
+  std::vector<State> GenBishopMoves(State state, int x, int y);
 
   // Generates the next moves for a single knight at field (x, y) for a given
   // state.
   // * Assumes that there is a knight of the player who's turn it is at
   // field (x, y).
   // * Does not switch the player turn.
-  std::vector<State> GenKnightMoves(State state, unsigned x, unsigned y);
+  std::vector<State> GenKnightMoves(State state, int x, int y);
 
   // Generates the next moves for a single queen at field (x, y) for a given
   // state.
-  std::vector<State> GenQueenMoves(State state, unsigned x, unsigned y);
+  std::vector<State> GenQueenMoves(State state, int x, int y);
 
   // Generates the next moves for a single king at field (x, y) for a given
   // state. This does not include castling moves (use GenCastlingMoves).
-  std::vector<State> GenKingMoves(State state, unsigned x, unsigned y);
+  std::vector<State> GenKingMoves(State state, int x, int y);
 
   // Generates castling moves for a piece at (x, y), assumed to be a king.
   std::vector<State> GenCastlingMoves(State state, int x, int y);
@@ -152,14 +148,8 @@ class Game : public ::aithena::Game<State> {
   // An array of all players.
   static const std::array<Player, 2> players;
 
-  Benchmark benchmark_gen_moves_;
-  Benchmark benchmark_find_king_;
-  Benchmark benchmark_danger_squares_;
-  Benchmark benchmark_king_moves_;
-  Benchmark benchmark_checks_;
-  Benchmark benchmark_move_masks_;
-  Benchmark benchmark_pin_moves_;
-  Benchmark benchmark_other_moves_;
+  BenchmarkSet benchmark_gen_moves_;
+  BenchmarkSet benchmark_;
 
  private:
   // Returns the x-coordinates of the rooks available for castling.
@@ -173,13 +163,13 @@ class Game : public ::aithena::Game<State> {
   // magic_bit_planes_[2*i + 0] thereby stores the push bit planes for figure i
   // whereas magic_bit_planes[2*i + 1] stores the capture bit planes
   std::array<std::unique_ptr<BoardPlane[]>,
-             static_cast<unsigned>(Figure::kCount) * 2>
+             static_cast<int>(Figure::kCount) * 2>
       magic_bit_planes_;
   // For faster access to GetOption("max_no_progress")
-  unsigned max_no_progress_;
+  int max_no_progress_;
   // For faster access to GetOption("max_move_count")
   // Set to 0 to disable.
-  unsigned max_move_count_;
+  int max_move_count_;
 };
 
 }  // namespace chess

@@ -14,7 +14,7 @@ Copyright 2020 All rights reserved.
 namespace aithena {
 namespace chess {
 
-State::State(std::size_t width, std::size_t height, unsigned figure_count)
+State::State(int width, int height, int figure_count)
     : ::aithena::State(width, height, figure_count),
       player_{Player::kWhite},
       castle_queen_{true, true},
@@ -64,26 +64,26 @@ Player State::GetOpponent() {
 void State::SetPlayer(Player p) { player_ = p; }
 
 bool State::GetCastleQueen(Player p) {
-  return castle_queen_[static_cast<unsigned>(p)];
+  return castle_queen_[static_cast<int>(p)];
 }
 bool State::GetCastleKing(Player p) {
-  return castle_king_[static_cast<unsigned>(p)];
+  return castle_king_[static_cast<int>(p)];
 }
 void State::SetCastleQueen(Player p) {
-  castle_queen_[static_cast<unsigned>(p)] = false;
+  castle_queen_[static_cast<int>(p)] = false;
 }
 void State::SetCastleKing(Player p) {
-  castle_king_[static_cast<unsigned>(p)] = false;
+  castle_king_[static_cast<int>(p)] = false;
 }
 
-unsigned State::GetMoveCount() { return move_count_; }
+int State::GetMoveCount() { return move_count_; }
 void State::IncMoveCount() { ++move_count_; }
-void State::SetMoveCount(unsigned count) { move_count_ = count; }
+void State::SetMoveCount(int count) { move_count_ = count; }
 
-unsigned State::GetNoProgressCount() { return no_progress_count_; }
+int State::GetNoProgressCount() { return no_progress_count_; }
 void State::IncNoProgressCount() { ++no_progress_count_; }
 void State::ResetNoProgressCount() { no_progress_count_ = 0; }
-void State::SetNoProgressCount(unsigned count) { no_progress_count_ = count; };
+void State::SetNoProgressCount(int count) { no_progress_count_ = count; };
 
 Coord State::GetDPushPawn() { return double_push_pawn_; }
 int State::GetDPushPawnX() { return double_push_pawn_.x; }
@@ -93,8 +93,8 @@ void State::SetDPushPawnX(int x) { double_push_pawn_.x = x; }
 void State::SetDPushPawnY(int y) { double_push_pawn_.y = y; }
 
 torch::Tensor State::PlanesAsTensor() {
-  unsigned width = GetBoard().GetWidth();
-  unsigned height = GetBoard().GetHeight();
+  int width = GetBoard().GetWidth();
+  int height = GetBoard().GetHeight();
 
   torch::Tensor board_tensor = GetBoard().AsTensor();
   torch::IntArrayRef shape = board_tensor.sizes();
@@ -107,8 +107,8 @@ torch::Tensor State::PlanesAsTensor() {
 }
 
 torch::Tensor State::DetailsAsTensor() {
-  unsigned width = GetBoard().GetWidth();
-  unsigned height = GetBoard().GetHeight();
+  int width = GetBoard().GetWidth();
+  int height = GetBoard().GetHeight();
 
   torch::Tensor color;
   torch::Tensor move_count;
@@ -208,9 +208,8 @@ std::tuple<::aithena::chess::State, int> State::FromBytes(
   state.castle_queen_[1] = state_struct->castle[1];
   state.castle_king_[0] = state_struct->castle[2];
   state.castle_king_[1] = state_struct->castle[3];
-  state.move_count_ = static_cast<unsigned>(state_struct->move_count);
-  state.no_progress_count_ =
-      static_cast<unsigned>(state_struct->no_progress_count);
+  state.move_count_ = static_cast<int>(state_struct->move_count);
+  state.no_progress_count_ = static_cast<int>(state_struct->no_progress_count);
   state.double_push_pawn_.x = state_struct->double_push_pawn[0];
   state.double_push_pawn_.y = state_struct->double_push_pawn[1];
 
@@ -367,13 +366,13 @@ State::StatePtr State::FromFEN(std::string fen) {
 
   int width = pieces.size() / height;
 
-  if (width * height != pieces.size()) return nullptr;
+  if (width * height != static_cast<int>(pieces.size())) return nullptr;
 
   StatePtr state =
       std::make_shared<State>(width, height, static_cast<int>(Figure::kCount));
   Board& board = state->GetBoard();
 
-  for (int i = 0; i < pieces.size(); ++i) {
+  for (int i = 0; i < static_cast<int>(pieces.size()); ++i) {
     board.SetField(i % width, height - 1 - static_cast<int>(i / width),
                    pieces.at(i));
   }

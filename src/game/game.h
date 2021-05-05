@@ -23,9 +23,7 @@ class Game {
   // Creates the game with custom options.
   explicit Game(Options options) : options_{options} {}
   // Copy constructor
-  Game(const Game<State>& other) {
-    options_ = other.options_;
-  }
+  Game(const Game<State>& other) { options_ = other.options_; }
 
   Game& operator=(const Game& other) {
     options_ = other.options_;
@@ -39,13 +37,9 @@ class Game {
   }
   // Returns the value of a given game option.
   // Take caution that the option is set!
-  int GetOption(std::string option) {
-    return options_[option];
-  }
+  int GetOption(std::string option) { return options_[option]; }
   // Sets a game option.
-  void SetOption(std::string option, int value) {
-    options_[option] = value;
-  }
+  void SetOption(std::string option, int value) { options_[option] = value; }
 
   // Returns an initial state for the game start.
   virtual State GetInitialState() = 0;
@@ -61,8 +55,7 @@ class Game {
  protected:
   // Registers a new default option
   void DefaultOption(std::string option, int value) {
-    if (HasOption(option))
-      return;
+    if (HasOption(option)) return;
     SetOption(option, value);
   }
 
