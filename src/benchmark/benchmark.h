@@ -2,6 +2,8 @@
 #define AITHENA_BENCHMARK_BENCHMARK_H
 
 #include <chrono>
+#include <memory>
+#include <string>
 #include <vector>
 
 namespace aithena {
@@ -42,6 +44,38 @@ class Benchmark {
   std::vector<std::chrono::nanoseconds> measurements_;
   // Indicates that the clock is running
   bool running_{false};
+};
+
+class BenchmarkSet {
+ public:
+  template <typename E>
+  using Entry = std::tuple<std::string, E>;
+
+  // Creates a new, empty set of benchmarks.
+  BenchmarkSet();
+
+  // Starts the benchmark registered under the given name. If no benchmark can
+  // be found, a new one is created and started.
+  void Start(std::string name);
+
+  // Ends a running benchmark registered under the given name. If no benchmark
+  // can be found, nothing happens.
+  void End(std::string name);
+
+  // Returns a benchmark registered under the given name or nullptr if not
+  // found.
+  std::shared_ptr<Benchmark> Get(std::string name);
+
+  // Returns the last benchmarked time for all registered benchmarks.
+  std::vector<Entry<long>> GetLast(int unit = Benchmark::UNIT_MSEC);
+  // Returns the summed benchmarked time for all registered benchmarks.
+  std::vector<Entry<long>> GetSum(int unit = Benchmark::UNIT_MSEC);
+  // Returns the average benchmarked time for all registered benchmarks.
+  std::vector<Entry<long>> GetAvg(int unit = Benchmark::UNIT_MSEC);
+
+ private:
+  // A list of all registered benchmarks.
+  std::vector<Entry<std::shared_ptr<Benchmark>>> entries_;
 };
 
 }  // namespace aithena

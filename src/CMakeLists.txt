@@ -8,7 +8,7 @@ target_include_directories(board_lib
 target_link_libraries(board_lib "${TORCH_LIBRARIES}")
 
 
-add_library(benchmark_lib benchmark/benchmark.cc)
+add_library(benchmark_lib benchmark/benchmark.cc benchmark/benchmark_set.cc)
 target_include_directories(benchmark_lib
     PUBLIC .
 )
