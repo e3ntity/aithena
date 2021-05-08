@@ -2,8 +2,8 @@
 Copyright 2020 All rights reserved.
 */
 
-#ifndef SRC_CHESS_GAME_H_
-#define SRC_CHESS_GAME_H_
+#ifndef AITHENA_CHESS_GAME_H_
+#define AITHENA_CHESS_GAME_H_
 
 #include "benchmark/benchmark.h"
 #include "game/game.h"
@@ -46,6 +46,8 @@ Piece make_piece(Figure, Player);
 
 class Game : public ::aithena::Game<State> {
  public:
+  using GamePtr = std::shared_ptr<Game>;
+
   Game();
   explicit Game(Options);
   Game(const Game&);
@@ -175,4 +177,4 @@ class Game : public ::aithena::Game<State> {
 }  // namespace chess
 }  // namespace aithena
 
-#endif  // SRC_CHESS_GAME_H_
+#endif  // AITHENA_CHESS_GAME_H_

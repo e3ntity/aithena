@@ -2,8 +2,8 @@
 Copyright 2020 All rights reserved.
 */
 
-#ifndef SRC_MCTS_NODE_H_
-#define SRC_MCTS_NODE_H_
+#ifndef AITHENA_MCTS_NODE_H_
+#define AITHENA_MCTS_NODE_H_
 
 #include <memory>
 #include <vector>
@@ -87,4 +87,4 @@ template class MCTSNode<::aithena::chess::Game>;
 
 }  // namespace aithena
 
-#endif  // SRC_MCTS_NODE_H_
+#endif  // AITHENA_MCTS_NODE_H_

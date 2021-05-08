@@ -64,13 +64,16 @@ const std::array<Player, 2> Game::players{Player::kWhite, Player::kBlack};
 
 // Chess methods
 State Game::GetInitialState() {
-  State state(GetOption("board_width"), GetOption("board_height"),
-              GetOption("figure_count"));
+  int width = GetOption("board_width");
+  int height = GetOption("board_height");
+  State state(width, height, GetOption("figure_count"));
 
-  assert(GetOption("board_width") == 8 && GetOption("board_height") == 8);
+  if (width == 8 && height == 8)
+    return *State::FromFEN(
+        "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
 
-  return *State::FromFEN(
-      "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+  if (width == 5 && height == 5)
+    return *State::FromFEN("4k/5/5/R4/RK3 w - - 0 1");
 }
 
 bool Game::KingInCheck(State state, Player player) {

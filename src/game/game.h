@@ -2,8 +2,8 @@
 Copyright 2020 All rights reserved.
 */
 
-#ifndef SRC_GAME_GAME_H_
-#define SRC_GAME_GAME_H_
+#ifndef AITHENA_GAME_GAME_H_
+#define AITHENA_GAME_GAME_H_
 
 #include <string>
 #include <unordered_map>
@@ -65,4 +65,4 @@ class Game {
 
 }  // namespace aithena
 
-#endif  // SRC_GAME_GAME_H_
+#endif  // AITHENA_GAME_GAME_H_

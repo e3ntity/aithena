@@ -2,8 +2,8 @@
 Copyright 2020 All rights reserved.
 */
 
-#ifndef SRC_BOARD_BOARD_H_
-#define SRC_BOARD_BOARD_H_
+#ifndef AITHENA_BOARD_BOARD_H_
+#define AITHENA_BOARD_BOARD_H_
 
 #include <torch/torch.h>
 #include <climits>
@@ -101,4 +101,4 @@ BoardPlane GetNewFields(const Board& before, const Board& after);
 
 }  // namespace aithena
 
-#endif  // SRC_BOARD_BOARD_H_
+#endif  // AITHENA_BOARD_BOARD_H_

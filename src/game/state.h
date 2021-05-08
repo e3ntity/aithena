@@ -2,8 +2,8 @@
 Copyright 2020 All rights reserved.
 */
 
-#ifndef SRC_GAME_STATE_H_
-#define SRC_GAME_STATE_H_
+#ifndef AITHENA_GAME_STATE_H_
+#define AITHENA_GAME_STATE_H_
 
 #include <sstream>
 #include <string>
@@ -33,4 +33,4 @@ class State {
 
 }  // namespace aithena
 
-#endif  // SRC_GAME_STATE_H_
+#endif  // AITHENA_GAME_STATE_H_

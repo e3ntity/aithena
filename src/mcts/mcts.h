@@ -2,8 +2,8 @@
 Copyright 2020 All rights reserved.
 */
 
-#ifndef SRC_MCTS_MCTS_H_
-#define SRC_MCTS_MCTS_H_
+#ifndef AITHENA_MCTS_MCTS_H_
+#define AITHENA_MCTS_MCTS_H_
 
 #include <chrono>
 
@@ -76,4 +76,4 @@ template class MCTS<::aithena::chess::Game>;
 
 }  // namespace aithena
 
-#endif  // SRC_MCTS_MCTS_H_
+#endif  // AITHENA_MCTS_MCTS_H_

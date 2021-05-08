@@ -2,8 +2,8 @@
 Copyright 2020 All rights reserved.
 */
 
-#ifndef SRC_BOARD_BOARD_PLANE_H_
-#define SRC_BOARD_BOARD_PLANE_H_
+#ifndef AITHENA_BOARD_BOARD_PLANE_H_
+#define AITHENA_BOARD_BOARD_PLANE_H_
 
 #include <torch/torch.h>
 #include <vector>
@@ -84,4 +84,4 @@ class BoardPlane {
 
 }  // namespace aithena
 
-#endif  // SRC_BOARD_BOARD_PLANE_H_
+#endif  // AITHENA_BOARD_BOARD_PLANE_H_

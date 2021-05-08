@@ -2,8 +2,8 @@
 Copyright 2020 All rights reserved.
 */
 
-#ifndef SRC_CHESS_STATE_H_
-#define SRC_CHESS_STATE_H_
+#ifndef AITHENA_CHESS_STATE_H_
+#define AITHENA_CHESS_STATE_H_
 
 #include <torch/torch.h>
 
@@ -148,4 +148,4 @@ constexpr char alphabet[] = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i',
 }  // namespace chess
 }  // namespace aithena
 
-#endif  // SRC_CHESS_STATE_H_
+#endif  // AITHENA_CHESS_STATE_H_

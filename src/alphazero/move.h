@@ -1,6 +1,6 @@
 
-#ifndef SRC_ALPHAZERO_ALPHAZERO_H_
-#define SRC_ALPHAZERO_ALPHAZERO_H_
+#ifndef AITHENA_ALPHAZERO_ALPHAZERO_H_
+#define AITHENA_ALPHAZERO_ALPHAZERO_H_
 
 #include "chess/game.h"
 
@@ -13,7 +13,7 @@ int MaxChessMoveValue(std::size_t board_width, std::size_t board_height);
 // the output nodes of the neural network.
 int ChessMoveValue(State& before, State& after);
 
-}  // alphazero
-}  // aithena
+}  // namespace alphazero
+}  // namespace aithena
 
-#endif  // SRC_ALPHAZERO_ALPHAZERO_H_
+#endif  // AITHENA_ALPHAZERO_ALPHAZERO_H_

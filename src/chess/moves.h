@@ -2,8 +2,8 @@
 Copyright 2020 All rights reserved.
 */
 
-#ifndef SRC_CHESS_MOVES_H_
-#define SRC_CHESS_MOVES_H_
+#ifndef AITHENA_CHESS_MOVES_H_
+#define AITHENA_CHESS_MOVES_H_
 
 #include <vector>
 
@@ -91,4 +91,4 @@ static const std::array<std::uint64_t, 64> kPawnCaptures = {
 }  // namespace chess
 }  // namespace aithena
 
-#endif  // SRC_CHESS_MOVES_H_
+#endif  // AITHENA_CHESS_MOVES_H_
