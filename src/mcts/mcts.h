@@ -7,6 +7,7 @@ Copyright 2020 All rights reserved.
 
 #include <chrono>
 
+#include "benchmark/benchmark.h"
 #include "mcts/node.h"
 
 namespace aithena {
@@ -19,7 +20,7 @@ class MCTS {
 
   MCTS(std::shared_ptr<Game>);
 
-  // Runs the MCTS algorithms for n rounds, using m simulations each round,
+  // Runs the MCTS algorithm with a certain number of simulations each round,
   // starting at the given node.
   void Run(typename Node::NodePtr, int simulations = 1);
 
@@ -62,14 +63,11 @@ class MCTS {
   double BenchmarkBackpropagate();
   double BenchmarkRun();
 
+  // Benchmark set. Benchmarks are named after the functions. e.g. "Run"
+  BenchmarkSet bm_;
+
  protected:
   std::shared_ptr<Game> game_;
-
-  // Stats
-  std::vector<std::chrono::milliseconds> time_select{};
-  std::vector<std::chrono::milliseconds> time_simulate{};
-  std::vector<std::chrono::milliseconds> time_backpropagate{};
-  std::vector<std::chrono::milliseconds> time_run{};
 };
 
 template class MCTS<::aithena::chess::Game>;

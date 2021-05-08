@@ -12,9 +12,9 @@ std::string GetUsageText() {
          "## Programs ##\n"
          "  benchmark   Benchmark the move generation\n"
          "  version     Print version information\n"
-         "  game        Run an interactive game with its own prompt\n"
+         //"  game        Run an interactive game with its own prompt\n"
          "  mcts        Run MCTS\n"
-         "  alphazero   Run AlphaZero\n"
+         //"  alphazero   Run AlphaZero\n"
          "(Run programs with \"-h\" to list available options)\n";
 }
 
@@ -40,9 +40,9 @@ int main(int argc, char** argv) {
   }
 
   if (program == "benchmark") return RunBenchmark(args_len, args);
-  if (program == "game") return RunGame(args_len, args);
+  // if (program == "game") return RunGame(args_len, args);
   if (program == "mcts") return RunMCTS(args_len, args);
-  if (program == "alphazero") return RunAlphazero(args_len, args);
+  // if (program == "alphazero") return RunAlphazero(args_len, args);
 
   std::cout << "[!] Invalid program \"" << program << "\"" << std::endl;
   std::cout << GetUsageText();

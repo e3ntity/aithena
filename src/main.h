@@ -3,7 +3,6 @@
 
 #include <string>
 
-static int verbose_flag{0};
 static std::string version{"0.1.0"};
 
 std::string GetUsageText();
