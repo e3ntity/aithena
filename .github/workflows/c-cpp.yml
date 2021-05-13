@@ -22,7 +22,7 @@ jobs:
     - name: Install libtorch
       run: cd extern/ && wget --quiet https://download.pytorch.org/libtorch/nightly/cpu/libtorch-shared-with-deps-latest.zip && unzip -q libtorch-shared-with-deps-latest.zip
     - name: Generate build files
-      run: ls extern/ && cd build/ && cmake -DCMAKE_PREFIX_PATH=../extern/libtorch ..
+      run: cd build/ && cmake -DCMAKE_PREFIX_PATH=../extern/libtorch/ ..
     - name: Build project
       run: cd build/ && make -j 8
     - name: Run executable
