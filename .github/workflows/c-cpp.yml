@@ -13,16 +13,22 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+    - name: Setup
+      run: sudo apt-get install -y wget && mkdir extern/ && mkdir build/
     - name: Install boost library
       run: sudo apt-get install -y libboost-all-dev
     - name: Install googletest library
-      run: sudo apt-get install libgtest-dev && cd /usr/src/gtest && sudo cmake CMakeLists.txt && sudo make && sudo cp *.a /usr/lib && sudo ln -s /usr/lib/libgtest.a /usr/local/lib/libgtest.a && sudo ln -s /usr/lib/libgtest_main.a /usr/local/lib/libgtest_main.a
-    - name: make
-      run: make
-    - name: make test
-      run: make test
-    - name: test
-      run: build/test
+      run: cd extern/ && git clone https://github.com/google/googletest
+    - name: Install libtorch
+      run: cd extern/ && wget https://download.pytorch.org/libtorch/nightly/cpu/libtorch-shared-with-deps-latest.zip && unzip libtorch-shared-with-deps-latest.zip
+    - name: Generate build files
+      run: cd build/ && cmake -DCMAKE_PREFIX_PATH=../extern/libtorch ..
+    - name: Build project
+      run: cd build/ && make -j 8
+    - name: Run executable
+      run: build/aithena version
+    - name: Run tests
+      run: cd build/ && make test
   
   lint:
     runs-on: ubuntu-latest
