@@ -20,9 +20,9 @@ jobs:
     - name: Install googletest library
       run: cd extern/ && git clone https://github.com/google/googletest
     - name: Install libtorch
-      run: cd extern/ && wget --quiet https://download.pytorch.org/libtorch/nightly/cpu/libtorch-shared-with-deps-latest.zip && unzip -q libtorch-shared-with-deps-latest.zip
+      run: cd extern/ && wget --quiet https://download.pytorch.org/libtorch/nightly/cpu/libtorch-shared-with-deps-latest.zip && unzip libtorch-shared-with-deps-latest.zip
     - name: Generate build files
-      run: cd build/ && cmake -DCMAKE_PREFIX_PATH=../extern/libtorch/ ..
+      run: cd build/ && pwd && cmake -DCMAKE_PREFIX_PATH=../extern/libtorch/ ..
     - name: Build project
       run: cd build/ && make -j 8
     - name: Run executable
