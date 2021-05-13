@@ -8,6 +8,11 @@ target_include_directories(board_lib
 target_link_libraries(board_lib "${TORCH_LIBRARIES}")
 
 
+add_library(benchmark_lib benchmark/benchmark.cc benchmark/benchmark_set.cc)
+target_include_directories(benchmark_lib
+    PUBLIC .
+)
+
 add_library(generic_lib game/state.cc)
 target_include_directories(generic_lib
     PUBLIC .
@@ -18,13 +23,14 @@ add_library(chess_lib
     chess/game.cc
     chess/moves.cc
     chess/state.cc
+    chess/util.cc
 )
 
 target_include_directories(chess_lib
     PUBLIC .
 )
 
-target_link_libraries(chess_lib generic_lib "${TORCH_LIBRARIES}")
+target_link_libraries(chess_lib generic_lib benchmark_lib "${TORCH_LIBRARIES}")
 
 add_library(mcts_lib mcts/mcts.cc mcts/node.cc)
 target_include_directories(mcts_lib

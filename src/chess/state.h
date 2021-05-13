@@ -2,8 +2,8 @@
 Copyright 2020 All rights reserved.
 */
 
-#ifndef SRC_CHESS_STATE_H_
-#define SRC_CHESS_STATE_H_
+#ifndef AITHENA_CHESS_STATE_H_
+#define AITHENA_CHESS_STATE_H_
 
 #include <torch/torch.h>
 
@@ -16,8 +16,10 @@ namespace chess {
 
 class State : public ::aithena::State {
  public:
+  using StatePtr = std::shared_ptr<State>;
   // Initializes to the chess starting state.
-  State(std::size_t width, std::size_t height, unsigned figure_count);
+  State(int width, int height,
+        int figure_count = static_cast<int>(Figure::kCount));
   // Initializes to a give state.
   State(const State&);
 
@@ -37,22 +39,33 @@ class State : public ::aithena::State {
   void SetCastleQueen(Player);
   void SetCastleKing(Player);
 
-  unsigned int GetMoveCount();
+  int GetMoveCount();
   void IncMoveCount();
+  void SetMoveCount(int);
 
-  unsigned int GetNoProgressCount();
+  int GetNoProgressCount();
   void IncNoProgressCount();
   void ResetNoProgressCount();
+  void SetNoProgressCount(int);
 
-  unsigned GetDPushPawnX();
-  unsigned GetDPushPawnY();
-  void SetDPushPawnX(unsigned);
-  void SetDPushPawnY(unsigned);
+  Coord GetDPushPawn();
+  int GetDPushPawnX();
+  int GetDPushPawnY();
+  void SetDPushPawn(Coord);
+  void SetDPushPawnX(int);
+  void SetDPushPawnY(int);
 
   torch::Tensor PlanesAsTensor();
   torch::Tensor DetailsAsTensor();
 
   std::vector<char> ToBytes();
+
+  // Represents the state as a string in FEN notation
+  std::string ToFEN();
+
+  // Loads a state from a string, represented in FEN notation.
+  // Returns nullptr if the string is invalid.
+  static StatePtr FromFEN(std::string);
   static std::tuple<::aithena::chess::State, int> FromBytes(std::vector<char>);
 
  private:
@@ -63,12 +76,11 @@ class State : public ::aithena::State {
   // Indicates for each player whether king-side castling is allowed.
   std::array<bool, 2> castle_king_;
   // The count of moves made up until this state.
-  unsigned int move_count_;
+  int move_count_;
   // Counts the moves without progress (neither a pawn moved, nor a piece
   // captured) up util this state.
-  unsigned int no_progress_count_;
-  signed double_push_pawn_x;
-  signed double_push_pawn_y;
+  int no_progress_count_;
+  Coord double_push_pawn_;
 
   struct StateByteRepr {
     int player, move_count, no_progress_count, double_push_pawn[2];
@@ -128,7 +140,12 @@ constexpr uint64_t count_lut[] = {0x0,
                                   0x1ffffffffffff,
                                   0x3ffffffffffff};
 
+constexpr char fen_figures[] = {'k', 'q', 'r', 'n', 'b', 'p'};
+constexpr char alphabet[] = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i',
+                             'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r',
+                             's', 't', 'u', 'v', 'w', 'x', 'y', 'z'};
+
 }  // namespace chess
 }  // namespace aithena
 
-#endif  // SRC_CHESS_STATE_H_
+#endif  // AITHENA_CHESS_STATE_H_

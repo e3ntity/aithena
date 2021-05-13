@@ -2,8 +2,8 @@
 Copyright 2020 All rights reserved.
 */
 
-#ifndef SRC_BOARD_BOARD_PLANE_H_
-#define SRC_BOARD_BOARD_PLANE_H_
+#ifndef AITHENA_BOARD_BOARD_PLANE_H_
+#define AITHENA_BOARD_BOARD_PLANE_H_
 
 #include <torch/torch.h>
 #include <vector>
@@ -12,20 +12,37 @@ Copyright 2020 All rights reserved.
 
 namespace aithena {
 
+struct Coord {
+  int x;
+  int y;
+};
+
+using Coords = std::vector<Coord>;
+
 class BoardPlane {
  public:
-  BoardPlane(std::size_t width, std::size_t height);
+  BoardPlane(int width, int height);
 
   // Special constructor for chess.
   explicit BoardPlane(std::uint64_t);
   BoardPlane() = default;
 
+  // Returns the number of set bits.
+  int count();
   // Sets the bit of the board at the specified location.
-  void set(unsigned int x, unsigned int y);
+  void set(int x, int y);
   // Clears the bit of the board at the specified location.
-  void clear(unsigned int x, unsigned int y);
+  void clear(int x, int y);
   // Returns the bit of the board at the specified location.
-  bool get(unsigned int x, unsigned int y) const;
+  bool get(int x, int y) const;
+
+  // Returns the coordinates (x, y) of all set bits.
+  Coords GetCoords();
+
+  // Sets all bits in the line connecting (x1, y1) and (x2, y2).
+  // If there exists no direct vertical / horizontal / diagonal line, the
+  // board remains unmodified.
+  void ScanLine(int x1, int y1, int x2, int y2);
 
   BoardPlane& operator=(const BoardPlane&);
 
@@ -54,7 +71,7 @@ class BoardPlane {
   static std::tuple<BoardPlane, int> FromBytes(std::vector<char>);
 
  private:
-  std::size_t width_, height_;
+  int width_, height_;
   // A 2D bit plane specified rows to columns.
   // Example:
   //  plane_[5 + 2 * width_] // returns the fifth element of the second row
@@ -67,4 +84,4 @@ class BoardPlane {
 
 }  // namespace aithena
 
-#endif  // SRC_BOARD_BOARD_PLANE_H_
+#endif  // AITHENA_BOARD_BOARD_PLANE_H_

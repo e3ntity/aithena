@@ -2,8 +2,8 @@
 Copyright 2020 All rights reserved.
 */
 
-#ifndef SRC_CHESS_MOVES_H_
-#define SRC_CHESS_MOVES_H_
+#ifndef AITHENA_CHESS_MOVES_H_
+#define AITHENA_CHESS_MOVES_H_
 
 #include <vector>
 
@@ -29,9 +29,9 @@ const Direction right{1, 0};
 Direction operator+(Direction d1, Direction d2);
 
 // Generate pseudo moves in the given directions
-std::vector<State> GenDirectionalMoves(State state, unsigned x, unsigned y,
+std::vector<State> GenDirectionalMoves(State state, int x, int y,
                                        std::vector<Direction> directions,
-                                       unsigned range);
+                                       int range);
 
 // Move patterns define how a piece may move starting from a given position.
 // Each entry in the array gives the pattern for the starting position at the
@@ -91,4 +91,4 @@ static const std::array<std::uint64_t, 64> kPawnCaptures = {
 }  // namespace chess
 }  // namespace aithena
 
-#endif  // SRC_CHESS_MOVES_H_
+#endif  // AITHENA_CHESS_MOVES_H_

@@ -10,7 +10,7 @@
 TEST(BoardPlane, InitializesBitfieldToCorrectSize) {
   aithena::BoardPlane bp(4, 4);
 
-  bp.get(3, 3); // Should work
+  bp.get(3, 3);  // Should work
   ASSERT_DEATH(bp.get(4, 3), ".*x < width_ && y < height_.*");
   ASSERT_DEATH(bp.get(3, 4), ".*x < width_ && y < height_.*");
 }
@@ -164,11 +164,11 @@ TEST(Board, InitializesBitfieldToCorrectSize) {
   ASSERT_EQ(small_board.GetWidth(), 4);
   ASSERT_EQ(small_board.GetHeight(), 4);
 
-  for (unsigned int fig = 0; fig < 3; ++fig) {
-    for (unsigned int player = 0; player < 2; ++player) {
+  for (int fig = 0; fig < 3; ++fig) {
+    for (int player = 0; player < 2; ++player) {
       aithena::BoardPlane bp = small_board.GetPlane({fig, player});
 
-      bp.get(3, 3); // Should work
+      bp.get(3, 3);  // Should work
       ASSERT_DEATH(bp.get(4, 4), ".*x < width_ && y < height_.*");
       ASSERT_DEATH(bp.get(4, 3), ".*x < width_ && y < height_.*");
       ASSERT_DEATH(bp.get(3, 4), ".*x < width_ && y < height_.*");
@@ -179,7 +179,7 @@ TEST(Board, InitializesBitfieldToCorrectSize) {
 class BoardFieldTest : public ::testing::Test {
  protected:
   void SetUp() {
-    for (unsigned int i = 0; i < 9; ++i) {
+    for (int i = 0; i < 9; ++i) {
       board.SetField(i, i, {i % 8, i % 2});
     }
   }
@@ -189,7 +189,7 @@ class BoardFieldTest : public ::testing::Test {
 
 // Tests whether Board::SetField works correctly.
 TEST_F(BoardFieldTest, FieldSetsCorrectly) {
-  for (unsigned int i = 0; i < 9; ++i)
+  for (int i = 0; i < 9; ++i)
     ASSERT_TRUE(board.GetPlane({i % 8, i % 2}).get(i, i));
 }
 
@@ -198,13 +198,13 @@ TEST_F(BoardFieldTest, FieldGetsCorrectly) {
   aithena::Piece piece;
 
   // test along the filled diagonal
-  for (unsigned int i = 0; i < 9; ++i) {
+  for (int i = 0; i < 9; ++i) {
     piece = board.GetField(i, i);
     ASSERT_EQ(piece.figure, i % 8);
     ASSERT_EQ(piece.player, i % 2);
   }
 
-  //test squares where there are no pieces
+  // test squares where there are no pieces
   ASSERT_TRUE(board.GetField(0, 8) == aithena::kEmptyPiece);
   ASSERT_TRUE(board.GetField(4, 2) == aithena::kEmptyPiece);
 }

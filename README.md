@@ -1,7 +1,9 @@
 # aithena
+
 Framework for running and benchmarking game AIs such as AlphaZero, AlphaGo and more.
 
 # Building
+
 Building the project requires [boost](https://www.boost.org/) libraries.
 
 ```bash
@@ -15,6 +17,7 @@ aithena/build/ $ ./aithena-az                                     # Run program
 Also for building tests, see [Test](#test).
 
 # Test
+
 Aithena uses [googletest](https://github.com/google/googletest) for testing.
 To build the tests, the googletest github repository must be placed under extern/googletest.
 
@@ -25,3 +28,7 @@ aithena/extern/ $ mkdir ../build/ && cd ../build/
 aithena/build/ $ cmake -DCMAKE_PREFIX_PATH=<path_to_libtorch> ..
 aithena/build/ $ ARGS=<gtest_args> make test
 ```
+
+# Notes
+
+- Do not use boards larger than 26x26

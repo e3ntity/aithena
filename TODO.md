@@ -1,0 +1,1 @@
+- Add tests for moving pinned pieces

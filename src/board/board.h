@@ -2,8 +2,8 @@
 Copyright 2020 All rights reserved.
 */
 
-#ifndef SRC_BOARD_BOARD_H_
-#define SRC_BOARD_BOARD_H_
+#ifndef AITHENA_BOARD_BOARD_H_
+#define AITHENA_BOARD_BOARD_H_
 
 #include <torch/torch.h>
 #include <climits>
@@ -15,12 +15,12 @@ namespace aithena {
 
 // Represents a piece (figure, player) on the chess board.
 struct Piece {
-  unsigned figure;
-  unsigned player;
+  int figure;
+  int player;
 };
 
 // Piece value returned for a square without a piece.
-constexpr Piece kEmptyPiece = {UINT_MAX, UINT_MAX};
+constexpr Piece kEmptyPiece = {INT_MAX, INT_MAX};
 
 bool operator==(const Piece&, const Piece&);
 
@@ -32,7 +32,7 @@ class Board {
  public:
   // Creates a board plane of size width x height for each type of figure and
   // each player (2).
-  Board(std::size_t width, std::size_t height, unsigned figure_count);
+  Board(int width, int height, int figure_count);
   Board(const Board&);
 
   Board& operator=(const Board&);
@@ -42,28 +42,31 @@ class Board {
   bool operator==(const Board&) const;
   bool operator!=(const Board&) const;
 
-  std::size_t GetWidth();
-  std::size_t GetHeight();
-  unsigned GetFigureCount();
+  int GetWidth();
+  int GetHeight();
+  int GetFigureCount();
 
   // Returns the BoardPlane for a given piece.
   BoardPlane& GetPlane(Piece);
-  BoardPlane GetFigurePlane(unsigned figure);
-  BoardPlane GetPlayerPlane(unsigned player);
+  BoardPlane GetFigurePlane(int figure);
+  BoardPlane GetPlayerPlane(int player);
   BoardPlane GetCompletePlane();
+
+  // Returns the coordinates of all pieces of some kind in format (x, y).
+  Coords FindPiece(Piece);
 
   // Sets the piece of field (x, y). If piece is kEmptyPiece, the field is
   // simply cleared.
-  void SetField(unsigned x, unsigned y, Piece);
+  void SetField(int x, int y, Piece);
   // Returns the piece that is on field (x, y). If the field is empty,
   // kEmptyPiece is returned.
-  Piece GetField(unsigned x, unsigned y);
+  Piece GetField(int x, int y);
   // Removes any figure from the field (x, y). If the field is already empty,
   // nothing happens.
-  void ClearField(unsigned x, unsigned y);
+  void ClearField(int x, int y);
   // Moves The piece on field (x, y) to field (x_, y_) thereby possibly
   // overriding a piece on the destination position.
-  void MoveField(unsigned x, unsigned y, unsigned x_, unsigned y_);
+  void MoveField(int x, int y, int x_, int y_);
 
   // Returns a tensor representatio of the board.
   torch::Tensor AsTensor() const;
@@ -79,9 +82,9 @@ class Board {
  private:
   // The width and height of the board and therefore of all board planes
   // managed by the board.
-  std::size_t width_, height_;
+  int width_, height_;
   // The number of figures managed by the board.
-  unsigned figure_count_;
+  int figure_count_;
   // The board planes managed by the board, two for each piece (one for each
   // player).
   std::vector<BoardPlane> planes_;
@@ -93,9 +96,9 @@ class Board {
 
 // Returns a board plane highlighting all fields that contain a different
 // figure in the after board than they did in the before board.
-// If a figure was removed and is not kEmptyPiece, no indication is given.
+// If a figure was removed and is now kEmptyPiece, no indication is given.
 BoardPlane GetNewFields(const Board& before, const Board& after);
 
 }  // namespace aithena
 
-#endif  // SRC_BOARD_BOARD_H_
+#endif  // AITHENA_BOARD_BOARD_H_
