@@ -5,6 +5,8 @@ Copyright 2020 All rights reserved.
 #include "chess/state.h"
 
 #include <torch/torch.h>
+#include <boost/algorithm/string.hpp>
+#include <cctype>
 #include <cstring>
 
 #include "chess/game.h"
@@ -12,16 +14,14 @@ Copyright 2020 All rights reserved.
 namespace aithena {
 namespace chess {
 
-State::State(std::size_t width, std::size_t height,
-             unsigned figure_count = static_cast<unsigned>(Figure::kCount))
+State::State(int width, int height, int figure_count)
     : ::aithena::State(width, height, figure_count),
       player_{Player::kWhite},
-      castle_queen_{false, false},
-      castle_king_{false, false},
+      castle_queen_{true, true},
+      castle_king_{true, true},
       move_count_{0},
       no_progress_count_{0},
-      double_push_pawn_x{-1},
-      double_push_pawn_y{-1} {}
+      double_push_pawn_{-1, -1} {};
 
 State::State(const State& other)
     : ::aithena::State(other),
@@ -30,8 +30,7 @@ State::State(const State& other)
       castle_king_{other.castle_king_},
       move_count_{other.move_count_},
       no_progress_count_{other.no_progress_count_},
-      double_push_pawn_x{other.double_push_pawn_x},
-      double_push_pawn_y{other.double_push_pawn_y} {}
+      double_push_pawn_{other.double_push_pawn_} {};
 
 State& State::operator=(const State& other) {
   if (this == &other) return *this;
@@ -43,8 +42,7 @@ State& State::operator=(const State& other) {
   castle_king_ = other.castle_king_;
   move_count_ = other.move_count_;
   no_progress_count_ = other.no_progress_count_;
-  double_push_pawn_x = other.double_push_pawn_x;
-  double_push_pawn_y = other.double_push_pawn_y;
+  double_push_pawn_ = other.double_push_pawn_;
 
   return *this;
 }
@@ -53,8 +51,8 @@ bool State::operator==(const State& other) {
   return ::aithena::State::operator==(other) && player_ == other.player_ &&
          castle_queen_ == other.castle_queen_ &&
          castle_king_ == other.castle_king_ &&
-         double_push_pawn_x == other.double_push_pawn_x &&
-         double_push_pawn_y == other.double_push_pawn_y;
+         double_push_pawn_.x == other.double_push_pawn_.x &&
+         double_push_pawn_.y == other.double_push_pawn_.y;
 }
 
 bool State::operator!=(const State& other) { return !operator==(other); }
@@ -66,36 +64,37 @@ Player State::GetOpponent() {
 void State::SetPlayer(Player p) { player_ = p; }
 
 bool State::GetCastleQueen(Player p) {
-  return castle_queen_[static_cast<unsigned>(p)];
+  return castle_queen_[static_cast<int>(p)];
 }
 bool State::GetCastleKing(Player p) {
-  return castle_king_[static_cast<unsigned>(p)];
+  return castle_king_[static_cast<int>(p)];
 }
 void State::SetCastleQueen(Player p) {
-  castle_queen_[static_cast<unsigned>(p)] = true;
+  castle_queen_[static_cast<int>(p)] = false;
 }
 void State::SetCastleKing(Player p) {
-  castle_king_[static_cast<unsigned>(p)] = true;
+  castle_king_[static_cast<int>(p)] = false;
 }
 
-unsigned State::GetMoveCount() { return move_count_; }
+int State::GetMoveCount() { return move_count_; }
 void State::IncMoveCount() { ++move_count_; }
+void State::SetMoveCount(int count) { move_count_ = count; }
 
-unsigned State::GetNoProgressCount() { return no_progress_count_; }
+int State::GetNoProgressCount() { return no_progress_count_; }
 void State::IncNoProgressCount() { ++no_progress_count_; }
 void State::ResetNoProgressCount() { no_progress_count_ = 0; }
+void State::SetNoProgressCount(int count) { no_progress_count_ = count; };
 
-unsigned State::GetDPushPawnX() { return double_push_pawn_x; }
-
-unsigned State::GetDPushPawnY() { return double_push_pawn_y; }
-
-void State::SetDPushPawnX(unsigned x) { double_push_pawn_x = x; }
-
-void State::SetDPushPawnY(unsigned y) { double_push_pawn_y = y; }
+Coord State::GetDPushPawn() { return double_push_pawn_; }
+int State::GetDPushPawnX() { return double_push_pawn_.x; }
+int State::GetDPushPawnY() { return double_push_pawn_.y; }
+void State::SetDPushPawn(Coord c) { double_push_pawn_ = c; }
+void State::SetDPushPawnX(int x) { double_push_pawn_.x = x; }
+void State::SetDPushPawnY(int y) { double_push_pawn_.y = y; }
 
 torch::Tensor State::PlanesAsTensor() {
-  unsigned width = GetBoard().GetWidth();
-  unsigned height = GetBoard().GetHeight();
+  int width = GetBoard().GetWidth();
+  int height = GetBoard().GetHeight();
 
   torch::Tensor board_tensor = GetBoard().AsTensor();
   torch::IntArrayRef shape = board_tensor.sizes();
@@ -108,8 +107,8 @@ torch::Tensor State::PlanesAsTensor() {
 }
 
 torch::Tensor State::DetailsAsTensor() {
-  unsigned width = GetBoard().GetWidth();
-  unsigned height = GetBoard().GetHeight();
+  int width = GetBoard().GetWidth();
+  int height = GetBoard().GetHeight();
 
   torch::Tensor color;
   torch::Tensor move_count;
@@ -165,8 +164,8 @@ std::vector<char> State::ToBytes() {
   state_struct.player = static_cast<int>(player_);
   state_struct.move_count = static_cast<int>(move_count_);
   state_struct.no_progress_count = static_cast<int>(no_progress_count_);
-  state_struct.double_push_pawn[0] = static_cast<int>(double_push_pawn_x);
-  state_struct.double_push_pawn[1] = static_cast<int>(double_push_pawn_y);
+  state_struct.double_push_pawn[0] = static_cast<int>(double_push_pawn_.x);
+  state_struct.double_push_pawn[1] = static_cast<int>(double_push_pawn_.y);
   state_struct.castle[0] = castle_queen_[0];
   state_struct.castle[1] = castle_queen_[1];
   state_struct.castle[2] = castle_king_[0];
@@ -209,13 +208,229 @@ std::tuple<::aithena::chess::State, int> State::FromBytes(
   state.castle_queen_[1] = state_struct->castle[1];
   state.castle_king_[0] = state_struct->castle[2];
   state.castle_king_[1] = state_struct->castle[3];
-  state.move_count_ = static_cast<unsigned>(state_struct->move_count);
-  state.no_progress_count_ =
-      static_cast<unsigned>(state_struct->no_progress_count);
-  state.double_push_pawn_x = state_struct->double_push_pawn[0];
-  state.double_push_pawn_y = state_struct->double_push_pawn[1];
+  state.move_count_ = static_cast<int>(state_struct->move_count);
+  state.no_progress_count_ = static_cast<int>(state_struct->no_progress_count);
+  state.double_push_pawn_.x = state_struct->double_push_pawn[0];
+  state.double_push_pawn_.y = state_struct->double_push_pawn[1];
 
   return std::make_tuple(state, bytes_read);
+}
+
+std::string State::ToFEN() {
+  std::string output;
+  int empty;
+
+  // board configuration
+
+  for (int y = board_.GetHeight() - 1; y >= 0; --y) {
+    empty = 0;
+    for (int x = 0; x < board_.GetWidth(); ++x) {
+      Piece piece = board_.GetField(x, y);
+
+      if (piece == kEmptyPiece) {
+        ++empty;
+        continue;
+      }
+
+      if (empty > 0) {
+        output += std::to_string(empty);
+        empty = 0;
+      }
+
+      char fen_figure = fen_figures[static_cast<int>(piece.figure)];
+
+      if (piece.player == Player::kWhite) fen_figure = std::toupper(fen_figure);
+
+      output += fen_figure;
+    }
+
+    if (empty > 0) output += std::to_string(empty);
+    if (y > 0) output += "/";
+  }
+
+  // player
+
+  if (player_ == Player::kWhite)
+    output += " w ";
+  else
+    output += " b ";
+
+  // castling
+
+  bool castling = false;
+  if (GetCastleKing(Player::kWhite)) {
+    output += "K";
+    castling = true;
+  }
+  if (GetCastleQueen(Player::kWhite)) {
+    output += "Q";
+    castling = true;
+  }
+  if (GetCastleKing(Player::kBlack)) {
+    output += "k";
+    castling = true;
+  }
+  if (GetCastleQueen(Player::kBlack)) {
+    output += "q";
+    castling = true;
+  }
+
+  if (!castling) output += "-";
+
+  output += " ";
+
+  // en passant
+
+  if (double_push_pawn_.x >= 0 && double_push_pawn_.y >= 0)
+    output +=
+        alphabet[double_push_pawn_.x] + std::to_string(double_push_pawn_.y + 1);
+  else
+    output += "-";
+
+  output += " ";
+
+  // half turns
+  output += std::to_string(no_progress_count_) + " ";
+
+  // turns
+  int move_count = static_cast<int>(move_count_ / 2) + 1;
+  output += std::to_string(move_count);
+
+  return output;
+}
+
+State::StatePtr State::FromFEN(std::string fen) {
+  std::vector<std::string> parts;
+
+  boost::split(parts, fen, boost::is_any_of(" "));
+
+  if (parts.size() != 6) return nullptr;
+
+  // Board configuration
+
+  std::vector<Piece> pieces;
+
+  // Counts subsequent numbers to allow for numbers with multiple digits
+  int number = 0;
+  int height = 1;
+  for (auto& c : parts.at(0)) {
+    if (isdigit(c)) {
+      // Copy c to buffer because otherwise atoi will read directly on string.
+      char num[2]{c, 0};
+      number = 10 * number + std::atoi(num);
+      continue;
+    }
+
+    if (number > 0) {
+      for (int i = 0; i < number; ++i) pieces.push_back(kEmptyPiece);
+      number = 0;
+    }
+
+    if (c == '/') {
+      ++height;
+      continue;
+    }
+
+    Figure fig;
+
+    switch (std::tolower(c)) {
+      case 'k':
+        fig = Figure::kKing;
+        break;
+      case 'q':
+        fig = Figure::kQueen;
+        break;
+      case 'r':
+        fig = Figure::kRook;
+        break;
+      case 'n':
+        fig = Figure::kKnight;
+        break;
+      case 'b':
+        fig = Figure::kBishop;
+        break;
+      case 'p':
+        fig = Figure::kPawn;
+        break;
+      default:
+        return nullptr;
+    }
+
+    Player player = std::islower(c) ? Player::kBlack : Player::kWhite;
+    pieces.push_back(make_piece(fig, player));
+  }
+
+  if (number > 0) {
+    for (int i = 0; i < number; ++i) pieces.push_back(kEmptyPiece);
+  }
+
+  int width = pieces.size() / height;
+
+  if (width * height != static_cast<int>(pieces.size())) return nullptr;
+
+  StatePtr state =
+      std::make_shared<State>(width, height, static_cast<int>(Figure::kCount));
+  Board& board = state->GetBoard();
+
+  for (int i = 0; i < static_cast<int>(pieces.size()); ++i) {
+    board.SetField(i % width, height - 1 - static_cast<int>(i / width),
+                   pieces.at(i));
+  }
+
+  // Player
+
+  if (parts.at(1) == "w")
+    state->SetPlayer(Player::kWhite);
+  else if (parts.at(1) == "b")
+    state->SetPlayer(Player::kBlack);
+  else
+    return nullptr;
+
+  // Castling
+
+  if (parts.at(2).find("K") == std::string::npos)
+    state->SetCastleKing(Player::kWhite);
+  if (parts.at(2).find("Q") == std::string::npos)
+    state->SetCastleQueen(Player::kWhite);
+  if (parts.at(2).find("k") == std::string::npos)
+    state->SetCastleKing(Player::kBlack);
+  if (parts.at(2).find("q") == std::string::npos)
+    state->SetCastleQueen(Player::kBlack);
+
+  // en passant
+
+  if (parts.at(3) != "-") {
+    auto itr =
+        std::find(alphabet, alphabet + sizeof(alphabet) / sizeof(alphabet[0]),
+                  std::tolower(parts.at(3).at(0)));
+
+    if (itr == std::end(alphabet)) return nullptr;
+
+    int x = std::distance(alphabet, itr);
+    int y = atoi(&parts.at(3).at(1)) - 1;
+
+    if (x >= board.GetWidth() || y >= board.GetHeight() || x < 0 || y < 0)
+      return nullptr;
+
+    state->SetDPushPawnX(std::distance(alphabet, itr));
+    state->SetDPushPawnY(atoi(&parts.at(3).at(1)) - 1);
+  }
+
+  // half turns
+
+  int half_turns = atoi(&parts.at(4).at(0));
+
+  state->SetNoProgressCount(half_turns);
+
+  // turns
+
+  int turns = (atoi(&parts.at(5).at(0)) - 1) * 2;
+
+  if (state->GetPlayer() == Player::kBlack) turns += 1;
+
+  state->SetMoveCount(turns);
+
+  return state;
 }
 
 }  // namespace chess

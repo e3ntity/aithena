@@ -16,9 +16,10 @@ BoardPlane GetNewFields(const Board& before, const Board& after) {
 
   BoardPlane difference(before.width_, before.height_);
 
-  for (unsigned plane = 0; plane < before.planes_.size(); ++plane) {
+  int plane_count = static_cast<int>(before.planes_.size());
+
+  for (int plane = 0; plane < plane_count; ++plane)
     difference |= ((!before.planes_[plane]) & after.planes_[plane]);
-  }
 
   return difference;
 }
@@ -29,7 +30,7 @@ bool operator==(const Piece& a, const Piece& b) {
   return a.figure == b.figure && a.player == b.player;
 }
 
-Board::Board(std::size_t width, std::size_t height, unsigned figure_count)
+Board::Board(int width, int height, int figure_count)
     : width_(width),
       height_(height),
       figure_count_(figure_count),
@@ -54,24 +55,23 @@ bool Board::operator==(const Board& other) const {
 
 bool Board::operator!=(const Board& other) const { return !(*this == other); }
 
-std::size_t Board::GetWidth() { return width_; }
-std::size_t Board::GetHeight() { return height_; }
-unsigned Board::GetFigureCount() { return figure_count_; }
+int Board::GetWidth() { return width_; }
+int Board::GetHeight() { return height_; }
+int Board::GetFigureCount() { return figure_count_; }
 
 BoardPlane& Board::GetPlane(Piece piece) {
   assert(piece.figure < figure_count_ && piece.player < 2);
   return planes_[piece.player * figure_count_ + piece.figure];
 }
 
-BoardPlane Board::GetFigurePlane(unsigned figure) {
+BoardPlane Board::GetFigurePlane(int figure) {
   return planes_[figure] | planes_[figure_count_ + figure];
 }
 
-BoardPlane Board::GetPlayerPlane(unsigned player) {
+BoardPlane Board::GetPlayerPlane(int player) {
   BoardPlane plane{width_, height_};
 
-  for (unsigned i = player * figure_count_; i < (player + 1) * figure_count_;
-       ++i)
+  for (int i = player * figure_count_; i < (player + 1) * figure_count_; ++i)
     plane |= planes_[i];
 
   return plane;
@@ -85,7 +85,19 @@ BoardPlane Board::GetCompletePlane() {
   return plane;
 }
 
-void Board::SetField(unsigned x, unsigned y, Piece piece) {
+Coords Board::FindPiece(Piece piece) {
+  Coords coords;
+
+  for (int y = 0; y < height_; ++y) {
+    for (int x = 0; x < width_; ++x) {
+      if (GetField(x, y) == piece) coords.push_back({x, y});
+    }
+  }
+
+  return coords;
+}
+
+void Board::SetField(int x, int y, Piece piece) {
   assert(x < width_ && y < height_);
 
   ClearField(x, y);
@@ -97,24 +109,25 @@ void Board::SetField(unsigned x, unsigned y, Piece piece) {
   planes_[piece.player * figure_count_ + piece.figure].set(x, y);
 }
 
-Piece Board::GetField(unsigned x, unsigned y) {
+Piece Board::GetField(int x, int y) {
   assert(x < width_ && y < height_);
 
-  for (unsigned i = 0; i < planes_.size(); ++i) {
+  for (int i = 0; i < static_cast<int>(planes_.size()); ++i) {
     if (!planes_[i].get(x, y)) continue;
-    return Piece{i % figure_count_, unsigned(i / figure_count_)};
+    return Piece{i % figure_count_, i / figure_count_};
   }
 
   return kEmptyPiece;
 }
 
-void Board::ClearField(unsigned x, unsigned y) {
+void Board::ClearField(int x, int y) {
   assert(x < width_ && y < height_);
 
-  for (unsigned i = 0; i < planes_.size(); ++i) planes_[i].clear(x, y);
+  for (int i = 0; i < static_cast<int>(planes_.size()); ++i)
+    planes_[i].clear(x, y);
 }
 
-void Board::MoveField(unsigned x, unsigned y, unsigned x_, unsigned y_) {
+void Board::MoveField(int x, int y, int x_, int y_) {
   Piece piece = GetField(x, y);
   ClearField(x, y);
   SetField(x_, y_, piece);
@@ -177,7 +190,7 @@ torch::Tensor Board::AsTensor() const {
   torch::Tensor res =
       torch::reshape(first_plane_as_tensor, {1, shape[0], shape[1]});
 
-  unsigned num_planes = planes_.size();
+  int num_planes = planes_.size();
   for (int i = 1; i < num_planes; ++i) {
     res = torch::cat(
         {res, torch::reshape(planes_[i].AsTensor(), {1, shape[0], shape[1]})});

@@ -5,197 +5,152 @@
 #include "gtest/gtest.h"
 
 #include "chess/game.h"
+#include "chess/util.h"
 
 using namespace aithena;
 
-std::string PrintMarkedBoard(aithena::chess::State state,
-                             aithena::BoardPlane marker,
-                             std::string marker_color = "\033[31m") {
-  aithena::Board board = state.GetBoard();
-  std::ostringstream repr;
-  aithena::Piece piece;
-  std::vector<std::string> letters = {"A", "B", "C", "D", "E", "F", "G", "H"};
-
-  std::string turn =
-      state.GetPlayer() == aithena::chess::Player::kWhite ? "White" : "Black";
-
-  repr << turn << "'s move:";
-
-  for (int y = board.GetHeight() - 1; y >= 0; --y) {
-    repr << std::endl << y + 1 << " ";
-    for (unsigned x = 0; x < board.GetWidth(); ++x) {
-      // field color
-      std::string s_color = ((x + y) % 2 == 1) ? "\033[1;47m" : "\033[1;45m";
-
-      piece = board.GetField(x, y);
-
-      // Player indication
-      bool white =
-          piece.player == static_cast<unsigned>(aithena::chess::Player::kWhite);
-      std::string s_piece;
-
-      // Figure icon
-      switch (piece.figure) {
-        case static_cast<unsigned>(aithena::chess::Figure::kKing):
-          s_piece = white ? "♔" : "♚";
-          break;
-        case static_cast<unsigned>(aithena::chess::Figure::kQueen):
-          s_piece = white ? "♕" : "♛";
-          break;
-        case static_cast<unsigned>(aithena::chess::Figure::kRook):
-          s_piece = white ? "♖" : "♜";
-          break;
-        case static_cast<unsigned>(aithena::chess::Figure::kBishop):
-          s_piece = white ? "♗" : "♝";
-          break;
-        case static_cast<unsigned>(aithena::chess::Figure::kKnight):
-          s_piece = white ? "♘" : "♞";
-          break;
-        case static_cast<unsigned>(aithena::chess::Figure::kPawn):
-          s_piece = white ? "♙" : "♟︎";
-          break;
-        default:
-          s_piece += std::to_string(piece.figure);
-          break;
-      }
-
-      bool marked = marker.get(x, y);
-
-      if (piece == aithena::kEmptyPiece) {
-        repr << s_color << (marked ? marker_color + "- -" : "   ") << "\033[0m";
-      } else {
-        repr << s_color << (marked ? marker_color + "-" : " ") << s_color
-             << s_piece << "\033[24m" << (marked ? marker_color + "-" : " ")
-             << "\033[0m";
-      }
-    }
+class ChessPerftTest : public ::testing::Test {
+ protected:
+  void SetUp() {
+    chess::Game::Options options = {{"board_width", 8}, {"board_height", 8}};
+    game_ = std::make_shared<chess::Game>(chess::Game(options));
   }
 
-  repr << std::endl << " ";
-  for (int i = 0; i < int(board.GetWidth()); ++i) repr << "  " << letters.at(i);
+  std::shared_ptr<chess::Game> game_;
+};
 
-  repr << std::endl;
+TEST_F(ChessPerftTest, DefaultStart1) {
+  auto state = chess::State::FromFEN(
+      "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
 
-  return repr.str();
+  EXPECT_EQ(perft(game_, *state, 1), 20);
 }
 
-std::string PrintBoard(aithena::chess::State state) {
-  aithena::Board board = state.GetBoard();
-  aithena::BoardPlane marker{board.GetWidth(), board.GetHeight()};
+TEST_F(ChessPerftTest, DefaultStart2) {
+  auto state = chess::State::FromFEN(
+      "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
 
-  return PrintMarkedBoard(state, marker);
+  EXPECT_EQ(perft(game_, *state, 2), 420);
 }
 
-chess::State GetStartState() {
-  chess::State start_state = chess::State(8, 8, 6);
-  Board& start_board = start_state.GetBoard();
+TEST_F(ChessPerftTest, DefaultStart3) {
+  auto state = chess::State::FromFEN(
+      "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
 
-  chess::Player players[2] = {chess::Player::kWhite, chess::Player::kBlack};
-
-  // Setup classic chess start
-  for (int p = 0; p < 2; ++p) {
-    start_board.SetField(0, p * 7,
-                         chess::make_piece(chess::Figure::kRook, players[p]));
-    start_board.SetField(1, p * 7,
-                         chess::make_piece(chess::Figure::kKnight, players[p]));
-    start_board.SetField(2, p * 7,
-                         chess::make_piece(chess::Figure::kBishop, players[p]));
-    start_board.SetField(3, p * 7,
-                         chess::make_piece(chess::Figure::kQueen, players[p]));
-    start_board.SetField(4, p * 7,
-                         chess::make_piece(chess::Figure::kKing, players[p]));
-    start_board.SetField(5, p * 7,
-                         chess::make_piece(chess::Figure::kBishop, players[p]));
-    start_board.SetField(6, p * 7,
-                         chess::make_piece(chess::Figure::kKnight, players[p]));
-    start_board.SetField(7, p * 7,
-                         chess::make_piece(chess::Figure::kRook, players[p]));
-
-    for (int i = 0; i < 8; ++i) {
-      start_board.SetField(i, p * 5 + 1,
-                           chess::make_piece(chess::Figure::kPawn, players[p]));
-    }
-  }
-
-  return start_state;
+  EXPECT_EQ(perft(game_, *state, 3), 9322);
 }
 
-int perft(std::shared_ptr<chess::Game> game, chess::State& state, int max_depth,
-          int depth = 0) {
-  if (depth >= max_depth) return 0;
+/*
+TEST_F(ChessPerftTest, DefaultStart4) {
+  auto state = chess::State::FromFEN(
+      "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
 
-  int counter = 0;
-  auto moves = game->GetLegalActions(state);
+  EXPECT_EQ(perft(game_, *state, 4), 206603);
+}
+*/
 
-  for (auto move : moves) {
-    counter += perft(game, move, max_depth, depth + 1) + 1;
-  }
+TEST_F(ChessPerftTest, CastleThroughCheck) {
+  auto state = chess::State::FromFEN("7k/8/8/8/8/1b6/8/R3K3 w Q - 0 1");
 
-  return counter;
+  EXPECT_EQ(perft(game_, *state, 1), 14);
 }
 
-TEST(ChessPerft, Depth1) {
-  chess::Game::Options options = {{"board_width", 8}, {"board_height", 8}};
+TEST_F(ChessPerftTest, CastleQueenBlocked) {
+  auto state = chess::State::FromFEN("6k1/8/8/8/8/8/8/R1B1K2R w KQ - 0 1");
 
-  auto game = chess::Game(options);
-  auto game_ptr = std::make_shared<chess::Game>(game);
-
-  auto start_state = GetStartState();
-
-  ASSERT_EQ(perft(game_ptr, start_state, 1), 20);
+  EXPECT_EQ(perft(game_, *state, 1), 30);
 }
 
-TEST(ChessPerft, Depth2) {
-  chess::Game::Options options = {{"board_width", 8}, {"board_height", 8}};
+TEST_F(ChessPerftTest, EnPassantDiscoveredCheck) {
+  auto state = chess::State::FromFEN("7k/8/8/K1pP3q/8/8/8/8 w - c6 0 2");
 
-  auto game = chess::Game(options);
-  auto game_ptr = std::make_shared<chess::Game>(game);
-
-  auto start_state = GetStartState();
-
-  ASSERT_EQ(perft(game_ptr, start_state, 2), 420);
+  EXPECT_EQ(perft(game_, *state, 1), 5);
 }
 
-TEST(ChessPerft, Depth3) {
-  chess::Game::Options options = {{"board_width", 8}, {"board_height", 8}};
+TEST_F(ChessPerftTest, PromotionCheck) {
+  auto state = chess::State::FromFEN("n1n5/PPPk4/8/8/8/8/4Kppp/5N1N b - - 0 1");
 
-  auto game = chess::Game(options);
-  auto game_ptr = std::make_shared<chess::Game>(game);
-
-  auto start_state = GetStartState();
-
-  ASSERT_EQ(perft(game_ptr, start_state, 3), 9322);
+  EXPECT_EQ(perft(game_, *state, 2), 520);
 }
 
-TEST(ChessPerft, Depth4) {
-  chess::Game::Options options = {{"board_width", 8}, {"board_height", 8}};
+// Custom test positions:
+// https://gist.github.com/peterellisjones/8c46c28141c162d1d8a0f0badbc9cff9
 
-  auto game = chess::Game(options);
-  auto game_ptr = std::make_shared<chess::Game>(game);
+TEST_F(ChessPerftTest, Custom1) {
+  auto state = chess::State::FromFEN("r6r/1b2k1bq/8/8/7B/8/8/R3K2R b KQ - 3 2");
 
-  auto start_state = GetStartState();
-
-  ASSERT_EQ(perft(game_ptr, start_state, 4), 206603);
+  EXPECT_EQ(perft(game_, *state, 1), 8);
 }
 
-TEST(ChessPerft, Depth5) {
-  chess::Game::Options options = {{"board_width", 8}, {"board_height", 8}};
+TEST_F(ChessPerftTest, Custom2) {
+  auto state = chess::State::FromFEN("8/8/8/2k5/2pP4/8/B7/4K3 b - d3 5 3");
 
-  auto game = chess::Game(options);
-  auto game_ptr = std::make_shared<chess::Game>(game);
-
-  auto start_state = GetStartState();
-
-  ASSERT_EQ(perft(game_ptr, start_state, 5), 5072212);
+  EXPECT_EQ(perft(game_, *state, 1), 8);
 }
 
-TEST(ChessPerft, Depth6) {
-  chess::Game::Options options = {{"board_width", 8}, {"board_height", 8}};
+TEST_F(ChessPerftTest, Custom3) {
+  auto state = chess::State::FromFEN(
+      "r1bqkbnr/pppppppp/n7/8/8/P7/1PPPPPPP/RNBQKBNR w KQkq - 2 2");
 
-  auto game = chess::Game(options);
-  auto game_ptr = std::make_shared<chess::Game>(game);
+  EXPECT_EQ(perft(game_, *state, 1), 19);
+}
 
-  auto start_state = GetStartState();
+TEST_F(ChessPerftTest, Custom4) {
+  auto state = chess::State::FromFEN(
+      "r3k2r/p1pp1pb1/bn2Qnp1/2qPN3/1p2P3/2N5/PPPBBPPP/R3K2R b KQkq - 3 2");
 
-  ASSERT_EQ(perft(game_ptr, start_state, 6), 124132536);
+  EXPECT_EQ(perft(game_, *state, 1), 5);
+}
+
+TEST_F(ChessPerftTest, Custom5) {
+  auto state = chess::State::FromFEN(
+      "2kr3r/p1ppqpb1/bn2Qnp1/3PN3/1p2P3/2N5/PPPBBPPP/R3K2R b KQ - 3 2");
+
+  EXPECT_EQ(perft(game_, *state, 1), 44);
+}
+
+TEST_F(ChessPerftTest, Custom6) {
+  auto state = chess::State::FromFEN(
+      "rnb2k1r/pp1Pbppp/2p5/q7/2B5/8/PPPQNnPP/RNB1K2R w KQ - 3 9");
+
+  EXPECT_EQ(perft(game_, *state, 1), 39);
+}
+
+TEST_F(ChessPerftTest, Custom7) {
+  auto state = chess::State::FromFEN("2r5/3pk3/8/2P5/8/2K5/8/8 w - - 5 4");
+
+  EXPECT_EQ(perft(game_, *state, 1), 9);
+}
+
+TEST_F(ChessPerftTest, Custom8) {
+  auto state = chess::State::FromFEN(
+      "rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8");
+
+  EXPECT_EQ(perft(game_, *state, 3), 63909);
+}
+
+TEST_F(ChessPerftTest, Custom9) {
+  auto state = chess::State::FromFEN(
+      "r4rk1/1pp1qppp/p1np1n2/2b1p1B1/2B1P1b1/P1NP1N2/1PP1QPPP/R4RK1 w - - 0 "
+      "10");
+
+  EXPECT_EQ(perft(game_, *state, 3), 92015);
+}
+
+TEST_F(ChessPerftTest, Custom10) {
+  auto state = chess::State::FromFEN("8/P1k5/K7/8/8/8/8/8 w - - 0 1");
+
+  EXPECT_EQ(perft(game_, *state, 6), 112453);
+}
+
+TEST_F(ChessPerftTest, Custom11) {
+  auto state = chess::State::FromFEN("K1k5/8/P7/8/8/8/8/8 w - - 0 1");
+
+  EXPECT_EQ(perft(game_, *state, 6), 2683);
+}
+
+TEST_F(ChessPerftTest, Custom12) {
+  auto state = chess::State::FromFEN("8/8/2k5/5q2/5n2/8/5K2/8 b - - 0 1");
+
+  EXPECT_EQ(perft(game_, *state, 4), 30306);
 }

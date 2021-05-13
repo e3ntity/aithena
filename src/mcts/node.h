@@ -2,8 +2,8 @@
 Copyright 2020 All rights reserved.
 */
 
-#ifndef SRC_MCTS_NODE_H_
-#define SRC_MCTS_NODE_H_
+#ifndef AITHENA_MCTS_NODE_H_
+#define AITHENA_MCTS_NODE_H_
 
 #include <memory>
 #include <vector>
@@ -22,6 +22,7 @@ class MCTSNode : public std::enable_shared_from_this<MCTSNode<Game>> {
   // Initialize with the default game state.
   explicit MCTSNode(std::shared_ptr<Game>);
   // Initialize with a specific state.
+  MCTSNode(std::shared_ptr<Game>, typename Game::GameState);
   MCTSNode(std::shared_ptr<Game>, typename Game::GameState, NodePtr parent);
 
   // Operators
@@ -86,4 +87,4 @@ template class MCTSNode<::aithena::chess::Game>;
 
 }  // namespace aithena
 
-#endif  // SRC_MCTS_NODE_H_
+#endif  // AITHENA_MCTS_NODE_H_

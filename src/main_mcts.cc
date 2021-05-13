@@ -8,100 +8,60 @@ Copyright 2020 All rights reserved.
 #include <iomanip>
 #include <memory>
 
+#include "benchmark/benchmark.h"
 #include "chess/game.h"
+#include "chess/util.h"
 #include "mcts/mcts.h"
 
-std::string PrintMarkedBoard(aithena::chess::State state,
-                             aithena::BoardPlane marker,
-                             std::string marker_color = "\033[31m") {
-  aithena::Board board = state.GetBoard();
-  std::ostringstream repr;
-  aithena::Piece piece;
-  std::vector<std::string> letters = {"A", "B", "C", "D", "E", "F", "G", "H"};
+int unit = aithena::Benchmark::UNIT_USEC;
 
-  std::string turn =
-      state.GetPlayer() == aithena::chess::Player::kWhite ? "White" : "Black";
+int main(int argc, char** argv) {
+  aithena::chess::Game::Options options = {{"board_width", 8},
+                                           {"board_height", 8}};
 
-  repr << turn << "'s move:";
+  auto game = aithena::chess::Game(options);
+  auto game_ptr = std::make_shared<aithena::chess::Game>(game);
 
-  for (int y = board.GetHeight() - 1; y >= 0; --y) {
-    repr << std::endl << y + 1 << " ";
-    for (unsigned x = 0; x < board.GetWidth(); ++x) {
-      // field color
-      std::string s_color = ((x + y) % 2 == 1) ? "\033[1;47m" : "\033[1;45m";
+  auto start = *aithena::chess::State::FromFEN(
+      "rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8");
 
-      piece = board.GetField(x, y);
+  aithena::Benchmark b;
 
-      // Player indication
-      bool white =
-          piece.player == static_cast<unsigned>(aithena::chess::Player::kWhite);
-      std::string s_piece;
+  b.Start();
 
-      // Figure icon
-      switch (piece.figure) {
-        case static_cast<unsigned>(aithena::chess::Figure::kKing):
-          s_piece = white ? "♔" : "♚";
-          break;
-        case static_cast<unsigned>(aithena::chess::Figure::kQueen):
-          s_piece = white ? "♕" : "♛";
-          break;
-        case static_cast<unsigned>(aithena::chess::Figure::kRook):
-          s_piece = white ? "♖" : "♜";
-          break;
-        case static_cast<unsigned>(aithena::chess::Figure::kBishop):
-          s_piece = white ? "♗" : "♝";
-          break;
-        case static_cast<unsigned>(aithena::chess::Figure::kKnight):
-          s_piece = white ? "♘" : "♞";
-          break;
-        case static_cast<unsigned>(aithena::chess::Figure::kPawn):
-          s_piece = white ? "♙" : "♟︎";
-          break;
-        default:
-          s_piece += std::to_string(piece.figure);
-          break;
-      }
+  int nodes = aithena::chess::perft(game_ptr, start, 3);
 
-      bool marked = marker.get(x, y);
+  b.End();
 
-      if (piece == aithena::kEmptyPiece) {
-        repr << s_color << (marked ? marker_color + "- -" : "   ") << "\033[0m";
-      } else {
-        repr << s_color << (marked ? marker_color + "-" : " ") << s_color
-             << s_piece << "\033[24m" << (marked ? marker_color + "-" : " ")
-             << "\033[0m";
-      }
-    }
+  double nps = 1000000.0 * static_cast<double>(nodes) /
+               static_cast<double>(b.GetLast(unit));
+
+  std::cout << "Speed: " << nps << " nodes / sec" << std::endl;
+
+  std::cout << "## Game functions benchmark ##" << std::endl;
+
+  for (auto time : game_ptr->benchmark_.GetAvg(unit)) {
+    auto b = game_ptr->benchmark_.Get(std::get<0>(time));
+
+    std::cout << std::get<0>(time) << ": " << std::get<1>(time) << " usec ("
+              << b->GetSize() << " times called)" << std::endl;
   }
 
-  repr << std::endl << " ";
-  for (int i = 0; i < int(board.GetWidth()); ++i) repr << "  " << letters.at(i);
+  std::cout << "## GenMoves benchmark ##" << std::endl;
 
-  repr << std::endl;
+  double total_time = game_ptr->benchmark_.Get("GenMoves()")->GetAvg(unit);
+  auto timings = game_ptr->benchmark_gen_moves_.GetAvg(unit);
 
-  return repr.str();
-}
-
-std::string PrintBoard(aithena::chess::State state) {
-  aithena::Board board = state.GetBoard();
-  aithena::BoardPlane marker{board.GetWidth(), board.GetHeight()};
-
-  return PrintMarkedBoard(state, marker);
-}
-
-void train(aithena::MCTS<aithena::chess::Game>& mcts,
-           std::shared_ptr<aithena::MCTSNode<aithena::chess::Game>> node,
-           int rounds, int simulations) {
-  for (int round = 0; round < rounds; ++round) {
-    mcts.Run(node, simulations);
-
-    double percentage = 100.0 * double(round) / double(rounds);
-    double remaining = double(rounds - round) * mcts.BenchmarkRun() / 60;
-    std::cout << "Running MCTS: " << std::setprecision(2) << percentage << "% ("
-              << remaining << " min. remaining)\r" << std::flush;
+  for (auto time : timings) {
+    std::cout << std::setprecision(2) << std::get<0>(time) << ": "
+              << std::get<1>(time) << " usec ("
+              << 100 * std::get<1>(time) / total_time << "%)" << std::endl;
   }
+
+  return 0;
 }
 
+/*
 int main(int argc, char** argv) {
   if (argc != 3) {
     std::cout << "Usage: " << argv[0] << " <rounds> <simulations>" << std::endl;
@@ -121,7 +81,9 @@ int main(int argc, char** argv) {
   auto game = aithena::chess::Game(options);
   auto game_ptr = std::make_shared<aithena::chess::Game>(game);
 
-  auto root = aithena::MCTSNode<aithena::chess::Game>(game_ptr);
+  auto start = aithena::chess::State::FromFEN("4k/5/R4/RK3 w - - 0 1");
+
+  auto root = aithena::MCTSNode<aithena::chess::Game>(game_ptr, *start);
   auto root_ptr =
       std::make_shared<aithena::MCTSNode<aithena::chess::Game>>(root);
 
@@ -146,4 +108,4 @@ int main(int argc, char** argv) {
   std::cout << mcts.BenchmarkRun() << " sec/run" << std::endl;
 
   return 0;
-}
+}*/
