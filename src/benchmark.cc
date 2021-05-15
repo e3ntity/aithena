@@ -25,10 +25,10 @@ std::string GetBenchmarkUsageText() {
 int RunBenchmark(int argc, char** argv) {
   static struct option long_options[] = {
       {"help", no_argument, nullptr, 'h'},
-      {"depth", optional_argument, nullptr, 'd'},
-      {"fen", optional_argument, nullptr, 'f'},
-      {"max-moves", optional_argument, nullptr, 'm'},
-      {"max-no-progress", optional_argument, nullptr, 'p'},
+      {"depth", required_argument, nullptr, 'd'},
+      {"fen", required_argument, nullptr, 'f'},
+      {"max-moves", required_argument, nullptr, 'm'},
+      {"max-no-progress", required_argument, nullptr, 'p'},
       {0, 0, 0, 0}};
 
   // Configurable options
