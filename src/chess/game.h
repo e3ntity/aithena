@@ -85,7 +85,7 @@ class Game : public ::aithena::Game<State> {
   std::vector<State> GenPawnCaptures(State, int x, int y);
 
   // Same as GenPawnCaptures but does not check whether there is a piece to
-  // capture.
+  // capture. Does not set move_info_ field in states!
   std::vector<State> GenRawPawnCaptures(State, int x, int y);
 
   // Generates the next moves for a single rook at field (x, y) for a given
@@ -149,6 +149,9 @@ class Game : public ::aithena::Game<State> {
 
   // An array of all players.
   static const std::array<Player, 2> players;
+
+  static const int figure_count;
+  static const int player_count;
 
   BenchmarkSet benchmark_gen_moves_;
   BenchmarkSet benchmark_;

@@ -4,6 +4,8 @@ Copyright 2020 All rights reserved.
 
 #include "chess/moves.h"
 
+#include <memory>
+
 namespace aithena {
 namespace chess {
 
@@ -38,6 +40,12 @@ std::vector<State> GenDirectionalMoves(State state, int x, int y,
       State new_state{state};
       new_state.SetDPushPawn({-1, -1});
       new_state.GetBoard().MoveField(x, y, new_x, new_y);
+
+      new_state.move_info_ =
+          std::make_shared<MoveInfo>(MoveInfo{{x, y}, {new_x, new_y}, 0, 0, 0});
+
+      if (!(piece == kEmptyPiece)) new_state.move_info_->capture = 1;
+
       moves.push_back(new_state);
 
       // Do not move further in direction on capture
@@ -46,7 +54,7 @@ std::vector<State> GenDirectionalMoves(State state, int x, int y,
   }
 
   return moves;
-}
+}  // namespace chess
 
 }  // namespace chess
 }  // namespace aithena

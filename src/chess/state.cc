@@ -30,7 +30,8 @@ State::State(const State& other)
       castle_king_{other.castle_king_},
       move_count_{other.move_count_},
       no_progress_count_{other.no_progress_count_},
-      double_push_pawn_{other.double_push_pawn_} {};
+      double_push_pawn_{other.double_push_pawn_},
+      move_info_{other.move_info_} {};
 
 State& State::operator=(const State& other) {
   if (this == &other) return *this;
@@ -43,6 +44,7 @@ State& State::operator=(const State& other) {
   move_count_ = other.move_count_;
   no_progress_count_ = other.no_progress_count_;
   double_push_pawn_ = other.double_push_pawn_;
+  move_info_ = other.move_info_;
 
   return *this;
 }

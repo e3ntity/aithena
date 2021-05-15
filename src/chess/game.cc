@@ -62,6 +62,9 @@ const std::array<Figure, 3> Game::slider_figures{Figure::kQueen, Figure::kRook,
 
 const std::array<Player, 2> Game::players{Player::kWhite, Player::kBlack};
 
+const int Game::figure_count = Game::figures.size();
+const int Game::player_count = Game::players.size();
+
 // Chess methods
 State Game::GetInitialState() {
   int width = GetOption("board_width");
@@ -74,6 +77,8 @@ State Game::GetInitialState() {
 
   if (width == 5 && height == 5)
     return *State::FromFEN("4k/5/5/R4/RK3 w - - 0 1");
+
+  assert(false);
 }
 
 bool Game::KingInCheck(State state, Player player) {
@@ -155,6 +160,27 @@ std::vector<State> Game::GenPawnPushes(State state, int x, int y) {
       promo.GetBoard().SetField(x, y + direction,
                                 make_piece(figure, state.GetPlayer()));
       promo.SetDPushPawn({-1, -1});
+
+      promo.move_info_ = std::make_shared<MoveInfo>(
+          Coord({x, y}), Coord({x, y + direction}), 1, 0, 0);
+
+      switch (figure) {
+        case Figure::kKnight:
+          promo.move_info_->special = 0;
+          break;
+        case Figure::kBishop:
+          promo.move_info_->special = 1;
+          break;
+        case Figure::kRook:
+          promo.move_info_->special = 2;
+          break;
+        case Figure::kQueen:
+          promo.move_info_->special = 3;
+          break;
+        default:
+          assert(false);  // should never reach here
+      }
+
       moves.push_back(promo);
     }
   } else {
@@ -162,6 +188,8 @@ std::vector<State> Game::GenPawnPushes(State state, int x, int y) {
     moves.push_back(state);
     moves.back().GetBoard().MoveField(x, y, x, y + direction);
     moves.back().SetDPushPawn({-1, -1});
+    moves.back().move_info_ = std::make_shared<MoveInfo>(
+        Coord({x, y}), Coord({x, y + direction}), 0, 0, 0);
   }
 
   // Double push
@@ -176,13 +204,15 @@ std::vector<State> Game::GenPawnPushes(State state, int x, int y) {
   moves.push_back(state);
   moves.back().GetBoard().MoveField(x, y, x, y + 2 * direction);
   moves.back().SetDPushPawn({x, y + direction});
+  moves.back().move_info_ = std::make_shared<MoveInfo>(
+      Coord({x, y}), Coord({x, y + direction}), 0, 0, 1);
 
   // Reset no progress count for each move.
   std::for_each(moves.begin(), moves.end(),
                 [&](State& s) { s.ResetNoProgressCount(); });
 
   return moves;
-}
+}  // namespace chess
 
 std::vector<State> Game::GenRawPawnCaptures(State state, int x, int y) {
   // TODO: this function is copied from GenPawnCaptures. This is bad!
@@ -260,33 +290,39 @@ std::vector<State> Game::GenPawnCaptures(State state, int x, int y) {
     if (x + h >= width || x + h < 0) continue;
 
     State move{state};
+
+    move.move_info_ = std::make_shared<MoveInfo>(
+        MoveInfo{{x, y}, {x + h, y + direction}, 0, 1, 0});
+
     Coord move_ep = move.GetDPushPawn();
 
     Piece captured_piece = board.GetField(x + h, y + direction);
 
-    if (move_ep.x == x + h && move_ep.y == y + direction)
+    if (move_ep.x == x + h && move_ep.y == y + direction) {
       // En passant, remove captured pawn
       move.GetBoard().ClearField(move_ep.x, move_ep.y - direction);
-    else if (captured_piece == kEmptyPiece)
+      move.move_info_->special = 1;
+    } else if (captured_piece == kEmptyPiece) {
       // No piece to capture
       continue;
-    else if (captured_piece.player == state.GetPlayer())
+    } else if (captured_piece.player == state.GetPlayer()) {
       // Blocked
       continue;
+    }
 
     move.SetDPushPawn({-1, -1});  // Any pawn capture clears this field
     move.SetNoProgressCount(0);
 
-    // Normal capture
     if (y + direction > 0 && y + direction < height - 1) {
+      // Normal capture, i.e. not a promotion
       move.GetBoard().MoveField(x, y, x + h, y + direction);
       moves.push_back(move);
 
       continue;
     }
 
-    // Promotion
     for (auto figure : Game::figures) {
+      // Promotion
       State promo{move};
 
       if ((figure == Figure::kPawn) || figure == Figure::kKing) continue;
@@ -295,6 +331,26 @@ std::vector<State> Game::GenPawnCaptures(State state, int x, int y) {
       promo.GetBoard().SetField(x + h, y + direction,
                                 make_piece(figure, state.GetPlayer()));
       promo.SetDPushPawn({-1, -1});
+
+      promo.move_info_ = std::make_shared<MoveInfo>(*move.move_info_);
+
+      switch (figure) {
+        case Figure::kKnight:
+          promo.move_info_->special = 0;
+          break;
+        case Figure::kBishop:
+          promo.move_info_->special = 1;
+          break;
+        case Figure::kRook:
+          promo.move_info_->special = 2;
+          break;
+        case Figure::kQueen:
+          promo.move_info_->special = 3;
+          break;
+        default:
+          assert(false);  // should never reach here
+      }
+
       moves.push_back(promo);
     }
   }
@@ -398,6 +454,7 @@ std::vector<State> Game::GenCastlingMoves(State state, int x, int y) {
   BoardPlane player_plane = board.GetPlayerPlane(state.GetPlayer());
 
   if (x_rook_right >= 0) {
+    // King side castle
     BoardPlane occupied_king(width, height);
 
     occupied_king.ScanLine(x + 1, y, x_rook_right, y);
@@ -409,10 +466,13 @@ std::vector<State> Game::GenCastlingMoves(State state, int x, int y) {
       moves.back().GetBoard().MoveField(x, y, x + 2, y);
       moves.back().SetCastleKing(state.GetPlayer());
       moves.back().SetCastleQueen(state.GetPlayer());
+      moves.back().move_info_ =
+          std::make_shared<MoveInfo>(MoveInfo{{x, y}, {x + 2, y}, 0, 0, 2});
     }
   }
 
   if (x_rook_left >= 0) {
+    // Queen side castle
     BoardPlane occupied_queen(width, height);
 
     occupied_queen.ScanLine(x - 1, y, x_rook_left, y);
@@ -424,6 +484,8 @@ std::vector<State> Game::GenCastlingMoves(State state, int x, int y) {
       moves.back().GetBoard().MoveField(x, y, x - 2, y);
       moves.back().SetCastleKing(state.GetPlayer());
       moves.back().SetCastleQueen(state.GetPlayer());
+      moves.back().move_info_ =
+          std::make_shared<MoveInfo>(MoveInfo{{x, y}, {x + 2, y}, 0, 0, 3});
     }
   }
 

@@ -14,6 +14,26 @@ Copyright 2020 All rights reserved.
 namespace aithena {
 namespace chess {
 
+// Special bit-fields:
+// - if promotion bit is set, indicate type of promotion (0: knight, 1: bishop,
+//   2: rook, 3: queen)
+// - if not promotion and capture bit is set, special == 1 indicates en passant
+// - otherwise 0: normal push, 1: double pawn push, 2: k castle, 3: q castle
+struct MoveInfo {
+  MoveInfo(struct Coord from_, struct Coord to_, unsigned char promotion_,
+           unsigned char capture_, unsigned char special_)
+      : from{from_},
+        to{to_},
+        promotion{promotion_},
+        capture{capture_},
+        special{special_} {}
+  Coord from;
+  Coord to;
+  unsigned char promotion : 1;
+  unsigned char capture : 1;
+  unsigned char special : 2;
+};
+
 class State : public ::aithena::State {
  public:
   using StatePtr = std::shared_ptr<State>;
@@ -27,6 +47,7 @@ class State : public ::aithena::State {
 
   // Checks whether both states have the same board, it is the same player's
   // turn and the same castling moves are still allowed.
+  // Move information is not taken into account!
   bool operator==(const State&);
   bool operator!=(const State&);
 
@@ -67,6 +88,8 @@ class State : public ::aithena::State {
   // Returns nullptr if the string is invalid.
   static StatePtr FromFEN(std::string);
   static std::tuple<::aithena::chess::State, int> FromBytes(std::vector<char>);
+
+  std::shared_ptr<MoveInfo> move_info_{nullptr};
 
  private:
   // Indicates the player that has to make the next move.
