@@ -133,6 +133,10 @@ void Board::MoveField(int x, int y, int x_, int y_) {
   SetField(x_, y_, piece);
 }
 
+void Board::Rotate() {
+  for (BoardPlane& plane : planes_) plane.Rotate();
+}
+
 std::vector<char> Board::ToBytes() {
   struct BoardByteRepr board_struct;
 

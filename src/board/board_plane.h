@@ -28,13 +28,33 @@ class BoardPlane {
   BoardPlane() = default;
 
   // Returns the number of set bits.
+  int Count();
+
+  // Deprecated: use Count()
   int count();
-  // Sets the bit of the board at the specified location.
+
+  // Deprecated: use Set()
   void set(int x, int y);
+
+  // Sets the bit of the board at the specified location.
+  void Set(int x, int y);
+
+  // Sets the bit of the board at the specified location to the given value.
+  void Set(int x, int y, bool value);
   // Clears the bit of the board at the specified location.
+  void Clear(int x, int y);
+
+  // Deprecated: use Clear()
   void clear(int x, int y);
+
   // Returns the bit of the board at the specified location.
+  bool Get(int x, int y) const;
+
+  // Deprecated: use Get()
   bool get(int x, int y) const;
+
+  // Rotates the board plane by 180 degrees.
+  void Rotate();
 
   // Returns the coordinates (x, y) of all set bits.
   Coords GetCoords();
@@ -58,8 +78,11 @@ class BoardPlane {
   bool operator==(const BoardPlane&) const;
   bool operator!=(const BoardPlane&) const;
 
-  // Returns true if no bits are set, otherwise false.
+  // Deprecated: use IsEmpty()
   bool empty() const;
+
+  // Returns true if no bits are set, otherwise false.
+  bool IsEmpty() const;
 
   // Returns a tensor representation of the board plane.
   torch::Tensor AsTensor() const;

@@ -67,6 +67,8 @@ class Board {
   // Moves The piece on field (x, y) to field (x_, y_) thereby possibly
   // overriding a piece on the destination position.
   void MoveField(int x, int y, int x_, int y_);
+  // Rotates the board by 180 degrees.
+  void Rotate();
 
   // Returns a tensor representatio of the board.
   torch::Tensor AsTensor() const;

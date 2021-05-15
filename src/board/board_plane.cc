@@ -7,6 +7,7 @@ Copyright 2020 All rights reserved.
 #include <torch/torch.h>
 #include <cstring>
 #include <iostream>
+#include <tuple>
 
 namespace aithena {
 
@@ -20,24 +21,57 @@ BoardPlane::BoardPlane(std::uint64_t plane)
   for (int i = 0; i < 64; i++) plane_[i] = (plane << i);
 }
 
-int BoardPlane::count() { return plane_.count(); }
+int BoardPlane::Count() { return plane_.count(); }
 
-// Sets the bit of the board at the specified location.
-void BoardPlane::set(int x, int y) {
+int BoardPlane::count() { return Count(); }
+
+void BoardPlane::Set(int x, int y) {
   assert(x < width_ && y < height_);
   plane_.set(x + y * width_);
 }
 
+void BoardPlane::set(int x, int y) { return Set(x, y); }
+
+void BoardPlane::Set(int x, int y, bool value) {
+  assert(x < width_ && y < height_);
+
+  if (value) return Set(x, y);
+
+  return Clear(x, y);
+}
+
 // Clears the bit of the board at the specified location.
-void BoardPlane::clear(int x, int y) {
+void BoardPlane::Clear(int x, int y) {
   assert(x < width_ && y < height_);
   plane_.reset(x + y * width_);
 }
 
+void BoardPlane::clear(int x, int y) { return Clear(x, y); }
+
 // Returns the bit of the board at the specified location.
-bool BoardPlane::get(int x, int y) const {
+bool BoardPlane::Get(int x, int y) const {
   assert(x < width_ && y < height_);
   return plane_[x + y * width_];
+}
+
+bool BoardPlane::get(int x, int y) const { return Get(x, y); }
+
+void BoardPlane::Rotate() {
+  int x_, y_;
+  bool bit;
+
+  for (int y = 0; y < (height_ / 2); ++y) {
+    y_ = height_ - y - 1;
+
+    for (int x = 0; x < width_; ++x) {
+      x_ = width_ - x - 1;
+
+      bit = Get(x, y);
+
+      Set(x, y, Get(x_, y_));
+      Set(x_, y_, bit);
+    }
+  }
 }
 
 Coords BoardPlane::GetCoords() {
@@ -138,7 +172,9 @@ bool BoardPlane::operator!=(const BoardPlane& other) const {
   return plane_ != other.plane_;
 }
 
-bool BoardPlane::empty() const { return plane_.none(); }
+bool BoardPlane::IsEmpty() const { return plane_.none(); }
+
+bool BoardPlane::empty() const { return IsEmpty(); }
 
 std::vector<char> BoardPlane::ToBytes() {
   // Collect data
@@ -148,7 +184,9 @@ std::vector<char> BoardPlane::ToBytes() {
   board_struct.height = height_;
 
   int byte_count = width_ * height_ / 8 + ((width_ * height_) % 2);
-  unsigned char plane_data[byte_count] = {0};
+  unsigned char plane_data[byte_count];
+
+  for (int i = 0; i < byte_count; ++i) plane_data[i] = '\0';
 
   for (int i = 0; i < static_cast<int>(width_); ++i) {
     for (int j = 0; j < static_cast<int>(height_); ++j) {
