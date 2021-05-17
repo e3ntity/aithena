@@ -2,10 +2,14 @@
 Copyright 2020 All rights reserved.
 */
 
-#ifndef AITHENA_CHESS_STATE_H_
-#define AITHENA_CHESS_STATE_H_
+#ifndef SRC_CHESS_STATE_H_
+#define SRC_CHESS_STATE_H_
 
 #include <torch/torch.h>
+#include <memory>
+#include <string>
+#include <tuple>
+#include <vector>
 
 #include "game/state.h"
 
@@ -19,19 +23,32 @@ namespace chess {
 //   2: rook, 3: queen)
 // - if not promotion and capture bit is set, special == 1 indicates en passant
 // - otherwise 0: normal push, 1: double pawn push, 2: k castle, 3: q castle
-struct MoveInfo {
-  MoveInfo(struct Coord from_, struct Coord to_, unsigned char promotion_,
-           unsigned char capture_, unsigned char special_)
-      : from{from_},
-        to{to_},
-        promotion{promotion_},
-        capture{capture_},
-        special{special_} {}
-  Coord from;
-  Coord to;
-  unsigned char promotion : 1;
-  unsigned char capture : 1;
-  unsigned char special : 2;
+class MoveInfo {
+ public:
+  MoveInfo(struct Coord from, struct Coord to, unsigned char promotion,
+           unsigned char capture, unsigned char special);
+
+  Coord& GetFrom();
+  Coord& GetTo();
+  bool IsCapture();
+  bool IsPromotion();
+
+  int GetFlagCode();
+  bool IsCastle();
+  bool IsEnPassant();
+
+  Figure GetPromotionFigure();
+
+  void SetPromotion(bool value);
+  void SetCapture(bool value);
+  void SetSpecial(int value);
+
+ private:
+  Coord from_;
+  Coord to_;
+  unsigned char promotion_ : 1;
+  unsigned char capture_ : 1;
+  unsigned char special_ : 2;
 };
 
 class State : public ::aithena::State {
@@ -171,4 +188,4 @@ constexpr char alphabet[] = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i',
 }  // namespace chess
 }  // namespace aithena
 
-#endif  // AITHENA_CHESS_STATE_H_
+#endif  // SRC_CHESS_STATE_H_

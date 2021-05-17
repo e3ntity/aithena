@@ -14,6 +14,62 @@ Copyright 2020 All rights reserved.
 namespace aithena {
 namespace chess {
 
+MoveInfo::MoveInfo(struct Coord from, struct Coord to, unsigned char promotion,
+                   unsigned char capture, unsigned char special)
+    : from_{from},
+      to_{to},
+      promotion_{promotion},
+      capture_{capture},
+      special_{special} {}
+
+Coord& MoveInfo::GetFrom() { return from_; }
+Coord& MoveInfo::GetTo() { return to_; }
+bool MoveInfo::IsCapture() { return capture_; }
+bool MoveInfo::IsPromotion() { return promotion_; }
+
+int MoveInfo::GetFlagCode() {
+  return (promotion_ << 3) + (capture_ << 2) + special_;
+}
+bool MoveInfo::IsCastle() {
+  int code = GetFlagCode();
+
+  return code == 2 || code == 3;
+}
+bool MoveInfo::IsEnPassant() { return GetFlagCode() == 5; }
+
+Figure MoveInfo::GetPromotionFigure() {
+  int code = GetFlagCode();
+
+  switch (code) {
+    case 8:
+    case 12:
+      return Figure::kKnight;
+    case 9:
+    case 13:
+      return Figure::kBishop;
+    case 10:
+    case 14:
+      return Figure::kRook;
+    case 11:
+    case 15:
+      return Figure::kQueen;
+    default:
+      return Figure::kInvalid;
+  }
+}
+
+void MoveInfo::SetPromotion(bool value) {
+  promotion_ = static_cast<unsigned char>(value);
+}
+
+void MoveInfo::SetCapture(bool value) {
+  capture_ = static_cast<unsigned char>(value);
+}
+
+void MoveInfo::SetSpecial(int value) {
+  special_ = static_cast<unsigned char>(value);
+}
+
 State::State(int width, int height, int figure_count)
     : ::aithena::State(width, height, figure_count),
       player_{Player::kWhite},
@@ -31,7 +87,9 @@ State::State(const State& other)
       move_count_{other.move_count_},
       no_progress_count_{other.no_progress_count_},
       double_push_pawn_{other.double_push_pawn_},
-      move_info_{other.move_info_} {};
+      move_info_{other.move_info_ == nullptr
+                     ? nullptr
+                     : std::make_shared<MoveInfo>(*other.move_info_)} {};
 
 State& State::operator=(const State& other) {
   if (this == &other) return *this;
@@ -44,7 +102,9 @@ State& State::operator=(const State& other) {
   move_count_ = other.move_count_;
   no_progress_count_ = other.no_progress_count_;
   double_push_pawn_ = other.double_push_pawn_;
-  move_info_ = other.move_info_;
+  move_info_ = other.move_info_ == nullptr
+                   ? nullptr
+                   : std::make_shared<MoveInfo>(*other.move_info_);
 
   return *this;
 }
