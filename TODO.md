@@ -1,1 +1,4 @@
-- Add tests for moving pinned pieces
+- Make MoveInfo a class
+- Implement GetDirection (returns enum n, ne, e, se, ..)
+- Implement IsKnightMove, etc.
+- Use for AlphaZero::DecodeNodeValue()

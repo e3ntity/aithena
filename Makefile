@@ -5,7 +5,7 @@ DIRTEST=./test
 DIRBUILD=./build
 DIROBJ=$(DIRBUILD)/obj
 
-OFILES=$(addprefix $(DIROBJ)/,$(patsubst src/%.cc,%.o,$(wildcard src/*/*.cc)))
+OFILES=$(addprefix $(DIROBJ)/,$(patsubst aithena/%.cc,%.o,$(wildcard aithena/*/*.cc)))
 TARGET=aithena
 
 # Compiler settings
