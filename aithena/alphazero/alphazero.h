@@ -2,7 +2,8 @@
  * Copyright (C) 2020 - All Right Reserved
  */
 
-#pragma once
+#ifndef AITHENA_ALPHAZERO_ALPHAZERO_H_
+#define AITHENA_ALPHAZERO_ALPHAZERO_H_
 
 #include <torch/torch.h>
 #include <memory>
@@ -27,7 +28,7 @@ class AlphaZeroNet : torch::nn::Module {
 
 class AlphaZero {
  public:
-  AlphaZero(chess::Game::GamePtr game);
+  explicit AlphaZero(chess::Game::GamePtr game);
 
   // Creates the alphazero interface. game is a pointer to a chess game instance
   // encoding the rules of the game. net is the neural network to be used.
@@ -52,3 +53,5 @@ class AlphaZero {
 };
 
 }  // namespace aithena
+
+#endif  // AITHENA_ALPHAZERO_ALPHAZERO_H_
