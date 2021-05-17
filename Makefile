@@ -1,6 +1,6 @@
 # Project layout
 
-DIRSRC=./src
+DIRSRC=./aithena
 DIRTEST=./test
 DIRBUILD=./build
 DIROBJ=$(DIRBUILD)/obj

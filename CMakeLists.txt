@@ -21,7 +21,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${BOOST_CXX_FLAGS}")
 
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DDDEBUG -O0")
 
-add_subdirectory(src)
+add_subdirectory(aithena)
 
 add_executable(aithena aithena/main.cc aithena/benchmark.cc aithena/game.cc aithena/mcts.cc aithena/alphazero.cc)
 target_link_libraries(aithena board_lib chess_lib generic_lib mcts_lib alphazero_lib)
