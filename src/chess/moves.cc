@@ -41,10 +41,10 @@ std::vector<State> GenDirectionalMoves(State state, int x, int y,
       new_state.SetDPushPawn({-1, -1});
       new_state.GetBoard().MoveField(x, y, new_x, new_y);
 
-      new_state.move_info_ =
-          std::make_shared<MoveInfo>(MoveInfo{{x, y}, {new_x, new_y}, 0, 0, 0});
+      new_state.move_info_ = std::make_shared<MoveInfo>(
+          Coord({x, y}), Coord({new_x, new_y}), 0, 0, 0);
 
-      if (!(piece == kEmptyPiece)) new_state.move_info_->capture = 1;
+      if (!(piece == kEmptyPiece)) new_state.move_info_->SetCapture(true);
 
       moves.push_back(new_state);
 

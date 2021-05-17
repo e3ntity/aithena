@@ -16,8 +16,7 @@ Copyright 2020 All rights reserved.
 namespace aithena {
 namespace chess {
 
-// Defines the figures used in chess. GhostPawn is used to keep track of
-// "en-passant".
+// Defines the figures used in chess.
 enum class Figure : int {
   kKing,
   kQueen,
@@ -25,7 +24,8 @@ enum class Figure : int {
   kKnight,
   kBishop,
   kPawn,
-  /*kGhostPawn, */ kCount
+  kCount,
+  kInvalid
 };
 
 enum Player : int { kWhite, kBlack };
@@ -60,8 +60,8 @@ class Game : public ::aithena::Game<State> {
   bool IsTerminalState(State&) override;
   int GetStateResult(State&) override;
 
-  // Returns whether the player's king is in check.
-  bool KingInCheck(State state, Player player);
+  // Returns whether the king of the player, whose turn it is, is in check.
+  bool KingInCheck(State state);
 
   // Takes in a previous state and a list of next-states from that state and
   // updates player turn, no progress counter, and turn counter.
@@ -135,11 +135,11 @@ class Game : public ::aithena::Game<State> {
 
   // Returns whether the move represented by a change from board b1 to board b2
   // is a capture move.
-  bool IsCapture(Board& b1, Board& b2);
+  bool IsCapture(State& state);
 
-  // Returns whether the move represented by a change from board b1 to board b2
+  // Returns whether the move represented by a change from state s1 to state s2
   // is an en-passant move.
-  bool IsEnPassant(Board& b1, Board& b2);
+  bool IsEnPassant(const State& state);
 
   // An array of all figures.
   static const std::array<Figure, 6> figures;
