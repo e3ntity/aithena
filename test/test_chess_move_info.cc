@@ -26,10 +26,10 @@ void ChessMoveInfoTest::VerifyInfoIsSet(chess::State::StatePtr state,
                                         int depth) {
   if (depth == 0) return;
 
-  for (auto move : game_->GetLegalActions(*state)) {
-    EXPECT_NE(move.move_info_, nullptr);
+  for (auto move : game_->GetLegalActions(state)) {
+    EXPECT_NE(move->move_info_, nullptr);
 
-    VerifyInfoIsSet(std::make_shared<chess::State>(move), depth - 1);
+    VerifyInfoIsSet(move, depth - 1);
   }
 }
 

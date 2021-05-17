@@ -81,7 +81,7 @@ int RunBenchmark(int argc, char** argv) {
 
   bm_perft.Start();
 
-  int nodes = chess::perft(game, *start, perft_depth);
+  int nodes = chess::perft(game, start, perft_depth);
 
   bm_perft.End();
 

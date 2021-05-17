@@ -5,6 +5,7 @@ Copyright 2020 All rights reserved.
 #ifndef AITHENA_GAME_GAME_H_
 #define AITHENA_GAME_GAME_H_
 
+#include <memory>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -42,15 +43,16 @@ class Game {
   void SetOption(std::string option, int value) { options_[option] = value; }
 
   // Returns an initial state for the game start.
-  virtual State GetInitialState() = 0;
+  virtual std::shared_ptr<State> GetInitialState() = 0;
   // Computes and returns all legal actions given a game state.
-  virtual std::vector<State> GetLegalActions(State) = 0;
+  virtual std::vector<std::shared_ptr<State>> GetLegalActions(
+      std::shared_ptr<State>) = 0;
 
   // Returns whether the state is a terminal state.
-  virtual bool IsTerminalState(State&) = 0;
+  virtual bool IsTerminalState(std::shared_ptr<State>) = 0;
   // Returns the result of the state. This value will be invalid if not a
   // terminal state (check via Game::IsTerminalState).
-  virtual int GetStateResult(State&) = 0;
+  virtual int GetStateResult(std::shared_ptr<State>) = 0;
 
  protected:
   // Registers a new default option

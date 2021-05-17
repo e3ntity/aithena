@@ -6,6 +6,8 @@ Copyright 2020 All rights reserved.
 
 #include <memory>
 
+#include "chess/game.h"
+
 namespace aithena {
 
 // Constructors
@@ -15,7 +17,7 @@ MCTSNode<Game>::MCTSNode(std::shared_ptr<Game> game)
     : children_{},
       parent_{nullptr},
       game_{game},
-      state_{game->GetInitialState()} {}
+      state_{*game_->GetInitialState()} {}
 
 template <typename Game>
 MCTSNode<Game>::MCTSNode(std::shared_ptr<Game> game,
@@ -70,11 +72,12 @@ std::shared_ptr<MCTSNode<Game>> MCTSNode<Game>::GetParent() {
 
 template <typename Game>
 void MCTSNode<Game>::Expand() {
-  auto moves = game_->GetLegalActions(state_);
+  auto moves = game_->GetLegalActions(
+      std::make_shared<typename Game::GameState>(state_));
 
   for (auto state : moves) {
     children_.push_back(std::shared_ptr<MCTSNode<Game>>(
-        new MCTSNode<Game>(game_, state, this->shared_from_this())));
+        new MCTSNode<Game>(game_, *state, this->shared_from_this())));
   }
 
   for (auto child : children_) child->SetUCTConfidence(1 / children_.size());
@@ -102,7 +105,8 @@ template <typename Game>
 bool MCTSNode<Game>::IsTerminal() {
   // if (IsExpanded()) return children_.size() == 0;  // Cheap check
 
-  return game_->IsTerminalState(state_);
+  return game_->IsTerminalState(
+      std::make_shared<typename Game::GameState>(state_));
 }
 
 template <typename Game>

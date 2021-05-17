@@ -5,7 +5,6 @@ Copyright 2020 All rights reserved.
 #ifndef AITHENA_CHESS_GAME_H_
 #define AITHENA_CHESS_GAME_H_
 
-#include "benchmark/benchmark.h"
 #include "game/game.h"
 
 #include <assert.h>
@@ -13,36 +12,13 @@ Copyright 2020 All rights reserved.
 #include <memory>
 #include <vector>
 
-namespace aithena {
-namespace chess {
-
-// Defines the figures used in chess.
-enum class Figure : int {
-  kKing,
-  kQueen,
-  kRook,
-  kKnight,
-  kBishop,
-  kPawn,
-  kCount,
-  kInvalid
-};
-
-enum Player : int { kWhite, kBlack };
-
-Player GetOpponent(Player);
-
-}  // namespace chess
-}  // namespace aithena
-
-// Needs to be imported here as state needs Figure & Player
+#include "benchmark/benchmark.h"
 #include "chess/moves.h"
+#include "chess/piece.h"
 #include "chess/state.h"
 
 namespace aithena {
 namespace chess {
-
-Piece make_piece(Figure, Player);
 
 class Game : public ::aithena::Game<State> {
  public:
@@ -54,11 +30,11 @@ class Game : public ::aithena::Game<State> {
 
   Game& operator=(const Game&);
 
-  State GetInitialState() override;
-  std::vector<State> GetLegalActions(State) override;
+  State::StatePtr GetInitialState() override;
+  std::vector<State::StatePtr> GetLegalActions(State::StatePtr) override;
 
-  bool IsTerminalState(State&) override;
-  int GetStateResult(State&) override;
+  bool IsTerminalState(State::StatePtr) override;
+  int GetStateResult(State::StatePtr) override;
 
   // Returns whether the king of the player, whose turn it is, is in check.
   bool KingInCheck(State state);
@@ -73,7 +49,7 @@ class Game : public ::aithena::Game<State> {
   std::vector<State> GenPseudoMoves(State, int x, int y);
 
   // Generates all legal moves for a given state.
-  std::vector<State> GenMoves(State);
+  std::vector<State::StatePtr> GenMoves(State::StatePtr);
 
   // Generates the next moves for a single pawn at field (x, y) for a given
   // state.

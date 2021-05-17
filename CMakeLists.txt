@@ -23,10 +23,10 @@ set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DDDEBUG -O0")
 
 add_subdirectory(aithena)
 
-add_executable(aithena aithena/main.cc aithena/benchmark.cc aithena/game.cc aithena/mcts.cc aithena/alphazero.cc)
-target_link_libraries(aithena board_lib chess_lib generic_lib mcts_lib alphazero_lib)
-target_link_libraries(aithena "${TORCH_LIBRARIES}")
-target_link_libraries(aithena "${BOOST_LIBRARIES}")
+add_executable(aithenarun aithena/main.cc aithena/benchmark.cc aithena/game.cc aithena/mcts.cc aithena/alphazero.cc)
+target_link_libraries(aithenarun board_lib chess_lib generic_lib mcts_lib alphazero_lib)
+target_link_libraries(aithenarun "${TORCH_LIBRARIES}")
+target_link_libraries(aithenarun "${BOOST_LIBRARIES}")
 
 if(PACKAGE_TESTS AND PROJECT_NAME STREQUAL CMAKE_PROJECT_NAME)
   enable_testing()

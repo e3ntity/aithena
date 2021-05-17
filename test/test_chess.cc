@@ -58,18 +58,26 @@ chess::State GenMoveManually(chess::State fromState, unsigned x_start,
 TEST(MoveGenerationTest, EnPassantTest1) {
   chess::Game::Options options{{"board_width", 2}, {"board_height", 6}};
   chess::Game game{options};
-  chess::State initstate = *chess::State::FromFEN("k1/2/2/pP/2/1K w - a4 0 2");
+  chess::State::StatePtr initstate =
+      chess::State::FromFEN("k1/2/2/pP/2/1K w - a4 0 2");
 
   auto moves_generated = game.GenMoves(initstate);
 
   // 2 king moves + 1 pawn push + 1 pawn en-passant capture
   EXPECT_EQ(moves_generated.size(), 4);
 
-  auto enpassant = GenMoveManually(initstate, 1, 2, 0, 3);
+  auto enpassant = GenMoveManually(*initstate, 1, 2, 0, 3);
   enpassant.GetBoard().ClearField(0, 2);
 
-  EXPECT_TRUE(std::find(moves_generated.begin(), moves_generated.end(),
-                        enpassant) != moves_generated.end());
+  bool found = false;
+  for (auto move : moves_generated) {
+    if (*move != enpassant) continue;
+
+    found = true;
+    break;
+  }
+
+  EXPECT_TRUE(found);
 }
 
 /**
@@ -86,7 +94,8 @@ TEST(MoveGenerationTest, EnPassantTest1) {
 TEST(MoveGenerationTest, CheckMateTest1) {
   chess::Game::Options options{{"board_width", 4}, {"board_height", 4}};
   chess::Game game{options};
-  chess::State initstate = *chess::State::FromFEN("K3/2q1/1n2/3k w - - 0 1");
+  chess::State::StatePtr initstate =
+      chess::State::FromFEN("K3/2q1/1n2/3k w - - 0 1");
 
   auto moves_generated = game.GenMoves(initstate);
   EXPECT_EQ(moves_generated.size(), 0);
@@ -105,14 +114,23 @@ TEST(MoveGenerationTest, CheckMateTest1) {
 TEST(MoveGenerationTest, DoubleCheckTest1) {
   chess::Game::Options options{{"board_width", 4}, {"board_height", 3}};
   chess::Game game{options};
-  chess::State initstate = *chess::State::FromFEN("k1RK/4/R1q1 b - - 0 1");
+  chess::State::StatePtr initstate =
+      chess::State::FromFEN("k1RK/4/R1q1 b - - 0 1");
 
   auto moves_generated = game.GenMoves(initstate);
 
   EXPECT_EQ(moves_generated.size(), 1);
-  EXPECT_TRUE(std::find(moves_generated.begin(), moves_generated.end(),
-                        GenMoveManually(initstate, 0, 2, 1, 1)) !=
-              moves_generated.end());
+
+  bool found = false;
+  auto target_move = GenMoveManually(*initstate, 0, 2, 1, 1);
+  for (auto move : moves_generated) {
+    if (*move != target_move) continue;
+
+    found = true;
+    break;
+  }
+
+  EXPECT_TRUE(found);
 }
 
 /**
@@ -129,7 +147,8 @@ TEST(MoveGenerationTest, DoubleCheckTest1) {
 TEST(MoveGenerationTest, PromotionTest1) {
   chess::Game::Options options{{"board_width", 4}, {"board_height", 4}};
   chess::Game game{options};
-  chess::State initstate = *chess::State::FromFEN("1r1k/P3/4/K3 w - - 0 1");
+  chess::State::StatePtr initstate =
+      chess::State::FromFEN("1r1k/P3/4/K3 w - - 0 1");
 
   auto moves_generated = game.GenMoves(initstate);
 
@@ -155,8 +174,8 @@ TEST(MoveGenerationTest, PromotionTest1) {
 TEST(MoveGenerationTest, CastleTest1) {
   chess::Game::Options options{{"board_width", 4}, {"board_height", 4}};
   chess::Game game{options};
-  chess::State initstate =
-      *chess::State::FromFEN("4k3/8/8/8/8/8/8/R3K2R w KQkq - 0 1");
+  chess::State::StatePtr initstate =
+      chess::State::FromFEN("4k3/8/8/8/8/8/8/R3K2R w KQkq - 0 1");
 
   auto moves_generated = game.GenMoves(initstate);
   // 19 rook moves + 5 king moves + 2 castling moves = 26 moves
@@ -182,7 +201,7 @@ TEST(UtilityFunctionTest, TerminalStateTest) {
   for (auto position : positions) {
     auto state = chess::State::FromFEN(std::get<0>(position));
 
-    EXPECT_EQ(game.IsTerminalState(*state),
+    EXPECT_EQ(game.IsTerminalState(state),
               static_cast<bool>(std::get<1>(position)));
   }
 }
@@ -204,6 +223,6 @@ TEST(UtilityFunctionTest, ResultTest) {
   for (auto position : positions) {
     auto state = chess::State::FromFEN(std::get<0>(position));
 
-    EXPECT_EQ(game.GetStateResult(*state), std::get<1>(position));
+    EXPECT_EQ(game.GetStateResult(state), std::get<1>(position));
   }
 }

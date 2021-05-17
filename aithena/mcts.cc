@@ -98,7 +98,8 @@ int RunMCTS(int argc, char** argv) {
 
   bm.Start("total");
 
-  while (!game->IsTerminalState(node->GetState())) {
+  while (!game->IsTerminalState(
+      std::make_shared<chess::State>(node->GetState()))) {
     std::cout << PrintBoard(node->GetState()) << std::endl;
 
     for (int round = 0; round < rounds; ++round) {

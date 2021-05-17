@@ -15,16 +15,6 @@ Copyright 2020 All rights reserved.
 namespace aithena {
 namespace chess {
 
-// Functions
-
-Piece make_piece(Figure figure, Player player) {
-  return Piece{static_cast<int>(figure), static_cast<int>(player)};
-}
-
-Player GetOpponent(Player player) {
-  return player == Player::kWhite ? Player::kBlack : Player::kWhite;
-}
-
 // Constructors
 
 Game::Game() : Game{Options{}} {}
@@ -68,17 +58,17 @@ const int Game::figure_count = Game::figures.size();
 const int Game::player_count = Game::players.size();
 
 // Chess methods
-State Game::GetInitialState() {
+State::StatePtr Game::GetInitialState() {
   int width = GetOption("board_width");
   int height = GetOption("board_height");
   State state(width, height, GetOption("figure_count"));
 
   if (width == 8 && height == 8)
-    return *State::FromFEN(
+    return State::FromFEN(
         "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
 
   if (width == 5 && height == 5)
-    return *State::FromFEN("4k/5/5/R4/RK3 w - - 0 1");
+    return State::FromFEN("4k/5/5/R4/RK3 w - - 0 1");
 
   assert(false);
 }
@@ -100,11 +90,11 @@ bool Game::KingInCheck(State state) {
   return attackers.count() > 0;
 }
 
-bool Game::IsTerminalState(State& state) {
+bool Game::IsTerminalState(State::StatePtr state) {
   // Check for a draw
-  if (state.GetNoProgressCount() >= GetOption("max_no_progress")) return true;
+  if (state->GetNoProgressCount() >= GetOption("max_no_progress")) return true;
 
-  if (state.GetMoveCount() >= GetOption("max_move_count")) return true;
+  if (state->GetMoveCount() >= GetOption("max_move_count")) return true;
 
   // Check for checkmate
   if (GetLegalActions(state).size() == 0) return true;
@@ -112,15 +102,15 @@ bool Game::IsTerminalState(State& state) {
   return false;
 }
 
-int Game::GetStateResult(State& state) {
+int Game::GetStateResult(State::StatePtr state) {
   // Check for a draw
-  if (state.GetNoProgressCount() >= max_no_progress_ ||
-      state.GetMoveCount() >= max_move_count_)
+  if (state->GetNoProgressCount() >= max_no_progress_ ||
+      state->GetMoveCount() >= max_move_count_)
     return 0;
 
   // Check if we are unable to move and king is in check
   if (GetLegalActions(state).size() == 0) {
-    if (KingInCheck(state)) return -1;
+    if (KingInCheck(*state)) return -1;
 
     return 0;
   }
@@ -130,7 +120,7 @@ int Game::GetStateResult(State& state) {
 
 // Move generation
 
-std::vector<State> Game::GetLegalActions(State state) {
+std::vector<State::StatePtr> Game::GetLegalActions(State::StatePtr state) {
   return GenMoves(state);
 }
 
@@ -791,20 +781,20 @@ State Game::FlipMostPieces(State state, Player player, Coord place) {
   return state;
 }
 
-std::vector<State> Game::GenMoves(State state) {
+std::vector<State::StatePtr> Game::GenMoves(State::StatePtr state) {
   benchmark_.Start("GenMoves()");
 
   // Vector of all legal moves (to be returned)
-  std::vector<State> moves;
+  std::vector<State::StatePtr> moves;
 
-  if (state.GetMoveCount() > GetOption("max_move_count")) return moves;
-  if (state.GetNoProgressCount() > GetOption("max_no_progress")) return moves;
+  if (state->GetMoveCount() > GetOption("max_move_count")) return moves;
+  if (state->GetNoProgressCount() > GetOption("max_no_progress")) return moves;
 
-  Board& board = state.GetBoard();
+  Board& board = state->GetBoard();
   int width = board.GetWidth();
   int height = board.GetHeight();
 
-  Piece player_king = make_piece(Figure::kKing, state.GetPlayer());
+  Piece player_king = make_piece(Figure::kKing, state->GetPlayer());
   auto king_coords = board.FindPiece(player_king);
 
   if (king_coords.size() != 1) {
@@ -818,19 +808,19 @@ std::vector<State> Game::GenMoves(State state) {
   // Remove player's king from board and set all pieces to belong to player.
   // Then, loop through the opponent's pieces and compute all possible attacks
   // to generate a bitboard of all fields, dangerous to the king.
-  State king_danger_state(state);
+  State king_danger_state(*state);
   king_danger_state.GetBoard().SetField(king_x, king_y, kEmptyPiece);
-  king_danger_state.SetPlayer(state.GetOpponent());
+  king_danger_state.SetPlayer(state->GetOpponent());
 
   for (int y = 0; y < height; ++y) {
     for (int x = 0; x < width; ++x) {
       Piece p = king_danger_state.GetBoard().GetField(x, y);
 
-      if (p == kEmptyPiece || p.player == static_cast<int>(state.GetPlayer()))
+      if (p == kEmptyPiece || p.player == static_cast<int>(state->GetPlayer()))
         continue;
 
       king_danger_state.GetBoard().SetField(
-          x, y, make_piece(static_cast<Figure>(p.figure), state.GetPlayer()));
+          x, y, make_piece(static_cast<Figure>(p.figure), state->GetPlayer()));
     }
   }
 
@@ -843,14 +833,14 @@ std::vector<State> Game::GenMoves(State state) {
 
       Piece piece = board.GetField(x, y);
 
-      if (piece.player != state.GetOpponent()) continue;
+      if (piece.player != state->GetOpponent()) continue;
 
       // Copy state and set figure at (x, y) to be opponent's for computing
       // possible attacks
       State danger_state(king_danger_state);
       danger_state.GetBoard().SetField(
           x, y,
-          make_piece(static_cast<Figure>(piece.figure), state.GetOpponent()));
+          make_piece(static_cast<Figure>(piece.figure), state->GetOpponent()));
 
       if (piece.figure == static_cast<int>(Figure::kPawn)) {
         nk_moves = PreparePseudoMoves(danger_state,
@@ -868,16 +858,16 @@ std::vector<State> Game::GenMoves(State state) {
   }
 
   // Add all moves the king can make without getting into check
-  for (auto move : GenPseudoMoves(state, king_x, king_y)) {
+  for (auto move : GenPseudoMoves(*state, king_x, king_y)) {
     Coord& target = move.move_info_->GetTo();
 
     if (king_danger_squares.get(target.x, target.y)) continue;
 
-    moves.push_back(move);
+    moves.push_back(std::make_shared<State>(move));
   }
 
   // Squares with pieces that attack the king
-  BoardPlane king_checks = GetAttackers(state, king_x, king_y);
+  BoardPlane king_checks = GetAttackers(*state, king_x, king_y);
 
   // If there is more than one check on the king, only king moves are valid
   if (king_checks.count() > 1) {
@@ -918,7 +908,7 @@ std::vector<State> Game::GenMoves(State state) {
   }
 
   // Generate moves for pinned pieces and remove them from the board.
-  std::vector<std::tuple<Coord, Coord>> pins = GetPins(state, king_x, king_y);
+  std::vector<std::tuple<Coord, Coord>> pins = GetPins(*state, king_x, king_y);
   BoardPlane pin_mask(width, height);
 
   for (auto pin : pins) {
@@ -933,13 +923,13 @@ std::vector<State> Game::GenMoves(State state) {
     pin_move_mask.clear(pinned.x, pinned.y);
     pin_move_mask.clear(king_x, king_y);
 
-    auto pin_moves = GenPseudoMoves(state, pinned.x, pinned.y);
+    auto pin_moves = GenPseudoMoves(*state, pinned.x, pinned.y);
 
     for (auto move : pin_moves) {
       Coord& target = move.move_info_->GetTo();
 
       if (!pin_move_mask.get(target.x, target.y)) continue;
-      moves.push_back(move);
+      moves.push_back(std::make_shared<State>(move));
     }
 
     pin_mask.set(pinned.x, pinned.y);
@@ -964,7 +954,7 @@ std::vector<State> Game::GenMoves(State state) {
       Piece piece = board.GetField(x, y);
 
       if (piece == kEmptyPiece) continue;
-      if (piece.player != state.GetPlayer()) continue;
+      if (piece.player != state->GetPlayer()) continue;
 
       // Skip pinned pieces
       if (pin_mask.get(x, y) == 1) continue;
@@ -975,7 +965,7 @@ std::vector<State> Game::GenMoves(State state) {
         if (king_checks.count() > 0) continue;
 
         auto king_pseudo_moves =
-            PreparePseudoMoves(state, GenCastlingMoves(state, x, y));
+            PreparePseudoMoves(*state, GenCastlingMoves(*state, x, y));
 
         // Remove castle through check
         for (auto move : king_pseudo_moves) {
@@ -988,7 +978,7 @@ std::vector<State> Game::GenMoves(State state) {
           pseudo_moves.push_back(move);
         }
       } else {
-        pseudo_moves = GenPseudoMoves(state, x, y);
+        pseudo_moves = GenPseudoMoves(*state, x, y);
       }
 
       for (auto move : pseudo_moves) {
@@ -1005,9 +995,9 @@ std::vector<State> Game::GenMoves(State state) {
         if (target_field.count() == 0) continue;
 
         // Filter out en-passant discovered checks
-        if (IsEnPassantDiscoveredCheck(state, move)) continue;
+        if (IsEnPassantDiscoveredCheck(*state, move)) continue;
 
-        moves.push_back(move);
+        moves.push_back(std::make_shared<State>(move));
       }
     }
   }
