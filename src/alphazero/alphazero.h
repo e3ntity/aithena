@@ -1,66 +1,54 @@
-#ifndef AITHENA_ALPHAZERO_ALPHAZERO
-#define AITHENA_ALPHAZERO_ALPHAZERO
+/**
+ * Copyright (C) 2020 - All Right Reserved
+ */
 
-#include "alphazero/neural_network.h"
+#pragma once
+
+#include <torch/torch.h>
+#include <memory>
+#include <vector>
+
+#include "alphazero/move.h"
 #include "alphazero/node.h"
-
-#include <chrono>
+#include "chess/game.h"
 
 namespace aithena {
-namespace alphazero {
+
+class AlphaZeroNet : torch::nn::Module {
+ public:
+  using NetPtr = std::shared_ptr<AlphaZeroNet>;
+
+  AlphaZeroNet(int board_width, int board_height);
+  torch::Tensor forward(torch::Tensor);
+
+ private:
+  torch::nn::Conv2d conv{nullptr};
+};
 
 class AlphaZero {
  public:
-  using ReplayMemory = std::vector<std::tuple<AZNode::NodePtr, int>>;
+  AlphaZero(chess::Game::GamePtr game);
 
-  AlphaZero(std::shared_ptr<chess::Game>, AZNeuralNetwork);
+  // Creates the alphazero interface. game is a pointer to a chess game instance
+  // encoding the rules of the game. net is the neural network to be used.
+  // time_steps gives the number of time steps to consider for the neural net.
+  AlphaZero(chess::Game::GamePtr game, AlphaZeroNet::NetPtr net);
 
-  // Runs a single simulation for alphazero starting from a root node.
-  void Run(AZNode::NodePtr);
-
-  // Runs a training game against itself and returns the final node.
-  AZNode::NodePtr SelfPlayGame(AZNode::NodePtr, int simulations = 800);
-
-  // Trains the network for a single self play game. Returns whether the NN was
-  // updates or if the sample count was too small for batch size.
-  bool Train(chess::Game::GameState, std::shared_ptr<ReplayMemory>, int, int);
-
-  void Backpropagate(AZNode::NodePtr, int);
-  AZNode::NodePtr Select(AZNode::NodePtr node,
-                         AZNode::NodePtr (*next)(AZNode::NodePtr));
-  static AZNode::NodePtr PUCTSelect(AZNode::NodePtr);
-
-  void SetDiscountFactor(double);
-  double GetDiscountFactor();
-
-  // Returns the average time per select in seconds.
-  double BenchmarkSelect();
-  // Returns the average time per backpropagation in seconds.
-  double BenchmarkBackprop();
-  // Returns the average time per run in seconds.
-  double BenchmarkRun();
-  // Returns the average time per training in seconds.
-  double BenchmarkTrain();
-
-  void Save(std::string path);
-  void Load(std::string path);
+  chess::State::StatePtr DrawAction(chess::State::StatePtr);
 
  private:
-  double Benchmark(std::vector<std::chrono::milliseconds>);
+  chess::Game::GamePtr game_;
+  AlphaZeroNet::NetPtr network_;
+  int time_steps_{8};
 
-  std::shared_ptr<chess::Game> game_;
-  AZNeuralNetwork nn_;
+  // Generates the neural network input tensor given a AZNode.
+  torch::Tensor EncodeNode(AZNode::AZNodePtr);
 
-  double discount_factor_{1.};
+  // Generates the tensor for a AZNode's state.
+  torch::Tensor EncodeNodeState(AZNode::AZNodePtr);
 
-  // Stats
-  std::vector<std::chrono::milliseconds> time_select_{};
-  std::vector<std::chrono::milliseconds> time_backprop_{};
-  std::vector<std::chrono::milliseconds> time_run_{};
-  std::vector<std::chrono::milliseconds> time_train_{};
+  // Returns the node value selected from the output tensor of the neural net.
+  double DecodeNodeValue(torch::Tensor, AZNode::AZNodePtr);
 };
 
-}  // alphazero
-}  // aithena
-
-#endif  // AITHENA_ALPHAZERO_ALPHAZERO
+}  // namespace aithena

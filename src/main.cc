@@ -1,3 +1,7 @@
+/**
+ * Copyright 2020 all rights reserved.
+ */
+
 #include "main.h"
 
 #include <ctype.h>
@@ -42,7 +46,7 @@ int main(int argc, char** argv) {
   if (program == "benchmark") return RunBenchmark(args_len, args);
   // if (program == "game") return RunGame(args_len, args);
   if (program == "mcts") return RunMCTS(args_len, args);
-  // if (program == "alphazero") return RunAlphazero(args_len, args);
+  if (program == "alphazero") return RunAlphazero(args_len, args);
 
   std::cout << "[!] Invalid program \"" << program << "\"" << std::endl;
   std::cout << GetUsageText();

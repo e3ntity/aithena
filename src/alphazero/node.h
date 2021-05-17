@@ -1,80 +1,55 @@
-/*
-Copyright 2020 All rights reserved.
-*/
+/**
+ * Copyright (C) 2020 All Right Reserved
+ */
 
-#ifndef AITHENA_ALPHAZERO_NODE
-#define AITHENA_ALPHAZERO_NODE
+#pragma once
 
 #include <torch/torch.h>
 #include <memory>
+#include <vector>
 
-#include "alphazero/neural_network.h"
 #include "chess/game.h"
-#include "mcts/node.h"
 
 namespace aithena {
-namespace alphazero {
 
 class AZNode : public std::enable_shared_from_this<AZNode> {
  public:
-  using NodePtr = std::shared_ptr<AZNode>;
-  using NodePtrList = std::vector<NodePtr>;
+  using AZNodePtr = std::shared_ptr<AZNode>;
 
-  AZNode(std::shared_ptr<chess::Game>, AZNeuralNetwork nn);
-  AZNode(std::shared_ptr<chess::Game>, chess::Game::GameState, NodePtr,
-         AZNeuralNetwork nn);
+  AZNode(chess::Game::GamePtr game, chess::State::StatePtr state,
+         AZNodePtr parent = nullptr);
 
-  AZNode& operator=(const AZNode& node) = delete;
-  bool operator==(const AZNode& node) = delete;
-  bool operator!=(const AZNode& node) = delete;
+  chess::State::StatePtr GetState();
+  AZNodePtr GetParent();
+  std::vector<AZNodePtr> GetChildren();
 
-  torch::Tensor GetNNInput(int history_length = 8);
-  torch::Tensor GetChildrenPriors();
+  void Update(double value);
 
-  // Tree node functions
-
-  // Expands the node by generating all possible child nodes and initializing
-  // them. Returns the value for the current state, evaluated by the NN.
-  double Expand();
-
+  void Expand(torch::Tensor priors);
   bool IsExpanded();
-  bool IsLeaf();
-  bool IsTerminal();
 
-  chess::Game::GameState& GetState();
-  NodePtrList GetChildren();
-  NodePtr GetParent();
-
-  // Setters and getters for node statistics
-  void SetPrior(double);
-  void SetValue(double);
-  void IncVisits();
+  double GetMeanActionValue();
   double GetPrior();
-  double GetValue();
-  double GetMeanValue();
-  int GetVisits();
+  double GetTotalActionValue();
+  int GetVisitCount();
 
  private:
-  // This node's child nodes.
-  NodePtrList children_;
-  // This node's parent.
-  NodePtr parent_;
-  // An object capturing the rules of the game.
-  std::shared_ptr<chess::Game> game_;
-  // The state of the game that this node captures.
-  typename chess::Game::GameState state_;
-  // Whether this node has all possible child nodes in children_.
+  // The game rules for chess
+  chess::Game::GamePtr game_;
+  // The children nodes of this node.
+  std::vector<AZNodePtr> children_{};
+  // The parent node of this node.
+  AZNodePtr parent_;
+  // The state encapsulated by this node.
+  chess::State::StatePtr state_;
+  // Whether the node has been expanded
   bool expanded_{false};
 
-  AZNeuralNetwork nn_;
+  // Edge statistics (in relation to the parent node)
 
-  // Statistics for the az node.
-  int visits_{0};
+  int visit_count_{0};
   double prior_{0};
-  double value_{0};
+  double action_value_{0};
 };
 
-}  // aithena
-}  // alphazero
-
-#endif  // AITHENA_ALPHAZERO_NODE
+}  // namespace aithena
