@@ -1,4 +1,1 @@
-- Make MoveInfo a class
-- Implement GetDirection (returns enum n, ne, e, se, ..)
-- Implement IsKnightMove, etc.
-- Use for AlphaZero::DecodeNodeValue()
+-- Implement AlphaZero::DecodeNodeValue()
