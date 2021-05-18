@@ -29,9 +29,9 @@ const Direction right{1, 0};
 Direction operator+(Direction d1, Direction d2);
 
 // Generate pseudo moves in the given directions
-std::vector<State> GenDirectionalMoves(State state, int x, int y,
-                                       std::vector<Direction> directions,
-                                       int range);
+std::vector<State::StatePtr> GenDirectionalMoves(
+    State::StatePtr state, int x, int y, std::vector<Direction> directions,
+    int range);
 
 }  // namespace chess
 }  // namespace aithena

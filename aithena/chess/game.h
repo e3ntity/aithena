@@ -10,6 +10,7 @@ Copyright 2020 All rights reserved.
 #include <assert.h>
 #include <iostream>
 #include <memory>
+#include <tuple>
 #include <vector>
 
 #include "benchmark/benchmark.h"
@@ -23,6 +24,7 @@ namespace chess {
 class Game : public ::aithena::Game<State> {
  public:
   using GamePtr = std::shared_ptr<Game>;
+  using StateList = std::vector<State::StatePtr>;
 
   Game();
   explicit Game(Options);
@@ -31,75 +33,75 @@ class Game : public ::aithena::Game<State> {
   Game& operator=(const Game&);
 
   State::StatePtr GetInitialState() override;
-  std::vector<State::StatePtr> GetLegalActions(State::StatePtr) override;
+  StateList GetLegalActions(State::StatePtr) override;
 
   bool IsTerminalState(State::StatePtr) override;
   int GetStateResult(State::StatePtr) override;
 
   // Returns whether the king of the player, whose turn it is, is in check.
-  bool KingInCheck(State state);
+  bool KingInCheck(State::StatePtr state);
 
   // Takes in a previous state and a list of next-states from that state and
   // updates player turn, no progress counter, and turn counter.
-  std::vector<State> PreparePseudoMoves(State state, std::vector<State> moves);
+  StateList PreparePseudoMoves(State::StatePtr state, StateList moves);
 
   // Generates all pseudo-moves for all pieces for a given state.
-  std::vector<State> GenPseudoMoves(State);
+  StateList GenPseudoMoves(State::StatePtr);
   // Generates all pseudo-moves for any piece at field (x, y) for a given state.
-  std::vector<State> GenPseudoMoves(State, int x, int y);
+  StateList GenPseudoMoves(State::StatePtr, int x, int y);
 
   // Generates all legal moves for a given state.
-  std::vector<State::StatePtr> GenMoves(State::StatePtr);
+  StateList GenMoves(State::StatePtr);
 
   // Generates the next moves for a single pawn at field (x, y) for a given
   // state.
   // * Assumes that there is a pawn of the player who's turn it is at
   // field (x, y).
   // * Does not switch the player turn.
-  std::vector<State> GenPawnMoves(State, int x, int y);
-  std::vector<State> GenPawnPushes(State, int x, int y);
-  std::vector<State> GenPawnCaptures(State, int x, int y);
+  StateList GenPawnMoves(State::StatePtr, int x, int y);
+  StateList GenPawnPushes(State::StatePtr, int x, int y);
+  StateList GenPawnCaptures(State::StatePtr, int x, int y);
 
   // Same as GenPawnCaptures but does not check whether there is a piece to
   // capture. Does not set move_info_ field in states!
-  std::vector<State> GenRawPawnCaptures(State, int x, int y);
+  StateList GenRawPawnCaptures(State::StatePtr, int x, int y);
 
   // Generates the next moves for a single rook at field (x, y) for a given
   // state.
   // * Assumes that there is a pawn of the player who's turn it is at
   // field (x, y).
   // * Does not switch the player turn.
-  std::vector<State> GenRookMoves(State state, int x, int y);
+  StateList GenRookMoves(State::StatePtr state, int x, int y);
 
   // Generates the next moves for a single bishop at field (x, y) for a given
   // state.
   // * Assumes that there is a rook of the player who's turn it is at
   // field (x, y).
   // * Does not switch the player turn.
-  std::vector<State> GenBishopMoves(State state, int x, int y);
+  StateList GenBishopMoves(State::StatePtr state, int x, int y);
 
   // Generates the next moves for a single knight at field (x, y) for a given
   // state.
   // * Assumes that there is a knight of the player who's turn it is at
   // field (x, y).
   // * Does not switch the player turn.
-  std::vector<State> GenKnightMoves(State state, int x, int y);
+  StateList GenKnightMoves(State::StatePtr state, int x, int y);
 
   // Generates the next moves for a single queen at field (x, y) for a given
   // state.
-  std::vector<State> GenQueenMoves(State state, int x, int y);
+  StateList GenQueenMoves(State::StatePtr state, int x, int y);
 
   // Generates the next moves for a single king at field (x, y) for a given
   // state. This does not include castling moves (use GenCastlingMoves).
-  std::vector<State> GenKingMoves(State state, int x, int y);
+  StateList GenKingMoves(State::StatePtr state, int x, int y);
 
   // Generates castling moves for a piece at (x, y), assumed to be a king.
-  std::vector<State> GenCastlingMoves(State state, int x, int y);
+  StateList GenCastlingMoves(State::StatePtr state, int x, int y);
 
   // Returns a board plane highlighting all the squares that contain pieces
   // attacking the piece at field (x, y).
   // Does not take en-passant moves into account!
-  BoardPlane GetAttackers(State state, int x, int y);
+  BoardPlane GetAttackers(State::StatePtr state, int x, int y);
 
   // Returns a board plane highlighting all the squares with pieces that are
   // pinned to the piece at field (x, y).
@@ -107,15 +109,16 @@ class Game : public ::aithena::Game<State> {
   // Returns a vector of coord tuples indicating pins, with the first coordinate
   // entry highlighting the pinning piece and the second entry highlighting the
   // pinned piece.
-  std::vector<std::tuple<Coord, Coord>> GetPins(State state, int x, int y);
+  std::vector<std::tuple<Coord, Coord>> GetPins(State::StatePtr state, int x,
+                                                int y);
 
   // Returns whether the move represented by a change from board b1 to board b2
   // is a capture move.
-  bool IsCapture(State& state);
+  bool IsCapture(State::StatePtr state);
 
   // Returns whether the move represented by a change from state s1 to state s2
   // is an en-passant move.
-  bool IsEnPassant(const State& state);
+  bool IsEnPassant(State::StatePtr state);
 
   // An array of all figures.
   static const std::array<Figure, 6> figures;
@@ -134,11 +137,9 @@ class Game : public ::aithena::Game<State> {
 
  private:
   // Returns the x-coordinates of the rooks available for castling.
-  std::tuple<Coord, Coord> GetCastlingRooks(State state);
+  std::tuple<Coord, Coord> GetCastlingRooks(State::StatePtr state);
   // Helper function for filtering out en-passant discovered check moves
-  bool IsEnPassantDiscoveredCheck(State& s1, State& s2);
-  // Flips the player to player of all pieces but the one specified by place.
-  State FlipMostPieces(State state, Player player, Coord place);
+  bool IsEnPassantDiscoveredCheck(State::StatePtr s1, State::StatePtr s2);
 
   // Stores the magic bit boards computed by InitializeMagic.
   // magic_bit_planes_[2*i + 0] thereby stores the push bit planes for figure i
