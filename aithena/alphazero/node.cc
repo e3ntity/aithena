@@ -19,10 +19,9 @@ std::vector<AZNode::AZNodePtr> AZNode::GetChildren() { return children_; }
 void AZNode::Expand(torch::Tensor priors) {
   AZNodePtr node;
 
-  auto moves = game_->GetLegalActions(*state_);
+  auto moves = game_->GetLegalActions(state_);
   for (auto move : moves) {
-    node = std::make_shared<AZNode>(game_, std::make_shared<chess::State>(move),
-                                    shared_from_this());
+    node = std::make_shared<AZNode>(game_, move, shared_from_this());
     // TODO(*): select appropriate prior and update node statistics with it
     children_.push_back(node);
   }

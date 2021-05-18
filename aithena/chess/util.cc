@@ -1,3 +1,7 @@
+/**
+ * Copyright (C) 2020 All Right Reserved
+ */
+
 #include "chess/util.h"
 
 #include <string>
@@ -69,7 +73,8 @@ std::string PrintMarkedBoard(State state, BoardPlane marker,
   }
 
   repr << std::endl << " ";
-  for (int i = 0; i < int(board.GetWidth()); ++i) repr << "  " << letters.at(i);
+  for (int i = 0; i < static_cast<int>(board.GetWidth()); ++i)
+    repr << "  " << letters.at(i);
 
   repr << std::endl;
 
@@ -83,8 +88,8 @@ std::string PrintBoard(State state) {
   return PrintMarkedBoard(state, marker);
 }
 
-int perft(std::shared_ptr<Game> game, chess::State& state, int max_depth,
-          int depth) {
+int perft(std::shared_ptr<Game> game, chess::State::StatePtr state,
+          int max_depth, int depth) {
   if (depth >= max_depth) return 0;
 
   int counter = 0;
@@ -97,9 +102,10 @@ int perft(std::shared_ptr<Game> game, chess::State& state, int max_depth,
   return counter;
 }
 
-std::vector<std::tuple<State, int>> divide(std::shared_ptr<Game> game,
-                                           State& state, int depth) {
-  std::vector<std::tuple<State, int>> output;
+std::vector<std::tuple<State::StatePtr, int>> divide(std::shared_ptr<Game> game,
+                                                     State::StatePtr state,
+                                                     int depth) {
+  std::vector<std::tuple<State::StatePtr, int>> output;
   auto moves = game->GenMoves(state);
 
   for (auto move : moves)

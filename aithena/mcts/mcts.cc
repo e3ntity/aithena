@@ -6,6 +6,7 @@ Copyright 2020 All rights reserved.
 
 #include <chrono>
 #include <cmath>
+#include <memory>
 
 namespace aithena {
 
@@ -21,7 +22,9 @@ void MCTS<Game>::Run(typename MCTSNode<Game>::NodePtr root, int simulations) {
   auto leaf = Select(root, UCTSelect);
 
   if (leaf->IsTerminal()) {
-    Backpropagate(leaf, game_->GetStateResult(leaf->GetState()));
+    Backpropagate(
+        leaf, game_->GetStateResult(std::make_shared<typename Game::GameState>(
+                  leaf->GetState())));
 
     bm_.End("Run");
     return;
@@ -61,14 +64,16 @@ int MCTS<Game>::Simulate(typename MCTSNode<Game>::NodePtr start,
 
   int i{0};
   auto current = start;
-  while (!game_->IsTerminalState(current->GetState())) {
+  while (!game_->IsTerminalState(
+      std::make_shared<typename Game::GameState>(current->GetState()))) {
     if (!current->IsExpanded()) current->Expand();
 
     current = next(current);
     ++i;
   }
 
-  int result = game_->GetStateResult(current->GetState());
+  int result = game_->GetStateResult(
+      std::make_shared<typename Game::GameState>(current->GetState()));
 
   bm_.End("Simulate");
 

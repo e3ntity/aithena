@@ -22,6 +22,7 @@ target_link_libraries(generic_lib board_lib)
 add_library(chess_lib
     chess/game.cc
     chess/moves.cc
+    chess/piece.cc
     chess/state.cc
     chess/util.cc
 )

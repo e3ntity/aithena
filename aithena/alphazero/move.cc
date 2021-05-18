@@ -1,4 +1,10 @@
+/**
+ * Copyright (C) 2020 All Rights Reserved
+ */
+
 #include "alphazero/move.h"
+
+#include <algorithm>
 
 #include "board/board_plane.h"
 #include "chess/game.h"
@@ -16,6 +22,6 @@ int AZMaxChessMoveValue(int board_width, int board_height) {
           UNDERPROMOTION_COUNT);
 }
 
-int AZChessMoveValue(State& before, State& after) {}
+int AZChessMoveValue(const State& before, const State& after) {}
 
 }  // namespace aithena

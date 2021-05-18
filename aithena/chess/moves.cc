@@ -13,12 +13,12 @@ Direction operator+(Direction d1, Direction d2) {
   return {d1.x + d2.x, d1.y + d2.y};
 }
 
-std::vector<State> GenDirectionalMoves(State state, int x, int y,
-                                       std::vector<Direction> directions,
-                                       int range) {
-  std::vector<State> moves;  // return value
+std::vector<State::StatePtr> GenDirectionalMoves(
+    State::StatePtr state, int x, int y, std::vector<Direction> directions,
+    int range) {
+  std::vector<State::StatePtr> moves;  // return value
 
-  Board& board = state.GetBoard();
+  Board& board = state->GetBoard();
   int width = board.GetWidth();
   int height = board.GetHeight();
 
@@ -33,23 +33,23 @@ std::vector<State> GenDirectionalMoves(State state, int x, int y,
 
       Piece piece = board.GetField(new_x, new_y);
 
-      if (piece.player == state.GetPlayer())
+      if (piece.player == state->GetPlayer())
         // Blocked by own piece
         break;
 
-      State new_state{state};
-      new_state.SetDPushPawn({-1, -1});
-      new_state.GetBoard().MoveField(x, y, new_x, new_y);
+      State::StatePtr new_state = std::make_shared<State>(State(*state));
+      new_state->SetDPushPawn({-1, -1});
+      new_state->GetBoard().MoveField(x, y, new_x, new_y);
 
-      new_state.move_info_ = std::make_shared<MoveInfo>(
+      new_state->move_info_ = std::make_shared<MoveInfo>(
           Coord({x, y}), Coord({new_x, new_y}), 0, 0, 0);
 
-      if (!(piece == kEmptyPiece)) new_state.move_info_->SetCapture(true);
+      if (!(piece == kEmptyPiece)) new_state->move_info_->SetCapture(true);
 
       moves.push_back(new_state);
 
       // Do not move further in direction on capture
-      if (piece.player == state.GetOpponent()) break;
+      if (piece.player == state->GetOpponent()) break;
     }
   }
 

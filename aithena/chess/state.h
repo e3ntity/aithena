@@ -13,7 +13,7 @@ Copyright 2020 All rights reserved.
 
 #include "game/state.h"
 
-#include "chess/game.h"
+#include "chess/piece.h"
 
 namespace aithena {
 namespace chess {
@@ -54,6 +54,7 @@ class MoveInfo {
 class State : public ::aithena::State {
  public:
   using StatePtr = std::shared_ptr<State>;
+
   // Initializes to the chess starting state.
   State(int width, int height,
         int figure_count = static_cast<int>(Figure::kCount));

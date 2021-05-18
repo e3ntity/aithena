@@ -47,7 +47,7 @@ chess::State::StatePtr AlphaZero::DrawAction(chess::State::StatePtr state) {
   torch::Tensor input = EncodeNode(node).unsqueeze(0);
   torch::Tensor output = network_->forward(input);
 
-  for (auto child : game_->GetLegalActions(*node->GetState())) {
+  for (auto child : game_->GetLegalActions(node->GetState())) {
     double value = DecodeNodeValue(output, node);
 
     std::cout << value << std::endl;

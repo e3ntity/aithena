@@ -2,7 +2,8 @@
  * Copyright (C) 2020 All Right Reserved
  */
 
-#pragma once
+#ifndef AITHENA_ALPHAZERO_NODE_H_
+#define AITHENA_ALPHAZERO_NODE_H_
 
 #include <torch/torch.h>
 #include <memory>
@@ -53,3 +54,5 @@ class AZNode : public std::enable_shared_from_this<AZNode> {
 };
 
 }  // namespace aithena
+
+#endif  // AITHENA_ALPHAZERO_NODE_H_
