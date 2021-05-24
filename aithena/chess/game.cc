@@ -30,14 +30,14 @@ Game::Game(Options options) : ::aithena::Game<State>{options} {
   max_move_count_ = static_cast<int>(GetOption("max_move_count"));
 }
 
-Game::Game(const Game& other) : ::aithena::Game<State>(other) {
+Game::Game(const Game &other) : ::aithena::Game<State>(other) {
   max_no_progress_ = other.max_no_progress_;
   max_move_count_ = other.max_move_count_;
 }
 
 // Operators
 
-Game& Game::operator=(const Game& other) {
+Game &Game::operator=(const Game &other) {
   ::aithena::Game<State>::operator=(other);
 
   return *this;
@@ -200,7 +200,7 @@ Game::StateList Game::GenPawnPushes(State::StatePtr state, int x, int y) {
   move->GetBoard().MoveField(x, y, x, y + 2 * direction);
   move->SetDPushPawn({x, y + direction});
   move->move_info_ = std::make_shared<MoveInfo>(
-      Coord({x, y}), Coord({x, y + direction}), 0, 0, 1);
+      Coord({x, y}), Coord({x, y + 2 * direction}), 0, 0, 1);
 
   moves.push_back(move);
 
@@ -393,7 +393,7 @@ Game::StateList Game::GenBishopMoves(State::StatePtr state, int x, int y) {
 }
 
 std::tuple<Coord, Coord> Game::GetCastlingRooks(State::StatePtr state) {
-  Board& board = state->GetBoard();
+  Board &board = state->GetBoard();
   Coord left{-1, -1};
   Coord right{-1, -1};
 
@@ -436,7 +436,7 @@ std::tuple<Coord, Coord> Game::GetCastlingRooks(State::StatePtr state) {
 Game::StateList Game::GenCastlingMoves(State::StatePtr state, int x, int y) {
   Game::StateList moves;
 
-  Board& board = state->GetBoard();
+  Board &board = state->GetBoard();
 
   int height = board.GetHeight();
   int width = board.GetWidth();
@@ -524,7 +524,7 @@ Game::StateList Game::GenKnightMoves(State::StatePtr state, int x, int y) {
 }
 
 Game::StateList Game::GenPseudoMoves(State::StatePtr state) {
-  benchmark_.Start("GenPseudoMoves()[all]");
+  benchmark_.Start("GenPseudoMoves(state)");
 
   Board board = state->GetBoard();
   int width = board.GetWidth();
@@ -540,14 +540,14 @@ Game::StateList Game::GenPseudoMoves(State::StatePtr state) {
     }
   }
 
-  benchmark_.End("GenPseudoMoves()[all]");
+  benchmark_.End("GenPseudoMoves(state)");
 
   return moves;
 }
 
 Game::StateList Game::PreparePseudoMoves(State::StatePtr state,
                                          Game::StateList moves) {
-  benchmark_.Start("PreparePseudoMoves()");
+  benchmark_.Start("PreparePseudoMoves(state, moves)");
 
   Player next_player = state->GetOpponent();
 
@@ -563,12 +563,12 @@ Game::StateList Game::PreparePseudoMoves(State::StatePtr state,
           s->IncNoProgressCount();
       });
 
-  benchmark_.End("PreparePseudoMoves()");
+  benchmark_.End("PreparePseudoMoves(state, moves)");
   return moves;
 }
 
 Game::StateList Game::GenPseudoMoves(State::StatePtr state, int x, int y) {
-  benchmark_.Start("GenPseudoMoves()");
+  benchmark_.Start("GenPseudoMoves");
 
   Piece piece = state->GetBoard().GetField(x, y);
   Game::StateList moves;
@@ -577,7 +577,7 @@ Game::StateList Game::GenPseudoMoves(State::StatePtr state, int x, int y) {
 
   if (piece == kEmptyPiece ||
       piece.player != static_cast<int>(state->GetPlayer())) {
-    benchmark_.End("GenPseudoMoves()");
+    benchmark_.End("GenPseudoMoves");
     return moves;
   }
 
@@ -585,34 +585,34 @@ Game::StateList Game::GenPseudoMoves(State::StatePtr state, int x, int y) {
 
   switch (piece.figure) {
     case static_cast<int>(Figure::kPawn):
-      benchmark_.Start("GenPawnMoves()");
+      benchmark_.Start("GenPawnMoves");
       moves = GenPawnMoves(state, x, y);
-      benchmark_.End("GenPawnMoves()");
+      benchmark_.End("GenPawnMoves");
       break;
     case static_cast<int>(Figure::kRook):
-      benchmark_.Start("GenRookMoves()");
+      benchmark_.Start("GenRookMoves");
       moves = GenRookMoves(state, x, y);
-      benchmark_.End("GenRookMoves()");
+      benchmark_.End("GenRookMoves");
       break;
     case static_cast<int>(Figure::kBishop):
-      benchmark_.Start("GenBishopMoves()");
+      benchmark_.Start("GenBishopMoves");
       moves = GenBishopMoves(state, x, y);
-      benchmark_.End("GenBishopMoves()");
+      benchmark_.End("GenBishopMoves");
       break;
     case static_cast<int>(Figure::kQueen):
-      benchmark_.Start("GenQueenMoves()");
+      benchmark_.Start("GenQueenMoves");
       moves = GenQueenMoves(state, x, y);
-      benchmark_.End("GenQueenMoves()");
+      benchmark_.End("GenQueenMoves");
       break;
     case static_cast<int>(Figure::kKnight):
-      benchmark_.Start("GenKnightMoves()");
+      benchmark_.Start("GenKnightMoves");
       moves = GenKnightMoves(state, x, y);
-      benchmark_.End("GenKnightMoves()");
+      benchmark_.End("GenKnightMoves");
       break;
     case static_cast<int>(Figure::kKing):
-      benchmark_.Start("GenKingMoves()");
+      benchmark_.Start("GenKingMoves");
       moves = GenKingMoves(state, x, y);
-      benchmark_.End("GenKingMoves()");
+      benchmark_.End("GenKingMoves");
       break;
     case kEmptyPiece.figure:
       break;
@@ -622,15 +622,15 @@ Game::StateList Game::GenPseudoMoves(State::StatePtr state, int x, int y) {
 
   auto prepared_moves = PreparePseudoMoves(state, moves);
 
-  benchmark_.End("GenPseudoMoves()");
+  benchmark_.End("GenPseudoMoves");
 
   return prepared_moves;
 }
 
 BoardPlane Game::GetAttackers(State::StatePtr state, int x, int y) {
-  Board& board = state->GetBoard();
+  Board &board = state->GetBoard();
   State::StatePtr attack_state = std::make_shared<State>(State(*state));
-  Board& attack_board = attack_state->GetBoard();
+  Board &attack_board = attack_state->GetBoard();
   BoardPlane attacks(board.GetWidth(), board.GetHeight());
 
   for (auto fig : figures) {
@@ -641,7 +641,7 @@ BoardPlane Game::GetAttackers(State::StatePtr state, int x, int y) {
         board.GetPlane(make_piece(fig, state->GetOpponent()));
 
     for (auto move : attack_moves) {
-      Coord& target = move->move_info_->GetTo();
+      Coord &target = move->move_info_->GetTo();
 
       if (!attackers.get(target.x, target.y)) continue;
 
@@ -660,7 +660,7 @@ std::vector<std::tuple<Coord, Coord>> Game::GetPins(State::StatePtr state,
   // moves from the piece at (x, y).
 
   State::StatePtr pin_state = std::make_shared<State>(State(*state));
-  Board& board = pin_state->GetBoard();
+  Board &board = pin_state->GetBoard();
   // Bitboard with pinned pieces (to be created & returned)
   std::vector<std::tuple<Coord, Coord>> pins;
   // Piece at (x, y)
@@ -679,7 +679,7 @@ std::vector<std::tuple<Coord, Coord>> Game::GetPins(State::StatePtr state,
   board.SetField(x, y, make_piece(Figure::kQueen, opponent));
 
   for (auto move : GenQueenMoves(pin_state, x, y)) {
-    Coord& target = move->move_info_->GetTo();
+    Coord &target = move->move_info_->GetTo();
 
     queen_move_mask.set(target.x, target.y);
   }
@@ -697,7 +697,7 @@ std::vector<std::tuple<Coord, Coord>> Game::GetPins(State::StatePtr state,
           GenPseudoMoves(pin_state, coord.x, coord.y);
 
       for (auto move : attack_moves) {
-        Coord& target = move->move_info_->GetTo();
+        Coord &target = move->move_info_->GetTo();
 
         pin_mask.set(target.x, target.y);
       }
@@ -740,7 +740,7 @@ bool Game::IsEnPassant(State::StatePtr state) {
 }
 
 bool Game::IsEnPassantDiscoveredCheck(State::StatePtr s1, State::StatePtr s2) {
-  Board& b2 = s2->GetBoard();
+  Board &b2 = s2->GetBoard();
 
   if (!IsEnPassant(s2)) return false;
 
@@ -780,7 +780,7 @@ bool Game::IsEnPassantDiscoveredCheck(State::StatePtr s1, State::StatePtr s2) {
 }
 
 std::vector<State::StatePtr> Game::GenMoves(State::StatePtr state) {
-  benchmark_.Start("GenMoves()");
+  benchmark_.Start("GenMoves");
 
   // Vector of all legal moves (to be returned)
   std::vector<State::StatePtr> moves;
@@ -788,7 +788,7 @@ std::vector<State::StatePtr> Game::GenMoves(State::StatePtr state) {
   if (state->GetMoveCount() > GetOption("max_move_count")) return moves;
   if (state->GetNoProgressCount() > GetOption("max_no_progress")) return moves;
 
-  Board& board = state->GetBoard();
+  Board &board = state->GetBoard();
   int width = board.GetWidth();
   int height = board.GetHeight();
 
@@ -859,7 +859,7 @@ std::vector<State::StatePtr> Game::GenMoves(State::StatePtr state) {
 
   // Add all moves the king can make without getting into check
   for (auto move : GenPseudoMoves(state, king_x, king_y)) {
-    Coord& target = move->move_info_->GetTo();
+    Coord &target = move->move_info_->GetTo();
 
     if (king_danger_squares.get(target.x, target.y)) continue;
 
@@ -871,7 +871,7 @@ std::vector<State::StatePtr> Game::GenMoves(State::StatePtr state) {
 
   // If there is more than one check on the king, only king moves are valid
   if (king_checks.count() > 1) {
-    benchmark_.End("GenMoves()");
+    benchmark_.End("GenMoves");
     return moves;
   }
 
@@ -926,7 +926,7 @@ std::vector<State::StatePtr> Game::GenMoves(State::StatePtr state) {
     auto pin_moves = GenPseudoMoves(state, pinned.x, pinned.y);
 
     for (auto move : pin_moves) {
-      Coord& target = move->move_info_->GetTo();
+      Coord &target = move->move_info_->GetTo();
 
       if (!pin_move_mask.get(target.x, target.y)) continue;
 
@@ -1003,7 +1003,7 @@ std::vector<State::StatePtr> Game::GenMoves(State::StatePtr state) {
     }
   }
 
-  benchmark_.End("GenMoves()");
+  benchmark_.End("GenMoves");
 
   return moves;
 }
