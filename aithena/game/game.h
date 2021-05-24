@@ -50,7 +50,8 @@ class Game {
 
   // Returns whether the state is a terminal state.
   virtual bool IsTerminalState(std::shared_ptr<State>) = 0;
-  // Returns the result of the state. This value will be invalid if not a
+  // Returns the result of the state from the perspective of the player who's
+  // turn it is. -1 is a loss and 0 a draw. This value will be invalid if not a
   // terminal state (check via Game::IsTerminalState).
   virtual int GetStateResult(std::shared_ptr<State>) = 0;
 
