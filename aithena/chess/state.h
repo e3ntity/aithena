@@ -6,14 +6,14 @@ Copyright 2020 All rights reserved.
 #define SRC_CHESS_STATE_H_
 
 #include <torch/torch.h>
+
 #include <memory>
 #include <string>
 #include <tuple>
 #include <vector>
 
-#include "game/state.h"
-
 #include "chess/piece.h"
+#include "game/state.h"
 
 namespace aithena {
 namespace chess {
@@ -28,8 +28,8 @@ class MoveInfo {
   MoveInfo(struct Coord from, struct Coord to, unsigned char promotion,
            unsigned char capture, unsigned char special);
 
-  Coord& GetFrom();
-  Coord& GetTo();
+  Coord &GetFrom();
+  Coord &GetTo();
   bool IsCapture();
   bool IsPromotion();
 
@@ -42,6 +42,25 @@ class MoveInfo {
   void SetPromotion(bool value);
   void SetCapture(bool value);
   void SetSpecial(int value);
+
+  enum class Direction {
+    kNorth,
+    kNorthEast,
+    kEast,
+    kSouthEast,
+    kSouth,
+    kSouthWest,
+    kWest,
+    kNorthWest,
+    kSpecial,
+    kCount
+  };
+
+  // Returns the direction of the move.
+  Direction GetDirection();
+  // Returns the distance of the move (negative for moves that are neither
+  // horizontal, vertical, nor diagonal).
+  int GetDistance();
 
  private:
   Coord from_;
@@ -59,15 +78,15 @@ class State : public ::aithena::State {
   State(int width, int height,
         int figure_count = static_cast<int>(Figure::kCount));
   // Initializes to a give state.
-  State(const State&);
+  State(const State &);
 
-  State& operator=(const State&);
+  State &operator=(const State &);
 
   // Checks whether both states have the same board, it is the same player's
   // turn and the same castling moves are still allowed.
   // Move information is not taken into account!
-  bool operator==(const State&);
-  bool operator!=(const State&);
+  bool operator==(const State &);
+  bool operator!=(const State &);
 
   Player GetPlayer();
   Player GetOpponent();

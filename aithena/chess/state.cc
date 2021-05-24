@@ -5,6 +5,7 @@ Copyright 2020 All rights reserved.
 #include "chess/state.h"
 
 #include <torch/torch.h>
+
 #include <boost/algorithm/string.hpp>
 #include <cctype>
 #include <cstring>
@@ -22,8 +23,8 @@ MoveInfo::MoveInfo(struct Coord from, struct Coord to, unsigned char promotion,
       capture_{capture},
       special_{special} {}
 
-Coord& MoveInfo::GetFrom() { return from_; }
-Coord& MoveInfo::GetTo() { return to_; }
+Coord &MoveInfo::GetFrom() { return from_; }
+Coord &MoveInfo::GetTo() { return to_; }
 bool MoveInfo::IsCapture() { return capture_; }
 bool MoveInfo::IsPromotion() { return promotion_; }
 
@@ -70,6 +71,60 @@ void MoveInfo::SetSpecial(int value) {
   special_ = static_cast<unsigned char>(value);
 }
 
+MoveInfo::Direction MoveInfo::GetDirection() {
+  int dx = to_.x - from_.x;
+  int dy = to_.y - from_.y;
+
+  // horiztonal move
+  if (dy == 0) {
+    if (dx > 0) return Direction::kEast;
+    if (dx < 0) return Direction::kWest;
+
+    return Direction::kSpecial;
+  }
+
+  // vertical move
+  if (dx == 0) {
+    if (dy > 0) return Direction::kNorth;
+    if (dy < 0) return Direction::kSouth;
+
+    return Direction::kSpecial;
+  }
+
+  // diagonal move
+  if (dx == dy) {
+    if (dx > 0) {
+      if (dy > 0) return Direction::kNorthEast;
+
+      return Direction::kSouthEast;
+    }
+
+    if (dx < 0) {
+      if (dy > 0) return Direction::kNorthWest;
+
+      return Direction::kSouthWest;
+    }
+
+    return Direction::kSpecial;
+  }
+
+  return Direction::kSpecial;
+}
+
+int MoveInfo::GetDistance() {
+  int dx = to_.x - from_.x;
+  int dy = to_.y - from_.y;
+
+  Direction direction = GetDirection();
+
+  if (direction == Direction::kSpecial) return -1;
+
+  if (direction == Direction::kNorth || direction == Direction::kSouth)
+    return abs(dy);
+
+  return abs(dx);
+}
+
 State::State(int width, int height, int figure_count)
     : ::aithena::State(width, height, figure_count),
       player_{Player::kWhite},
@@ -79,7 +134,7 @@ State::State(int width, int height, int figure_count)
       no_progress_count_{0},
       double_push_pawn_{-1, -1} {};
 
-State::State(const State& other)
+State::State(const State &other)
     : ::aithena::State(other),
       player_{other.player_},
       castle_queen_{other.castle_queen_},
@@ -91,7 +146,7 @@ State::State(const State& other)
                      ? nullptr
                      : std::make_shared<MoveInfo>(*other.move_info_)} {};
 
-State& State::operator=(const State& other) {
+State &State::operator=(const State &other) {
   if (this == &other) return *this;
 
   ::aithena::State::operator=(other);
@@ -109,7 +164,7 @@ State& State::operator=(const State& other) {
   return *this;
 }
 
-bool State::operator==(const State& other) {
+bool State::operator==(const State &other) {
   return ::aithena::State::operator==(other) && player_ == other.player_ &&
          castle_queen_ == other.castle_queen_ &&
          castle_king_ == other.castle_king_ &&
@@ -117,7 +172,7 @@ bool State::operator==(const State& other) {
          double_push_pawn_.y == other.double_push_pawn_.y;
 }
 
-bool State::operator!=(const State& other) { return !operator==(other); }
+bool State::operator!=(const State &other) { return !operator==(other); }
 
 Player State::GetPlayer() { return player_; }
 Player State::GetOpponent() {
@@ -235,7 +290,7 @@ std::vector<char> State::ToBytes() {
 
   std::vector<char> output(sizeof state_struct);
 
-  std::memcpy(&output[0], static_cast<void*>(&state_struct),
+  std::memcpy(&output[0], static_cast<void *>(&state_struct),
               sizeof state_struct);
 
   std::vector<char> board_output = board_.ToBytes();
@@ -250,8 +305,8 @@ std::tuple<::aithena::chess::State, int> State::FromBytes(
   int bytes_read = 0;
 
   // Gather state settings
-  struct StateByteRepr* state_struct =
-      static_cast<struct StateByteRepr*>(static_cast<void*>(&bytes[0]));
+  struct StateByteRepr *state_struct =
+      static_cast<struct StateByteRepr *>(static_cast<void *>(&bytes[0]));
   bytes_read += sizeof *state_struct;
 
   // Gather board
@@ -375,7 +430,7 @@ State::StatePtr State::FromFEN(std::string fen) {
   // Counts subsequent numbers to allow for numbers with multiple digits
   int number = 0;
   int height = 1;
-  for (auto& c : parts.at(0)) {
+  for (auto &c : parts.at(0)) {
     if (isdigit(c)) {
       // Copy c to buffer because otherwise atoi will read directly on string.
       char num[2]{c, 0};
@@ -432,7 +487,7 @@ State::StatePtr State::FromFEN(std::string fen) {
 
   StatePtr state =
       std::make_shared<State>(width, height, static_cast<int>(Figure::kCount));
-  Board& board = state->GetBoard();
+  Board &board = state->GetBoard();
 
   for (int i = 0; i < static_cast<int>(pieces.size()); ++i) {
     board.SetField(i % width, height - 1 - static_cast<int>(i / width),
