@@ -6,6 +6,7 @@
 #define AITHENA_ALPHAZERO_NODE_H_
 
 #include <torch/torch.h>
+
 #include <memory>
 #include <vector>
 
@@ -24,10 +25,15 @@ class AZNode : public std::enable_shared_from_this<AZNode> {
   AZNodePtr GetParent();
   std::vector<AZNodePtr> GetChildren();
 
-  void Update(double value);
+  int GetStateRepetitions();
 
-  void Expand(torch::Tensor priors);
+  void SetPrior(double);
+  void Update(double);
+
+  void Expand();
   bool IsExpanded();
+
+  bool IsTerminal();
 
   double GetMeanActionValue();
   double GetPrior();
@@ -48,9 +54,9 @@ class AZNode : public std::enable_shared_from_this<AZNode> {
 
   // Edge statistics (in relation to the parent node)
 
-  int visit_count_{0};
-  double prior_{0};
   double action_value_{0};
+  double prior_{0};
+  int visit_count_{0};
 };
 
 }  // namespace aithena

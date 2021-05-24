@@ -41,7 +41,7 @@ target_link_libraries(mcts_lib generic_lib chess_lib)
 
 add_library(alphazero_lib
     alphazero/alphazero.cc
-    alphazero/move.cc
+    alphazero/nn.cc
     alphazero/node.cc
 )
 target_include_directories(alphazero_lib
