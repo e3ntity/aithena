@@ -8,9 +8,7 @@
 
 namespace aithena {
 
-AZNode::AZNode(chess::Game::GamePtr game, chess::State::StatePtr state,
-               AZNode::AZNodePtr parent)
-    : game_{game} {
+AZNode::AZNode(chess::Game::GamePtr game, chess::State::StatePtr state, AZNode::AZNodePtr parent) : game_{game} {
   state_ = state;
   parent_ = parent;
 }

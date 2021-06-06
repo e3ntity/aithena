@@ -18,8 +18,7 @@ class AZNode : public std::enable_shared_from_this<AZNode> {
  public:
   using AZNodePtr = std::shared_ptr<AZNode>;
 
-  AZNode(chess::Game::GamePtr game, chess::State::StatePtr state,
-         AZNodePtr parent = nullptr);
+  AZNode(chess::Game::GamePtr game, chess::State::StatePtr state, AZNodePtr parent = nullptr);
 
   chess::State::StatePtr GetState();
   AZNodePtr GetParent();

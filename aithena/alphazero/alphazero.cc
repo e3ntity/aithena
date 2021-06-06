@@ -11,104 +11,165 @@
 
 #include "alphazero/nn.h"
 #include "chess/util.h"
+#include "util/dirichlet.h"
 
 namespace aithena {
 
-AlphaZero::AlphaZero(chess::Game::GamePtr game, AlphaZeroNet net,
-                     std::shared_ptr<ReplayMemory> replay_memory)
+AlphaZero::AlphaZero(chess::Game::GamePtr game, AlphaZeroNet net, std::shared_ptr<ReplayMemory> replay_memory)
     : game_{game} {
-  network_ = net ? net : AlphaZeroNet(game_);
-  replay_memory_ =
-      replay_memory ? replay_memory : std::make_shared<ReplayMemory>();
+  network_ = net ? net : AlphaZeroNet(game_, torch::cuda::cudnn_is_available());
+  replay_memory_ = replay_memory ? replay_memory : std::make_shared<ReplayMemory>();
+  random_generator_ = std::mt19937(std::random_device()());
 }
 
-void AlphaZero::SelfPlay(chess::State::StatePtr start) {
-  chess::State::StatePtr state =
-      start == nullptr ? game_->GetInitialState() : start;
+bool AlphaZero::SelfPlay(chess::State::StatePtr start) {
+  benchmark_.Start("SelfPlay");
+
+  chess::State::StatePtr state = start == nullptr ? game_->GetInitialState() : start;
   AZNode::AZNodePtr root = std::make_shared<AZNode>(game_, state);
+
+  std::vector<AZNode::AZNodePtr> nodes = {root};
   AZNode::AZNodePtr node = root;
 
   // Run game
 
-  while (!node->IsTerminal() && node->GetStateRepetitions() < 3)
+  while (!node->IsTerminal() && node->GetStateRepetitions() < 3) {
     node = DrawAction(node);
+    nodes.push_back(node);
+    node = std::make_shared<AZNode>(game_, node->GetState());
+  }
 
   int result = node->IsTerminal() ? game_->GetStateResult(node->GetState()) : 0;
 
   // Store samples in replay memory
 
+  std::reverse(nodes.begin(), nodes.end());
+
   bool negate = false;
-  while (node != nullptr) {
-    replay_memory_->AddSample(node, negate ? result : -result);
+  for (auto node : nodes) {
+    replay_memory_->AddSample(GetNNInput(node), GetNNOutput(node), negate ? -result : result);
 
     node = node->GetParent();
     negate = !negate;
   }
 
+  if (!replay_memory_->IsReady()) {
+    benchmark_.End("SelfPlay");
+    return false;
+  }
+
+  auto input = GetNNInput(root);
+  auto output = network_->forward(input);
+
+  std::cout << "Root value: " << std::get<1>(output).item<double>() << std::endl << "Action:  ";
+  for (auto child : root->GetChildren()) {
+    std::cout << child->GetState()->ToLAN() << "  " << std::flush;
+  }
+  std::cout << std::endl << "S-Value: ";
+  for (auto child : root->GetChildren()) {
+    double value = EvaluateState(child->GetState(), root->GetState()->GetPlayer());
+    std::cout << std::fixed << std::setprecision(3) << std::setw(4) << value << " " << std::flush;
+    if (value >= 0) std::cout << " ";
+  }
+  std::cout << std::endl << "Mean Q:  ";
+  for (auto child : root->GetChildren()) {
+    double value = child->GetMeanActionValue();
+    std::cout << std::fixed << std::setprecision(3) << std::setw(4) << value << " " << std::flush;
+    if (value >= 0) std::cout << " ";
+  }
+  std::cout << std::endl << "Prior:   ";
+  for (auto child : root->GetChildren()) {
+    double value = child->GetPrior();
+    std::cout << std::fixed << std::setprecision(3) << std::setw(4) << value << " " << std::flush;
+    if (value >= 0) std::cout << " ";
+  }
+  std::cout << std::endl << "PUCT:    ";
+  for (auto child : root->GetChildren()) {
+    double value = PUCTValue(child) * .1;
+    std::cout << std::fixed << std::setprecision(3) << std::setw(4) << value << " " << std::flush;
+    if (value >= 0) std::cout << " ";
+  }
+  std::cout << std::endl << "Visits:  ";
+  for (auto child : root->GetChildren()) {
+    int value = child->GetVisitCount();
+    std::cout << std::fixed << std::setw(5) << value << " " << std::flush;
+    if (value >= 0) std::cout << " ";
+  }
+  std::cout << "total: " << root->GetVisitCount();
+  std::cout << std::endl << std::endl;
+
   TrainNetwork();
 
-  auto output = network_->forward(GetNNInput(root));
-  torch::Tensor action_values = std::get<0>(output);
-  torch::Tensor state_value = std::get<1>(output);
+  benchmark_.End("SelfPlay");
 
-  std::cout << "State value: " << state_value.item<double>() << std::endl;
-
-  std::cout << "Root dist.: " << std::flush;
-  for (auto child : root->GetChildren()) {
-    double estimate = GetNNOutput(action_values, child);
-    std::cout << std::fixed << std::setprecision(2) << estimate << " "
-              << std::flush;
-  }
-  std::cout << std::endl;
+  return true;
 }
 
 void AlphaZero::TrainNetwork() {
+  benchmark_.Start("TrainNetwork");
+
   int width = game_->GetOption("board_width");
   int height = game_->GetOption("board_height");
 
-  torch::optim::Adam optimizer(
-      network_->parameters(),
-      torch::optim::AdamOptions(1e-2).weight_decay(1e-3));
+  torch::optim::Adam optimizer(network_->parameters(), torch::optim::AdamOptions(1e-3));
 
-  network_->zero_grad();
-
-  torch::Tensor true_action_values =
-      torch::empty({0, GetNNOutputSize(game_), width, height});
-  torch::Tensor true_state_values = torch::empty({0});
-  torch::Tensor input = torch::empty({0, network_->kInputSize, width, height});
+  torch::Tensor input_batch = torch::empty({0, network_->kInputSize, width, height});
+  torch::Tensor true_action_value_batch = torch::empty({0, GetNNOutputSize(game_), width, height});
+  torch::Tensor true_state_value_batch = torch::empty({0});
 
   for (int i = 0; i < batch_size_; ++i) {
     auto sample = replay_memory_->GetSample();
 
-    AZNode::AZNodePtr sample_node = std::get<0>(sample);
-    double sample_value = std::get<1>(sample);
+    torch::Tensor input = std::get<0>(sample);
+    torch::Tensor action_values = std::get<0>(std::get<1>(sample));
+    double state_value = static_cast<double>(std::get<1>(std::get<1>(sample)));
 
-    true_action_values =
-        torch::cat({true_action_values, GetNNOutput(sample_node)});
-    true_state_values =
-        torch::cat({true_state_values,
-                    torch::from_blob(&sample_value, {1}, torch::kFloat64)});
-    input = torch::cat({input, GetNNInput(sample_node)});
+    input_batch = torch::cat({input_batch, input});
+    true_action_value_batch = torch::cat({true_action_value_batch, action_values});
+    true_state_value_batch = torch::cat({true_state_value_batch, torch::from_blob(&state_value, {1}, torch::kFloat64)});
   }
 
-  std::tuple<torch::Tensor, torch::Tensor> output = network_->forward(input);
+  std::tuple<torch::Tensor, torch::Tensor> output = network_->forward(input_batch, true);
 
-  torch::Tensor predicted_action_values = std::get<0>(output);
-  torch::Tensor predicted_state_values = std::get<1>(output);
+  if (network_->use_cuda_) {
+    true_action_value_batch = true_action_value_batch.to(torch::kCUDA);
+    true_state_value_batch = true_state_value_batch.to(torch::kCUDA);
+  }
 
-  torch::Tensor state_value_error =
-      torch::square(true_state_values - predicted_state_values);
-  torch::Tensor state_value_loss =
-      state_value_error.sum() / state_value_error.size({0});
+  torch::Tensor predicted_action_value_batch = torch::clamp(std::get<0>(output), 1e-7, 1.);
+  torch::Tensor predicted_state_value_batch = std::get<1>(output);
 
-  torch::Tensor action_value_loss =
-      torch::dot(true_action_values.reshape({-1}),
-                 torch::log(predicted_action_values.reshape({-1}) + 1e-7));
+  torch::Tensor state_value_loss = torch::mean(torch::square(true_state_value_batch - predicted_state_value_batch));
+  torch::Tensor action_value_loss = torch::sum(true_action_value_batch * torch::log(predicted_action_value_batch));
 
   torch::Tensor loss = state_value_loss - action_value_loss;
 
+  // std::cout << "Loss: " << loss.item<double>() << std::endl;
+
+  optimizer.zero_grad();
   loss.backward();
   optimizer.step();
+
+  benchmark_.End("TrainNetwork");
+}
+
+double AlphaZero::EvaluateState(chess::State::StatePtr state) {
+  AZNode::AZNodePtr node = std::make_shared<AZNode>(game_, state);
+
+  torch::Tensor input = GetNNInput(node);
+  auto output = network_->forward(input);
+
+  double state_value = std::get<1>(output)[0].item<double>();
+
+  return state_value;
+}
+
+double AlphaZero::EvaluateState(chess::State::StatePtr state, chess::Player player) {
+  double state_value = EvaluateState(state);
+
+  if (state->GetPlayer() != player) state_value = -state_value;
+
+  return state_value;
 }
 
 chess::State::StatePtr AlphaZero::DrawAction(chess::State::StatePtr state) {
@@ -120,6 +181,20 @@ chess::State::StatePtr AlphaZero::DrawAction(chess::State::StatePtr state) {
 
 AZNode::AZNodePtr AlphaZero::DrawAction(AZNode::AZNodePtr start) {
   benchmark_.Start("DrawAction");
+
+  // Initialize root and add dirchilet noise
+  torch::Tensor input = GetNNInput(start);
+  std::tuple<torch::Tensor, torch::Tensor> output = network_->forward(input);
+
+  torch::Tensor action_values = std::get<0>(output);
+
+  start->Expand();
+  for (auto child : start->GetChildren()) {
+    double action_value = GetNNOutput(action_values, child);
+    double noise = dirichlet_noise_(random_generator_)[0];
+
+    child->SetPrior(.75 * action_value + .25 * noise);
+  }
 
   AZNode::AZNodePtr node = start;
 
@@ -144,23 +219,22 @@ void AlphaZero::Simulate(AZNode::AZNodePtr start) {
   benchmark_.Start("Simulate");
 
   AZNode::AZNodePtr node = start;
-  while (node->IsExpanded() && !node->IsTerminal()) {
-    node = select_policy_(node);
-    assert(node != nullptr);
-  }
+
+  while (node->IsExpanded() && !node->IsTerminal()) node = select_policy_(node);
+
+  node->Expand();
 
   torch::Tensor input = GetNNInput(node);
-  auto output = network_->forward(input);
+  std::tuple<torch::Tensor, torch::Tensor> output = network_->forward(input);
 
   torch::Tensor action_values = std::get<0>(output);
   double state_value = std::get<1>(output)[0].item<double>();
 
-  node->Expand();
+  for (auto child : node->GetChildren()) child->SetPrior(GetNNOutput(action_values, child));
 
-  for (auto child : node->GetChildren())
-    child->SetPrior(GetNNOutput(action_values, child));
-
-  backpass_(node, state_value);
+  // If node's player is black, a positive state_value means moving into this node is bad for white. As backpass (first)
+  // adds state_value to the node's action value, it must be negated to discourage white from moving into it.
+  backpass_(node, -state_value);
 
   benchmark_.End("Simulate");
 }
@@ -169,14 +243,11 @@ void AlphaZero::SetSimulations(int simulations) { simulations_ = simulations; }
 
 void AlphaZero::SetBatchSize(int batch_size) { batch_size_ = batch_size; }
 
-void AlphaZero::SetSelectPolicy(
-    AZNode::AZNodePtr (*select_policy)(AZNode::AZNodePtr)) {
+void AlphaZero::SetSelectPolicy(AZNode::AZNodePtr (*select_policy)(AZNode::AZNodePtr)) {
   select_policy_ = select_policy;
 }
 
-void AlphaZero::SetBackpass(void (*backpass)(AZNode::AZNodePtr, double)) {
-  backpass_ = backpass;
-}
+void AlphaZero::SetBackpass(void (*backpass)(AZNode::AZNodePtr, double)) { backpass_ = backpass; }
 
 double AlphaZero::PUCTValue(AZNode::AZNodePtr child) {
   AZNode::AZNodePtr parent = child->GetParent();
@@ -185,9 +256,9 @@ double AlphaZero::PUCTValue(AZNode::AZNodePtr child) {
 
   double exploitation = child->GetMeanActionValue();
   // TODO(*): use exploration rate C(s) = log((1 + node->GetVisitCount +
-  // c_base)/c_base) + c_init instead of const. 0.1
-  double exploration = 0.1 * child->GetPrior() * sqrt(parent->GetVisitCount()) /
-                       static_cast<double>(child->GetVisitCount() + 1);
+  // c_base)/c_base) + c_init instead of const. 4
+  double exploration =
+      1.41 * child->GetPrior() * sqrt(parent->GetVisitCount()) / static_cast<double>(child->GetVisitCount() + 1);
   double value = exploitation + exploration;
 
   return value;
@@ -212,24 +283,41 @@ AZNode::AZNodePtr AlphaZero::PUCTSelect(AZNode::AZNodePtr node) {
 void AlphaZero::AlphaZeroBackpass(AZNode::AZNodePtr start, double state_value) {
   AZNode::AZNodePtr node = start;
 
-  for (int i = 0; node != nullptr; ++i, node = node->GetParent())
+  int i = 0;
+  while (node != nullptr) {
     node->Update(i % 2 == 0 ? state_value : -state_value);
+
+    node = node->GetParent();
+    ++i;
+  }
 }
 
-ReplayMemory::ReplayMemory() {
+std::shared_ptr<ReplayMemory> AlphaZero::GetReplayMemory() { return replay_memory_; }
+
+AlphaZeroNet AlphaZero::GetNetwork() { return network_; }
+
+ReplayMemory::ReplayMemory(int min_size, int max_size) : min_size_{min_size}, max_size_{max_size} {
   random_generator_ = std::default_random_engine(std::random_device()());
 }
 
-void ReplayMemory::SetSize(int size) { size_ = size; }
-
 int ReplayMemory::GetSampleCount() { return samples_.size(); }
 
-void ReplayMemory::AddSample(AZNode::AZNodePtr node, int result) {
-  AddSample(std::make_tuple(node, result));
+bool ReplayMemory::IsReady() { return GetSampleCount() >= min_size_; }
+
+int ReplayMemory::GetMinSize() { return min_size_; }
+
+int ReplayMemory::GetMaxSize() { return max_size_; }
+
+void ReplayMemory::SetMinSize(int size) { min_size_ = size; }
+
+void ReplayMemory::SetMaxSize(int size) { max_size_ = size; }
+
+void ReplayMemory::AddSample(torch::Tensor input, torch::Tensor action_values, int state_value) {
+  AddSample(std::make_tuple(input, std::make_tuple(action_values, state_value)));
 }
 
-void ReplayMemory::AddSample(std::tuple<AZNode::AZNodePtr, int> sample) {
-  while (size_ > 0 && samples_.size() >= static_cast<std::size_t>(size_))
+void ReplayMemory::AddSample(std::tuple<torch::Tensor, std::tuple<torch::Tensor, int>> sample) {
+  while (max_size_ > 0 && samples_.size() >= static_cast<std::size_t>(max_size_))
     samples_.erase(samples_.begin() + GetRandomSampleIndex());
 
   samples_.push_back(sample);
@@ -244,7 +332,7 @@ int ReplayMemory::GetRandomSampleIndex() {
   return dist(random_generator_);
 }
 
-std::tuple<AZNode::AZNodePtr, int> ReplayMemory::GetSample() {
+std::tuple<torch::Tensor, std::tuple<torch::Tensor, int>> ReplayMemory::GetSample() {
   auto sample = samples_.begin();
 
   std::advance(sample, GetRandomSampleIndex());

@@ -15,28 +15,35 @@
 #include "alphazero/nn.h"
 #include "alphazero/node.h"
 #include "chess/game.h"
+#include "util/dirichlet.h"
 
 namespace aithena {
 
 class ReplayMemory {
  public:
-  using Sample = std::tuple<AZNode::AZNodePtr, int>;
+  using Sample = std::tuple<torch::Tensor, std::tuple<torch::Tensor, int>>;
 
   // Size specifies the maximum number of samples to be stored. A value smaller
   // than one specifies that infinitely many samples can be stored.
-  explicit ReplayMemory();
-
-  void SetSize(int);
+  ReplayMemory(int min_size = 0, int max_size = 0);
 
   int GetSampleCount();
+  bool IsReady();
 
-  void AddSample(AZNode::AZNodePtr, int);
+  int GetMinSize();
+  int GetMaxSize();
+  void SetMinSize(int);
+  void SetMaxSize(int);
+
+  // NN input, action values, state value
+  void AddSample(torch::Tensor, torch::Tensor, int);
   void AddSample(Sample);
 
   Sample GetSample();
 
  private:
-  int size_{0};
+  int min_size_;
+  int max_size_;
   std::vector<Sample> samples_;
 
   std::default_random_engine random_generator_;
@@ -49,15 +56,23 @@ class AlphaZero {
   // Creates the alphazero interface. game is a pointer to a chess game instance
   // encoding the rules of the game. net is the neural network to be used.
   // time_steps gives the number of time steps to consider for the neural net.
-  explicit AlphaZero(chess::Game::GamePtr game, AlphaZeroNet net = nullptr,
-                     std::shared_ptr<ReplayMemory> = nullptr);
+  explicit AlphaZero(chess::Game::GamePtr game, AlphaZeroNet net = nullptr, std::shared_ptr<ReplayMemory> = nullptr);
 
   chess::State::StatePtr DrawAction(chess::State::StatePtr);
   AZNode::AZNodePtr DrawAction(AZNode::AZNodePtr);
 
-  void SelfPlay(chess::State::StatePtr start = nullptr);
+  // Returns whether the network was updated
+  bool SelfPlay(chess::State::StatePtr start = nullptr);
   void Simulate(AZNode::AZNodePtr);
   void TrainNetwork();
+
+  // Evaluate the given state
+  double EvaluateState(chess::State::StatePtr);
+  // Evaluate the given state from the perspective of the given player.
+  double EvaluateState(chess::State::StatePtr, chess::Player);
+
+  // Initializes a node by expanding it and setting all children's prior probabilities.
+  void Initialize(AZNode::AZNodePtr);
 
   void SetSimulations(int);
   void SetBatchSize(int);
@@ -69,8 +84,11 @@ class AlphaZero {
 
   static void AlphaZeroBackpass(AZNode::AZNodePtr, double);
 
-  static const int kDefaultSimulations = 128;
-  static const int kDefaultBatchSize = 64;
+  std::shared_ptr<ReplayMemory> GetReplayMemory();
+  AlphaZeroNet GetNetwork();
+
+  static const int kDefaultSimulations = 800;
+  static const int kDefaultBatchSize = 4096;
 
   BenchmarkSet benchmark_;
 
@@ -79,6 +97,8 @@ class AlphaZero {
   chess::Game::GamePtr game_{nullptr};
   AlphaZeroNet network_{nullptr};
   int time_steps_{8};
+  std::mt19937 random_generator_;
+  dirichlet_distribution<std::mt19937> dirichlet_noise_{{.3}};
 
   // Simulation settings
 
@@ -86,7 +106,7 @@ class AlphaZero {
   int batch_size_{kDefaultBatchSize};
   AZNode::AZNodePtr (*select_policy_)(AZNode::AZNodePtr) = PUCTSelect;
   void (*backpass_)(AZNode::AZNodePtr, double) = AlphaZeroBackpass;
-};
+};  // namespace aithena
 
 }  // namespace aithena
 
