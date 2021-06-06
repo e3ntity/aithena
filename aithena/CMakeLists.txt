@@ -1,6 +1,12 @@
 find_package(Torch REQUIRED)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TORCH_CXX_FLAGS}")
 
+add_library(util_lib util/dirichlet.cc)
+target_include_directories(util_lib
+    PUBLIC .
+)
+target_link_libraries(util_lib "${TORCH_LIBRARIES}")
+
 add_library(board_lib board/board.cc board/board_plane.cc)
 target_include_directories(board_lib
     PUBLIC .
@@ -48,4 +54,4 @@ target_include_directories(alphazero_lib
     PUBLIC .
 )
 
-target_link_libraries(alphazero_lib chess_lib mcts_lib "${TORCH_LIBRARIES}")
+target_link_libraries(alphazero_lib util_lib chess_lib mcts_lib "${TORCH_LIBRARIES}")
