@@ -45,12 +45,10 @@ Game &Game::operator=(const Game &other) {
 
 // Static attributes
 
-const std::array<Figure, 6> Game::figures{Figure::kKing,   Figure::kQueen,
-                                          Figure::kRook,   Figure::kKnight,
-                                          Figure::kBishop, Figure::kPawn};
+const std::array<Figure, 6> Game::figures{Figure::kKing,   Figure::kQueen,  Figure::kRook,
+                                          Figure::kKnight, Figure::kBishop, Figure::kPawn};
 
-const std::array<Figure, 3> Game::slider_figures{Figure::kQueen, Figure::kRook,
-                                                 Figure::kBishop};
+const std::array<Figure, 3> Game::slider_figures{Figure::kQueen, Figure::kRook, Figure::kBishop};
 
 const std::array<Player, 2> Game::players{Player::kWhite, Player::kBlack};
 
@@ -63,12 +61,9 @@ State::StatePtr Game::GetInitialState() {
   int height = GetOption("board_height");
   State state(width, height, GetOption("figure_count"));
 
-  if (width == 8 && height == 8)
-    return State::FromFEN(
-        "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+  if (width == 8 && height == 8) return State::FromFEN("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
 
-  if (width == 5 && height == 5)
-    return State::FromFEN("4k/5/5/R4/RK3 w - - 0 1");
+  if (width == 5 && height == 5) return State::FromFEN("rnbqk/ppppp/5/PPPPP/RNBQK - - 0 1");
 
   assert(false);
 }
@@ -91,12 +86,6 @@ bool Game::KingInCheck(State::StatePtr state) {
 }
 
 bool Game::IsTerminalState(State::StatePtr state) {
-  // Check for a draw
-  if (state->GetNoProgressCount() >= GetOption("max_no_progress")) return true;
-
-  if (state->GetMoveCount() >= GetOption("max_move_count")) return true;
-
-  // Check for checkmate
   if (GetLegalActions(state).size() == 0) return true;
 
   return false;
@@ -121,7 +110,16 @@ int Game::GetStateResult(State::StatePtr state) {
 // Move generation
 
 Game::StateList Game::GetLegalActions(State::StatePtr state) {
-  return GenMoves(state);
+  Game::StateList moves;
+
+  // Check for a draw.
+  if (state->GetNoProgressCount() >= GetOption("max_no_progress")) return moves;
+
+  if (state->GetMoveCount() >= GetOption("max_move_count")) return moves;
+
+  moves = GenMoves(state);
+
+  return moves;
 }
 
 Game::StateList Game::GenPawnPushes(State::StatePtr state, int x, int y) {
@@ -147,12 +145,10 @@ Game::StateList Game::GenPawnPushes(State::StatePtr state, int x, int y) {
       if ((figure == Figure::kPawn) || figure == Figure::kKing) continue;
 
       promo->GetBoard().ClearField(x, y);
-      promo->GetBoard().SetField(x, y + direction,
-                                 make_piece(figure, state->GetPlayer()));
+      promo->GetBoard().SetField(x, y + direction, make_piece(figure, state->GetPlayer()));
       promo->SetDPushPawn({-1, -1});
 
-      promo->move_info_ = std::make_shared<MoveInfo>(
-          Coord({x, y}), Coord({x, y + direction}), 1, 0, 0);
+      promo->move_info_ = std::make_shared<MoveInfo>(Coord({x, y}), Coord({x, y + direction}), 1, 0, 0);
 
       switch (figure) {
         case Figure::kKnight:
@@ -179,8 +175,7 @@ Game::StateList Game::GenPawnPushes(State::StatePtr state, int x, int y) {
 
     push_move->GetBoard().MoveField(x, y, x, y + direction);
     push_move->SetDPushPawn({-1, -1});
-    push_move->move_info_ = std::make_shared<MoveInfo>(
-        Coord({x, y}), Coord({x, y + direction}), 0, 0, 0);
+    push_move->move_info_ = std::make_shared<MoveInfo>(Coord({x, y}), Coord({x, y + direction}), 0, 0, 0);
 
     moves.push_back(push_move);
   }
@@ -190,8 +185,7 @@ Game::StateList Game::GenPawnPushes(State::StatePtr state, int x, int y) {
   // Out of bounds
   if (y + 2 * direction >= height || y + 2 * direction < 0) return moves;
   // Not at start position
-  if (y != (state->GetPlayer() == Player::kWhite ? 1 : height - 2))
-    return moves;
+  if (y != (state->GetPlayer() == Player::kWhite ? 1 : height - 2)) return moves;
   // Blocked
   if (!(board.GetField(x, y + 2 * direction) == kEmptyPiece)) return moves;
 
@@ -199,14 +193,12 @@ Game::StateList Game::GenPawnPushes(State::StatePtr state, int x, int y) {
 
   move->GetBoard().MoveField(x, y, x, y + 2 * direction);
   move->SetDPushPawn({x, y + direction});
-  move->move_info_ = std::make_shared<MoveInfo>(
-      Coord({x, y}), Coord({x, y + 2 * direction}), 0, 0, 1);
+  move->move_info_ = std::make_shared<MoveInfo>(Coord({x, y}), Coord({x, y + 2 * direction}), 0, 0, 1);
 
   moves.push_back(move);
 
   // Reset no progress count for each move.
-  std::for_each(moves.begin(), moves.end(),
-                [&](State::StatePtr s) { s->ResetNoProgressCount(); });
+  std::for_each(moves.begin(), moves.end(), [&](State::StatePtr s) { s->ResetNoProgressCount(); });
 
   return moves;
 }  // namespace chess
@@ -260,8 +252,7 @@ Game::StateList Game::GenRawPawnCaptures(State::StatePtr state, int x, int y) {
       if ((figure == Figure::kPawn) || figure == Figure::kKing) continue;
 
       promo->GetBoard().ClearField(x, y);
-      promo->GetBoard().SetField(x + h, y + direction,
-                                 make_piece(figure, state->GetPlayer()));
+      promo->GetBoard().SetField(x + h, y + direction, make_piece(figure, state->GetPlayer()));
       promo->SetDPushPawn({-1, -1});
       moves.push_back(promo);
     }
@@ -288,8 +279,7 @@ Game::StateList Game::GenPawnCaptures(State::StatePtr state, int x, int y) {
 
     State::StatePtr move = std::make_shared<State>(State(*state));
 
-    move->move_info_ = std::make_shared<MoveInfo>(
-        Coord({x, y}), Coord({x + h, y + direction}), 0, 1, 0);
+    move->move_info_ = std::make_shared<MoveInfo>(Coord({x, y}), Coord({x + h, y + direction}), 0, 1, 0);
 
     Coord move_ep = move->GetDPushPawn();
 
@@ -325,8 +315,7 @@ Game::StateList Game::GenPawnCaptures(State::StatePtr state, int x, int y) {
       if ((figure == Figure::kPawn) || figure == Figure::kKing) continue;
 
       promo->GetBoard().ClearField(x, y);
-      promo->GetBoard().SetField(x + h, y + direction,
-                                 make_piece(figure, state->GetPlayer()));
+      promo->GetBoard().SetField(x + h, y + direction, make_piece(figure, state->GetPlayer()));
       promo->SetDPushPawn({-1, -1});
 
       promo->move_info_ = std::make_shared<MoveInfo>(*move->move_info_);
@@ -364,10 +353,8 @@ Game::StateList Game::GenPawnMoves(State::StatePtr state, int x, int y) {
   return moves;
 }
 
-std::vector<State::StatePtr> Game::GenRookMoves(State::StatePtr state, int x,
-                                                int y) {
-  std::vector<State::StatePtr> moves = aithena::chess::GenDirectionalMoves(
-      state, x, y, {up, down, left, right}, 99);
+std::vector<State::StatePtr> Game::GenRookMoves(State::StatePtr state, int x, int y) {
+  std::vector<State::StatePtr> moves = aithena::chess::GenDirectionalMoves(state, x, y, {up, down, left, right}, 99);
 
   Player player = state->GetPlayer();
 
@@ -377,19 +364,16 @@ std::vector<State::StatePtr> Game::GenRookMoves(State::StatePtr state, int x,
   Coord rook_right = std::get<1>(castle_rooks);
 
   if (rook_left.x == x && rook_left.y == y) {
-    std::for_each(moves.begin(), moves.end(),
-                  [&player](State::StatePtr s) { s->SetCastleQueen(player); });
+    std::for_each(moves.begin(), moves.end(), [&player](State::StatePtr s) { s->SetCastleQueen(player); });
   } else if (rook_right.x == x && rook_right.y == y) {
-    std::for_each(moves.begin(), moves.end(),
-                  [&player](State::StatePtr s) { s->SetCastleKing(player); });
+    std::for_each(moves.begin(), moves.end(), [&player](State::StatePtr s) { s->SetCastleKing(player); });
   }
 
   return moves;
 }
 
 Game::StateList Game::GenBishopMoves(State::StatePtr state, int x, int y) {
-  return aithena::chess::GenDirectionalMoves(
-      state, x, y, {up + left, up + right, down + left, down + right}, 99);
+  return aithena::chess::GenDirectionalMoves(state, x, y, {up + left, up + right, down + left, down + right}, 99);
 }
 
 std::tuple<Coord, Coord> Game::GetCastlingRooks(State::StatePtr state) {
@@ -403,8 +387,7 @@ std::tuple<Coord, Coord> Game::GetCastlingRooks(State::StatePtr state) {
 
   Coord king = kings.at(0);
 
-  if (king.y > 0 && king.y < board.GetHeight() - 1)
-    return std::make_tuple(left, right);
+  if (king.y > 0 && king.y < board.GetHeight() - 1) return std::make_tuple(left, right);
 
   int left_x = -1;
   int right_x = -1;
@@ -412,9 +395,7 @@ std::tuple<Coord, Coord> Game::GetCastlingRooks(State::StatePtr state) {
   for (int i = 0; i < board.GetWidth(); ++i) {
     Piece p = board.GetField(i, king.y);
 
-    if (p.figure != static_cast<int>(Figure::kRook) ||
-        p.player != state->GetPlayer())
-      continue;
+    if (p.figure != static_cast<int>(Figure::kRook) || p.player != state->GetPlayer()) continue;
 
     // Take rooks closest to king
     if (i < king.x) {
@@ -425,10 +406,8 @@ std::tuple<Coord, Coord> Game::GetCastlingRooks(State::StatePtr state) {
     }
   }
 
-  if (state->GetCastleKing(state->GetPlayer()) && right_x >= 0)
-    right = {right_x, king.y};
-  if (state->GetCastleQueen(state->GetPlayer()) && left_x >= 0)
-    left = {left_x, king.y};
+  if (state->GetCastleKing(state->GetPlayer()) && right_x >= 0) right = {right_x, king.y};
+  if (state->GetCastleQueen(state->GetPlayer()) && left_x >= 0) left = {left_x, king.y};
 
   return std::make_tuple(left, right);
 }
@@ -465,8 +444,7 @@ Game::StateList Game::GenCastlingMoves(State::StatePtr state, int x, int y) {
       moves.back()->GetBoard().MoveField(x, y, x + 2, y);
       moves.back()->SetCastleKing(state->GetPlayer());
       moves.back()->SetCastleQueen(state->GetPlayer());
-      moves.back()->move_info_ =
-          std::make_shared<MoveInfo>(Coord({x, y}), Coord({x + 2, y}), 0, 0, 2);
+      moves.back()->move_info_ = std::make_shared<MoveInfo>(Coord({x, y}), Coord({x + 2, y}), 0, 0, 2);
     }
   }
 
@@ -484,8 +462,7 @@ Game::StateList Game::GenCastlingMoves(State::StatePtr state, int x, int y) {
       moves.back()->GetBoard().MoveField(x, y, x - 2, y);
       moves.back()->SetCastleKing(state->GetPlayer());
       moves.back()->SetCastleQueen(state->GetPlayer());
-      moves.back()->move_info_ =
-          std::make_shared<MoveInfo>(Coord({x, y}), Coord({x + 2, y}), 0, 0, 3);
+      moves.back()->move_info_ = std::make_shared<MoveInfo>(Coord({x, y}), Coord({x + 2, y}), 0, 0, 3);
     }
   }
 
@@ -494,9 +471,7 @@ Game::StateList Game::GenCastlingMoves(State::StatePtr state, int x, int y) {
 
 Game::StateList Game::GenKingMoves(State::StatePtr state, int x, int y) {
   Game::StateList moves = aithena::chess::GenDirectionalMoves(
-      state, x, y,
-      {up, right, down, left, up + right, up + left, down + right, down + left},
-      1);
+      state, x, y, {up, right, down, left, up + right, up + left, down + right, down + left}, 1);
 
   // Any king move disables futher castling
   std::for_each(moves.begin(), moves.end(), [&state](State::StatePtr s) {
@@ -509,17 +484,14 @@ Game::StateList Game::GenKingMoves(State::StatePtr state, int x, int y) {
 
 Game::StateList Game::GenQueenMoves(State::StatePtr state, int x, int y) {
   return aithena::chess::GenDirectionalMoves(
-      state, x, y,
-      {up + left, up + right, down + left, down + right, up, down, left, right},
-      99);
+      state, x, y, {up + left, up + right, down + left, down + right, up, down, left, right}, 99);
 }
 
 Game::StateList Game::GenKnightMoves(State::StatePtr state, int x, int y) {
   return aithena::chess::GenDirectionalMoves(
       state, x, y,
-      {up + up + left, up + up + right, down + down + left, down + down + right,
-       up + left + left, up + right + right, down + left + left,
-       down + right + right},
+      {up + up + left, up + up + right, down + down + left, down + down + right, up + left + left, up + right + right,
+       down + left + left, down + right + right},
       1);
 }
 
@@ -545,23 +517,21 @@ Game::StateList Game::GenPseudoMoves(State::StatePtr state) {
   return moves;
 }
 
-Game::StateList Game::PreparePseudoMoves(State::StatePtr state,
-                                         Game::StateList moves) {
+Game::StateList Game::PreparePseudoMoves(State::StatePtr state, Game::StateList moves) {
   benchmark_.Start("PreparePseudoMoves(state, moves)");
 
   Player next_player = state->GetOpponent();
 
-  std::for_each(
-      moves.begin(), moves.end(), [&next_player, &state](State::StatePtr s) {
-        s->IncMoveCount();
-        s->SetPlayer(next_player);
+  std::for_each(moves.begin(), moves.end(), [&next_player, &state](State::StatePtr s) {
+    s->IncMoveCount();
+    s->SetPlayer(next_player);
 
-        // Any capture resets no progress counter
-        if (s->GetBoard().GetFigureCount() < state->GetBoard().GetFigureCount())
-          s->ResetNoProgressCount();
-        else
-          s->IncNoProgressCount();
-      });
+    // Any capture resets no progress counter
+    if (s->GetBoard().GetFigureCount() < state->GetBoard().GetFigureCount())
+      s->ResetNoProgressCount();
+    else
+      s->IncNoProgressCount();
+  });
 
   benchmark_.End("PreparePseudoMoves(state, moves)");
   return moves;
@@ -575,8 +545,7 @@ Game::StateList Game::GenPseudoMoves(State::StatePtr state, int x, int y) {
 
   // Make checks
 
-  if (piece == kEmptyPiece ||
-      piece.player != static_cast<int>(state->GetPlayer())) {
+  if (piece == kEmptyPiece || piece.player != static_cast<int>(state->GetPlayer())) {
     benchmark_.End("GenPseudoMoves");
     return moves;
   }
@@ -637,8 +606,7 @@ BoardPlane Game::GetAttackers(State::StatePtr state, int x, int y) {
     attack_board.SetField(x, y, make_piece(fig, state->GetPlayer()));
 
     Game::StateList attack_moves = GenPseudoMoves(attack_state, x, y);
-    BoardPlane attackers =
-        board.GetPlane(make_piece(fig, state->GetOpponent()));
+    BoardPlane attackers = board.GetPlane(make_piece(fig, state->GetOpponent()));
 
     for (auto move : attack_moves) {
       Coord &target = move->move_info_->GetTo();
@@ -652,8 +620,7 @@ BoardPlane Game::GetAttackers(State::StatePtr state, int x, int y) {
   return attacks;
 }
 
-std::vector<std::tuple<Coord, Coord>> Game::GetPins(State::StatePtr state,
-                                                    int x, int y) {
+std::vector<std::tuple<Coord, Coord>> Game::GetPins(State::StatePtr state, int x, int y) {
   // Find all pieces that 1) belong to player and can be atacked by an
   // opponent sliding piece, 2) lie on a straight line between an opponent
   // sliding piece and the piece at (x, y) and 3) can be moved to by queen
@@ -693,8 +660,7 @@ std::vector<std::tuple<Coord, Coord>> Game::GetPins(State::StatePtr state,
 
     for (auto coord : coords) {
       BoardPlane pin_mask(board.GetWidth(), board.GetHeight());
-      Game::StateList attack_moves =
-          GenPseudoMoves(pin_state, coord.x, coord.y);
+      Game::StateList attack_moves = GenPseudoMoves(pin_state, coord.x, coord.y);
 
       for (auto move : attack_moves) {
         Coord &target = move->move_info_->GetTo();
@@ -756,9 +722,7 @@ bool Game::IsEnPassantDiscoveredCheck(State::StatePtr s1, State::StatePtr s2) {
     if (p == kEmptyPiece) continue;
 
     if (p.player == s1->GetPlayer()) break;
-    if (p.figure != static_cast<int>(Figure::kQueen) &&
-        p.figure != static_cast<int>(Figure::kRook))
-      break;
+    if (p.figure != static_cast<int>(Figure::kQueen) && p.figure != static_cast<int>(Figure::kRook)) break;
 
     return true;
   }
@@ -769,9 +733,7 @@ bool Game::IsEnPassantDiscoveredCheck(State::StatePtr s1, State::StatePtr s2) {
     if (p == kEmptyPiece) continue;
 
     if (p.player == s1->GetPlayer()) break;
-    if (p.figure != static_cast<int>(Figure::kQueen) &&
-        p.figure != static_cast<int>(Figure::kRook))
-      break;
+    if (p.figure != static_cast<int>(Figure::kQueen) && p.figure != static_cast<int>(Figure::kRook)) break;
 
     return true;
   }
@@ -815,11 +777,9 @@ std::vector<State::StatePtr> Game::GenMoves(State::StatePtr state) {
     for (int x = 0; x < width; ++x) {
       Piece p = king_danger_state.GetBoard().GetField(x, y);
 
-      if (p == kEmptyPiece || p.player == static_cast<int>(state->GetPlayer()))
-        continue;
+      if (p == kEmptyPiece || p.player == static_cast<int>(state->GetPlayer())) continue;
 
-      king_danger_state.GetBoard().SetField(
-          x, y, make_piece(static_cast<Figure>(p.figure), state->GetPlayer()));
+      king_danger_state.GetBoard().SetField(x, y, make_piece(static_cast<Figure>(p.figure), state->GetPlayer()));
     }
   }
 
@@ -836,23 +796,18 @@ std::vector<State::StatePtr> Game::GenMoves(State::StatePtr state) {
 
       // Copy state and set figure at (x, y) to be opponent's for computing
       // possible attacks
-      State::StatePtr danger_state =
-          std::make_shared<State>(State(king_danger_state));
-      danger_state->GetBoard().SetField(
-          x, y,
-          make_piece(static_cast<Figure>(piece.figure), state->GetOpponent()));
+      State::StatePtr danger_state = std::make_shared<State>(State(king_danger_state));
+      danger_state->GetBoard().SetField(x, y, make_piece(static_cast<Figure>(piece.figure), state->GetOpponent()));
 
       if (piece.figure == static_cast<int>(Figure::kPawn)) {
-        nk_moves = PreparePseudoMoves(danger_state,
-                                      GenRawPawnCaptures(danger_state, x, y));
+        nk_moves = PreparePseudoMoves(danger_state, GenRawPawnCaptures(danger_state, x, y));
       } else {
         nk_moves = GenPseudoMoves(danger_state, x, y);
       }
 
       for (auto move : nk_moves) {
         // cannot use move_info_ as GenRawPawnCaptures does not set move_info_.
-        king_danger_squares |=
-            GetNewFields(danger_state->GetBoard(), move->GetBoard());
+        king_danger_squares |= GetNewFields(danger_state->GetBoard(), move->GetBoard());
       }
     }
   }
@@ -965,8 +920,7 @@ std::vector<State::StatePtr> Game::GenMoves(State::StatePtr state) {
       if (x == king_x && y == king_y) {
         if (king_checks.count() > 0) continue;
 
-        auto king_pseudo_moves =
-            PreparePseudoMoves(state, GenCastlingMoves(state, x, y));
+        auto king_pseudo_moves = PreparePseudoMoves(state, GenCastlingMoves(state, x, y));
 
         // Remove castle through check
         for (auto move : king_pseudo_moves) {

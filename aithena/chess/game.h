@@ -5,9 +5,8 @@ Copyright 2020 All rights reserved.
 #ifndef AITHENA_CHESS_GAME_H_
 #define AITHENA_CHESS_GAME_H_
 
-#include "game/game.h"
-
 #include <assert.h>
+
 #include <iostream>
 #include <memory>
 #include <tuple>
@@ -17,6 +16,7 @@ Copyright 2020 All rights reserved.
 #include "chess/moves.h"
 #include "chess/piece.h"
 #include "chess/state.h"
+#include "game/game.h"
 
 namespace aithena {
 namespace chess {
@@ -50,7 +50,7 @@ class Game : public ::aithena::Game<State> {
   // Generates all pseudo-moves for any piece at field (x, y) for a given state.
   StateList GenPseudoMoves(State::StatePtr, int x, int y);
 
-  // Generates all legal moves for a given state.
+  // Generates all legal moves for a given state. Disregards max move count and max no progress counters.
   StateList GenMoves(State::StatePtr);
 
   // Generates the next moves for a single pawn at field (x, y) for a given
@@ -109,8 +109,7 @@ class Game : public ::aithena::Game<State> {
   // Returns a vector of coord tuples indicating pins, with the first coordinate
   // entry highlighting the pinning piece and the second entry highlighting the
   // pinned piece.
-  std::vector<std::tuple<Coord, Coord>> GetPins(State::StatePtr state, int x,
-                                                int y);
+  std::vector<std::tuple<Coord, Coord>> GetPins(State::StatePtr state, int x, int y);
 
   // Returns whether the move represented by a change from board b1 to board b2
   // is a capture move.
@@ -144,9 +143,7 @@ class Game : public ::aithena::Game<State> {
   // Stores the magic bit boards computed by InitializeMagic.
   // magic_bit_planes_[2*i + 0] thereby stores the push bit planes for figure i
   // whereas magic_bit_planes[2*i + 1] stores the capture bit planes
-  std::array<std::unique_ptr<BoardPlane[]>,
-             static_cast<int>(Figure::kCount) * 2>
-      magic_bit_planes_;
+  std::array<std::unique_ptr<BoardPlane[]>, static_cast<int>(Figure::kCount) * 2> magic_bit_planes_;
   // For faster access to GetOption("max_no_progress")
   int max_no_progress_;
   // For faster access to GetOption("max_move_count")

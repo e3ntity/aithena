@@ -25,8 +25,7 @@ namespace chess {
 // - otherwise 0: normal push, 1: double pawn push, 2: k castle, 3: q castle
 class MoveInfo {
  public:
-  MoveInfo(struct Coord from, struct Coord to, unsigned char promotion,
-           unsigned char capture, unsigned char special);
+  MoveInfo(struct Coord from, struct Coord to, unsigned char promotion, unsigned char capture, unsigned char special);
 
   Coord &GetFrom();
   Coord &GetTo();
@@ -58,6 +57,7 @@ class MoveInfo {
 
   // Returns the direction of the move.
   Direction GetDirection();
+  static Direction GetOppositeDirection(Direction);
   // Returns the distance of the move (negative for moves that are neither
   // horizontal, vertical, nor diagonal).
   int GetDistance();
@@ -75,8 +75,7 @@ class State : public ::aithena::State {
   using StatePtr = std::shared_ptr<State>;
 
   // Initializes to the chess starting state.
-  State(int width, int height,
-        int figure_count = static_cast<int>(Figure::kCount));
+  State(int width, int height, int figure_count = static_cast<int>(Figure::kCount));
   // Initializes to a give state.
   State(const State &);
 
@@ -120,6 +119,9 @@ class State : public ::aithena::State {
 
   // Represents the state as a string in FEN notation
   std::string ToFEN();
+
+  // Outputs the move in long algebraic chess notation.
+  std::string ToLAN();
 
   // Loads a state from a string, represented in FEN notation.
   // Returns nullptr if the string is invalid.
@@ -200,10 +202,8 @@ constexpr uint64_t count_lut[] = {0x0,
                                   0x1ffffffffffff,
                                   0x3ffffffffffff};
 
-constexpr char fen_figures[] = {'k', 'q', 'r', 'n', 'b', 'p'};
-constexpr char alphabet[] = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i',
-                             'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r',
-                             's', 't', 'u', 'v', 'w', 'x', 'y', 'z'};
+constexpr char alphabet[] = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
+                             'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'};
 
 }  // namespace chess
 }  // namespace aithena

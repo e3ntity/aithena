@@ -11,16 +11,9 @@ namespace aithena {
 namespace chess {
 
 // Defines the figures used in chess.
-enum class Figure : int {
-  kKing,
-  kQueen,
-  kRook,
-  kKnight,
-  kBishop,
-  kPawn,
-  kCount,
-  kInvalid
-};
+enum class Figure : int { kKing, kQueen, kRook, kKnight, kBishop, kPawn, kCount, kInvalid };
+
+char GetPieceSymbol(Piece);
 
 enum Player : int { kWhite, kBlack };
 

@@ -15,22 +15,16 @@ Copyright 2020 All rights reserved.
 namespace aithena {
 namespace chess {
 
-MoveInfo::MoveInfo(struct Coord from, struct Coord to, unsigned char promotion,
-                   unsigned char capture, unsigned char special)
-    : from_{from},
-      to_{to},
-      promotion_{promotion},
-      capture_{capture},
-      special_{special} {}
+MoveInfo::MoveInfo(struct Coord from, struct Coord to, unsigned char promotion, unsigned char capture,
+                   unsigned char special)
+    : from_{from}, to_{to}, promotion_{promotion}, capture_{capture}, special_{special} {}
 
 Coord &MoveInfo::GetFrom() { return from_; }
 Coord &MoveInfo::GetTo() { return to_; }
 bool MoveInfo::IsCapture() { return capture_; }
 bool MoveInfo::IsPromotion() { return promotion_; }
 
-int MoveInfo::GetFlagCode() {
-  return (promotion_ << 3) + (capture_ << 2) + special_;
-}
+int MoveInfo::GetFlagCode() { return (promotion_ << 3) + (capture_ << 2) + special_; }
 bool MoveInfo::IsCastle() {
   int code = GetFlagCode();
 
@@ -59,17 +53,11 @@ Figure MoveInfo::GetPromotionFigure() {
   }
 }
 
-void MoveInfo::SetPromotion(bool value) {
-  promotion_ = static_cast<unsigned char>(value);
-}
+void MoveInfo::SetPromotion(bool value) { promotion_ = static_cast<unsigned char>(value); }
 
-void MoveInfo::SetCapture(bool value) {
-  capture_ = static_cast<unsigned char>(value);
-}
+void MoveInfo::SetCapture(bool value) { capture_ = static_cast<unsigned char>(value); }
 
-void MoveInfo::SetSpecial(int value) {
-  special_ = static_cast<unsigned char>(value);
-}
+void MoveInfo::SetSpecial(int value) { special_ = static_cast<unsigned char>(value); }
 
 MoveInfo::Direction MoveInfo::GetDirection() {
   int dx = to_.x - from_.x;
@@ -92,7 +80,7 @@ MoveInfo::Direction MoveInfo::GetDirection() {
   }
 
   // diagonal move
-  if (dx == dy) {
+  if (abs(dx) == abs(dy)) {
     if (dx > 0) {
       if (dy > 0) return Direction::kNorthEast;
 
@@ -111,6 +99,29 @@ MoveInfo::Direction MoveInfo::GetDirection() {
   return Direction::kSpecial;
 }
 
+MoveInfo::Direction MoveInfo::GetOppositeDirection(MoveInfo::Direction direction) {
+  switch (direction) {
+    case MoveInfo::Direction::kNorth:
+      return MoveInfo::Direction::kSouth;
+    case MoveInfo::Direction::kNorthEast:
+      return MoveInfo::Direction::kSouthWest;
+    case MoveInfo::Direction::kEast:
+      return MoveInfo::Direction::kWest;
+    case MoveInfo::Direction::kSouthEast:
+      return MoveInfo::Direction::kNorthWest;
+    case MoveInfo::Direction::kSouth:
+      return MoveInfo::Direction::kNorth;
+    case MoveInfo::Direction::kSouthWest:
+      return MoveInfo::Direction::kNorthEast;
+    case MoveInfo::Direction::kWest:
+      return MoveInfo::Direction::kEast;
+    case MoveInfo::Direction::kNorthWest:
+      return MoveInfo::Direction::kSouthEast;
+    default:
+      return MoveInfo::Direction::kSpecial;
+  }
+}
+
 int MoveInfo::GetDistance() {
   int dx = to_.x - from_.x;
   int dy = to_.y - from_.y;
@@ -119,8 +130,7 @@ int MoveInfo::GetDistance() {
 
   if (direction == Direction::kSpecial) return -1;
 
-  if (direction == Direction::kNorth || direction == Direction::kSouth)
-    return abs(dy);
+  if (direction == Direction::kNorth || direction == Direction::kSouth) return abs(dy);
 
   return abs(dx);
 }
@@ -142,9 +152,7 @@ State::State(const State &other)
       move_count_{other.move_count_},
       no_progress_count_{other.no_progress_count_},
       double_push_pawn_{other.double_push_pawn_},
-      move_info_{other.move_info_ == nullptr
-                     ? nullptr
-                     : std::make_shared<MoveInfo>(*other.move_info_)} {};
+      move_info_{other.move_info_ == nullptr ? nullptr : std::make_shared<MoveInfo>(*other.move_info_)} {};
 
 State &State::operator=(const State &other) {
   if (this == &other) return *this;
@@ -157,41 +165,27 @@ State &State::operator=(const State &other) {
   move_count_ = other.move_count_;
   no_progress_count_ = other.no_progress_count_;
   double_push_pawn_ = other.double_push_pawn_;
-  move_info_ = other.move_info_ == nullptr
-                   ? nullptr
-                   : std::make_shared<MoveInfo>(*other.move_info_);
+  move_info_ = other.move_info_ == nullptr ? nullptr : std::make_shared<MoveInfo>(*other.move_info_);
 
   return *this;
 }
 
 bool State::operator==(const State &other) {
-  return ::aithena::State::operator==(other) && player_ == other.player_ &&
-         castle_queen_ == other.castle_queen_ &&
-         castle_king_ == other.castle_king_ &&
-         double_push_pawn_.x == other.double_push_pawn_.x &&
+  return ::aithena::State::operator==(other) && player_ == other.player_ && castle_queen_ == other.castle_queen_ &&
+         castle_king_ == other.castle_king_ && double_push_pawn_.x == other.double_push_pawn_.x &&
          double_push_pawn_.y == other.double_push_pawn_.y;
 }
 
 bool State::operator!=(const State &other) { return !operator==(other); }
 
 Player State::GetPlayer() { return player_; }
-Player State::GetOpponent() {
-  return player_ == Player::kWhite ? Player::kBlack : Player::kWhite;
-}
+Player State::GetOpponent() { return player_ == Player::kWhite ? Player::kBlack : Player::kWhite; }
 void State::SetPlayer(Player p) { player_ = p; }
 
-bool State::GetCastleQueen(Player p) {
-  return castle_queen_[static_cast<int>(p)];
-}
-bool State::GetCastleKing(Player p) {
-  return castle_king_[static_cast<int>(p)];
-}
-void State::SetCastleQueen(Player p) {
-  castle_queen_[static_cast<int>(p)] = false;
-}
-void State::SetCastleKing(Player p) {
-  castle_king_[static_cast<int>(p)] = false;
-}
+bool State::GetCastleQueen(Player p) { return castle_queen_[static_cast<int>(p)]; }
+bool State::GetCastleKing(Player p) { return castle_king_[static_cast<int>(p)]; }
+void State::SetCastleQueen(Player p) { castle_queen_[static_cast<int>(p)] = false; }
+void State::SetCastleKing(Player p) { castle_king_[static_cast<int>(p)] = false; }
 
 int State::GetMoveCount() { return move_count_; }
 void State::IncMoveCount() { ++move_count_; }
@@ -219,8 +213,7 @@ torch::Tensor State::PlanesAsTensor() {
   torch::Tensor repetition0 = torch::zeros({1, width, height});
   torch::Tensor repetition1 = torch::zeros({1, width, height});
 
-  return torch::cat({board_tensor, repetition1, repetition0})
-      .reshape({1, shape[0] + 2, shape[1], shape[2]});
+  return torch::cat({board_tensor, repetition1, repetition0}).reshape({1, shape[0] + 2, shape[1], shape[2]});
 }
 
 torch::Tensor State::DetailsAsTensor() {
@@ -238,10 +231,7 @@ torch::Tensor State::DetailsAsTensor() {
   else
     color = torch::ones({1, width, height});
 
-  move_count = torch::reshape(BoardPlane(count_lut[move_count_])
-                                  .AsTensor()
-                                  .slice(0, 0, width)
-                                  .slice(1, 0, height),
+  move_count = torch::reshape(BoardPlane(count_lut[move_count_]).AsTensor().slice(0, 0, width).slice(1, 0, height),
                               {1, width, height});
 
   if (castle_queen_[0])
@@ -264,15 +254,10 @@ torch::Tensor State::DetailsAsTensor() {
   else
     p2castling = torch::cat({p2castling, torch::zeros({1, width, height})});
 
-  no_progress_count = torch::reshape(BoardPlane(count_lut[no_progress_count_])
-                                         .AsTensor()
-                                         .slice(0, 0, width)
-                                         .slice(1, 0, height),
-                                     {1, width, height});
+  no_progress_count = torch::reshape(
+      BoardPlane(count_lut[no_progress_count_]).AsTensor().slice(0, 0, width).slice(1, 0, height), {1, width, height});
 
-  return torch::cat(
-             {color, move_count, p1castling, p2castling, no_progress_count})
-      .reshape({1, 7, width, height});
+  return torch::cat({color, move_count, p1castling, p2castling, no_progress_count}).reshape({1, 7, width, height});
 }
 
 std::vector<char> State::ToBytes() {
@@ -290,8 +275,7 @@ std::vector<char> State::ToBytes() {
 
   std::vector<char> output(sizeof state_struct);
 
-  std::memcpy(&output[0], static_cast<void *>(&state_struct),
-              sizeof state_struct);
+  std::memcpy(&output[0], static_cast<void *>(&state_struct), sizeof state_struct);
 
   std::vector<char> board_output = board_.ToBytes();
 
@@ -300,13 +284,11 @@ std::vector<char> State::ToBytes() {
   return output;
 }
 
-std::tuple<::aithena::chess::State, int> State::FromBytes(
-    std::vector<char> bytes) {
+std::tuple<::aithena::chess::State, int> State::FromBytes(std::vector<char> bytes) {
   int bytes_read = 0;
 
   // Gather state settings
-  struct StateByteRepr *state_struct =
-      static_cast<struct StateByteRepr *>(static_cast<void *>(&bytes[0]));
+  struct StateByteRepr *state_struct = static_cast<struct StateByteRepr *>(static_cast<void *>(&bytes[0]));
   bytes_read += sizeof *state_struct;
 
   // Gather board
@@ -354,11 +336,7 @@ std::string State::ToFEN() {
         empty = 0;
       }
 
-      char fen_figure = fen_figures[static_cast<int>(piece.figure)];
-
-      if (piece.player == Player::kWhite) fen_figure = std::toupper(fen_figure);
-
-      output += fen_figure;
+      output += GetPieceSymbol(piece);
     }
 
     if (empty > 0) output += std::to_string(empty);
@@ -399,8 +377,7 @@ std::string State::ToFEN() {
   // en passant
 
   if (double_push_pawn_.x >= 0 && double_push_pawn_.y >= 0)
-    output +=
-        alphabet[double_push_pawn_.x] + std::to_string(double_push_pawn_.y + 1);
+    output += alphabet[double_push_pawn_.x] + std::to_string(double_push_pawn_.y + 1);
   else
     output += "-";
 
@@ -412,6 +389,33 @@ std::string State::ToFEN() {
   // turns
   int move_count = static_cast<int>(move_count_ / 2) + 1;
   output += std::to_string(move_count);
+
+  return output;
+}
+
+std::string State::ToLAN() {
+  assert(move_info_ != nullptr);
+
+  std::string output;
+  Coord source = move_info_->GetFrom();
+  Coord target = move_info_->GetTo();
+  Piece piece = board_.GetField(target.x, target.y);
+
+  if (move_info_->IsPromotion() || piece.figure == static_cast<int>(Figure::kPawn)) output += GetPieceSymbol(piece);
+
+  output += alphabet[source.x];
+  output += std::to_string(source.y + 1);
+
+  if (move_info_->IsCapture())
+    output += "x";
+  else
+    output += "-";
+
+  output += alphabet[target.x];
+  output += std::to_string(target.y + 1);
+
+  if (move_info_->IsPromotion())
+    output += GetPieceSymbol(make_piece(move_info_->GetPromotionFigure(), static_cast<Player>(piece.player)));
 
   return output;
 }
@@ -485,13 +489,11 @@ State::StatePtr State::FromFEN(std::string fen) {
 
   if (width * height != static_cast<int>(pieces.size())) return nullptr;
 
-  StatePtr state =
-      std::make_shared<State>(width, height, static_cast<int>(Figure::kCount));
+  StatePtr state = std::make_shared<State>(width, height, static_cast<int>(Figure::kCount));
   Board &board = state->GetBoard();
 
   for (int i = 0; i < static_cast<int>(pieces.size()); ++i) {
-    board.SetField(i % width, height - 1 - static_cast<int>(i / width),
-                   pieces.at(i));
+    board.SetField(i % width, height - 1 - static_cast<int>(i / width), pieces.at(i));
   }
 
   // Player
@@ -505,29 +507,22 @@ State::StatePtr State::FromFEN(std::string fen) {
 
   // Castling
 
-  if (parts.at(2).find("K") == std::string::npos)
-    state->SetCastleKing(Player::kWhite);
-  if (parts.at(2).find("Q") == std::string::npos)
-    state->SetCastleQueen(Player::kWhite);
-  if (parts.at(2).find("k") == std::string::npos)
-    state->SetCastleKing(Player::kBlack);
-  if (parts.at(2).find("q") == std::string::npos)
-    state->SetCastleQueen(Player::kBlack);
+  if (parts.at(2).find("K") == std::string::npos) state->SetCastleKing(Player::kWhite);
+  if (parts.at(2).find("Q") == std::string::npos) state->SetCastleQueen(Player::kWhite);
+  if (parts.at(2).find("k") == std::string::npos) state->SetCastleKing(Player::kBlack);
+  if (parts.at(2).find("q") == std::string::npos) state->SetCastleQueen(Player::kBlack);
 
   // en passant
 
   if (parts.at(3) != "-") {
-    auto itr =
-        std::find(alphabet, alphabet + sizeof(alphabet) / sizeof(alphabet[0]),
-                  std::tolower(parts.at(3).at(0)));
+    auto itr = std::find(alphabet, alphabet + sizeof(alphabet) / sizeof(alphabet[0]), std::tolower(parts.at(3).at(0)));
 
     if (itr == std::end(alphabet)) return nullptr;
 
     int x = std::distance(alphabet, itr);
     int y = atoi(&parts.at(3).at(1)) - 1;
 
-    if (x >= board.GetWidth() || y >= board.GetHeight() || x < 0 || y < 0)
-      return nullptr;
+    if (x >= board.GetWidth() || y >= board.GetHeight() || x < 0 || y < 0) return nullptr;
 
     state->SetDPushPawnX(std::distance(alphabet, itr));
     state->SetDPushPawnY(atoi(&parts.at(3).at(1)) - 1);
