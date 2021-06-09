@@ -21,7 +21,7 @@ namespace aithena {
 
 class ReplayMemory {
  public:
-  using Sample = std::tuple<torch::Tensor, std::tuple<torch::Tensor, int>>;
+  using Sample = std::tuple<torch::Tensor, std::tuple<torch::Tensor, double>>;
 
   // Size specifies the maximum number of samples to be stored. A value smaller
   // than one specifies that infinitely many samples can be stored.
@@ -36,7 +36,7 @@ class ReplayMemory {
   void SetMaxSize(int);
 
   // NN input, action values, state value
-  void AddSample(torch::Tensor, torch::Tensor, int);
+  void AddSample(torch::Tensor, torch::Tensor, double);
   void AddSample(Sample);
 
   Sample GetSample();
@@ -58,13 +58,24 @@ class AlphaZero {
   // time_steps gives the number of time steps to consider for the neural net.
   explicit AlphaZero(chess::Game::GamePtr game, AlphaZeroNet net = nullptr, std::shared_ptr<ReplayMemory> = nullptr);
 
+  // Returns the state that is the result of the action estimated to be the best for the current player.
   chess::State::StatePtr DrawAction(chess::State::StatePtr);
+  // Runs the algorithm on the given node and returns the best node, keeping all statistics that were built up during
+  // simulation.
   AZNode::AZNodePtr DrawAction(AZNode::AZNodePtr);
 
-  // Returns whether the network was updated
+  // Plays games against itself whilst also updating the neural network.
+  // TODO: implement
+  void Train(chess::State::StatePtr start = nullptr);
+
+  // Plays a game against itself and stores the result in the replay memory. Returns whether the network was updated.
   bool SelfPlay(chess::State::StatePtr start = nullptr);
-  void Simulate(AZNode::AZNodePtr);
+
+  // Samples a batch of samples from the replay memory and updates the neural network with it.
   void TrainNetwork();
+
+  // Runs a simulation, starting from the given node and backpasses the result.
+  void Simulate(AZNode::AZNodePtr);
 
   // Evaluate the given state
   double EvaluateState(chess::State::StatePtr);
@@ -76,6 +87,8 @@ class AlphaZero {
 
   void SetSimulations(int);
   void SetBatchSize(int);
+  void SetUseCUDA(bool);
+  void SetDirichletNoiseAlpha(double);
   void SetSelectPolicy(AZNode::AZNodePtr (*select_policy)(AZNode::AZNodePtr));
   void SetBackpass(void (*backpass)(AZNode::AZNodePtr, double));
 
@@ -89,21 +102,28 @@ class AlphaZero {
 
   static const int kDefaultSimulations = 800;
   static const int kDefaultBatchSize = 4096;
+  static constexpr double kDefaultDiscountFactor = 0.95;
+  static constexpr double kDefaultDirichletNoiseAlpha = 0.3;
 
   BenchmarkSet benchmark_;
 
  private:
+  // TODO: this flag disables using the GPU for updating the NN. This is required for my old PC but should normally be
+  // disabled or completely removed from the code!
+  bool disable_cuda_update_{true};
+
   std::shared_ptr<ReplayMemory> replay_memory_{nullptr};
   chess::Game::GamePtr game_{nullptr};
   AlphaZeroNet network_{nullptr};
   int time_steps_{8};
   std::mt19937 random_generator_;
-  dirichlet_distribution<std::mt19937> dirichlet_noise_{{.3}};
+  dirichlet_distribution<std::mt19937> dirichlet_noise_{{kDefaultDirichletNoiseAlpha}};
 
   // Simulation settings
 
   int simulations_{kDefaultSimulations};
   int batch_size_{kDefaultBatchSize};
+  double discount_factor_{kDefaultDiscountFactor};
   AZNode::AZNodePtr (*select_policy_)(AZNode::AZNodePtr) = PUCTSelect;
   void (*backpass_)(AZNode::AZNodePtr, double) = AlphaZeroBackpass;
 };  // namespace aithena

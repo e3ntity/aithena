@@ -15,7 +15,7 @@
 namespace aithena {
 
 struct ResidualBlockImpl : torch::nn::Module {
-  ResidualBlockImpl(int index, torch::nn::Conv2dOptions conv_options, bool use_cuda = false);
+  ResidualBlockImpl(int index, torch::nn::Conv2dOptions conv_options);
 
   torch::Tensor forward(torch::Tensor x);
 
@@ -25,27 +25,27 @@ struct ResidualBlockImpl : torch::nn::Module {
   torch::nn::Conv2d conv2_{nullptr};
   torch::nn::BatchNorm2d bn2_{nullptr};
   torch::nn::ReLU relu2_{};
-
-  bool use_cuda_;
 };
 
 TORCH_MODULE(ResidualBlock);
 
 struct AlphaZeroNetImpl : torch::nn::Module {
-  explicit AlphaZeroNetImpl(chess::Game::GamePtr game, bool use_cuda = false);
+  explicit AlphaZeroNetImpl(chess::Game::GamePtr game);
 
   // Returns the action value tensor and a state value double.
   std::tuple<torch::Tensor, torch::Tensor> forward(torch::Tensor, bool keep_device = false);
+
+  void Save(std::string path);
+  void Load(std::string path);
+
+  // Returns whether the NN uses CUDA
+  bool UsesCUDA();
 
   torch::nn::Sequential body_{nullptr};
   torch::nn::Sequential policy_head_{nullptr};
   torch::nn::Sequential value_head_{nullptr};
 
-  void Save(std::string path);
-  void Load(std::string path);
-
   static const int kInputSize{119};
-  bool use_cuda_;
 };
 
 TORCH_MODULE(AlphaZeroNet);

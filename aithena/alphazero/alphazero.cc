@@ -5,6 +5,7 @@
 #include "alphazero/alphazero.h"
 
 #include <float.h>
+#include <time.h>
 #include <torch/torch.h>
 
 #include <random>
@@ -17,9 +18,13 @@ namespace aithena {
 
 AlphaZero::AlphaZero(chess::Game::GamePtr game, AlphaZeroNet net, std::shared_ptr<ReplayMemory> replay_memory)
     : game_{game} {
-  network_ = net ? net : AlphaZeroNet(game_, torch::cuda::cudnn_is_available());
+  network_ = net ? net : AlphaZeroNet(game_);
   replay_memory_ = replay_memory ? replay_memory : std::make_shared<ReplayMemory>();
   random_generator_ = std::mt19937(std::random_device()());
+
+  if (!net) SetUseCUDA(torch::cuda::cudnn_is_available());
+
+  srand(static_cast<unsigned>(time(NULL)));
 }
 
 bool AlphaZero::SelfPlay(chess::State::StatePtr start) {
@@ -46,11 +51,14 @@ bool AlphaZero::SelfPlay(chess::State::StatePtr start) {
   std::reverse(nodes.begin(), nodes.end());
 
   bool negate = false;
+  int i = 0;
   for (auto node : nodes) {
-    replay_memory_->AddSample(GetNNInput(node), GetNNOutput(node), negate ? -result : result);
+    double value = pow(discount_factor_, i) * static_cast<double>(negate ? -result : result);
+    replay_memory_->AddSample(GetNNInput(node), GetNNOutput(node), value);
 
     node = node->GetParent();
     negate = !negate;
+    ++i;
   }
 
   if (!replay_memory_->IsReady()) {
@@ -111,7 +119,7 @@ void AlphaZero::TrainNetwork() {
   int width = game_->GetOption("board_width");
   int height = game_->GetOption("board_height");
 
-  torch::optim::Adam optimizer(network_->parameters(), torch::optim::AdamOptions(1e-3));
+  torch::optim::Adam optimizer(network_->parameters(), torch::optim::AdamOptions(1e-4).weight_decay(1e-6));
 
   torch::Tensor input_batch = torch::empty({0, network_->kInputSize, width, height});
   torch::Tensor true_action_value_batch = torch::empty({0, GetNNOutputSize(game_), width, height});
@@ -122,21 +130,24 @@ void AlphaZero::TrainNetwork() {
 
     torch::Tensor input = std::get<0>(sample);
     torch::Tensor action_values = std::get<0>(std::get<1>(sample));
-    double state_value = static_cast<double>(std::get<1>(std::get<1>(sample)));
+    double state_value = std::get<1>(std::get<1>(sample));
 
     input_batch = torch::cat({input_batch, input});
     true_action_value_batch = torch::cat({true_action_value_batch, action_values});
     true_state_value_batch = torch::cat({true_state_value_batch, torch::from_blob(&state_value, {1}, torch::kFloat64)});
   }
 
+  bool disable_cuda = disable_cuda_update_ && network_->UsesCUDA();
+  if (disable_cuda) network_->to(torch::kCPU);
+
   std::tuple<torch::Tensor, torch::Tensor> output = network_->forward(input_batch, true);
 
-  if (network_->use_cuda_) {
+  if (!disable_cuda && network_->UsesCUDA()) {
     true_action_value_batch = true_action_value_batch.to(torch::kCUDA);
     true_state_value_batch = true_state_value_batch.to(torch::kCUDA);
   }
 
-  torch::Tensor predicted_action_value_batch = torch::clamp(std::get<0>(output), 1e-7, 1.);
+  torch::Tensor predicted_action_value_batch = torch::clamp(std::get<0>(output), 1e-8, 1.);
   torch::Tensor predicted_state_value_batch = std::get<1>(output);
 
   torch::Tensor state_value_loss = torch::mean(torch::square(true_state_value_batch - predicted_state_value_batch));
@@ -144,11 +155,15 @@ void AlphaZero::TrainNetwork() {
 
   torch::Tensor loss = state_value_loss - action_value_loss;
 
-  // std::cout << "Loss: " << loss.item<double>() << std::endl;
+  std::cout << "State value loss:  " << state_value_loss.item<double>() << std::endl;
+  std::cout << "Action value loss: " << action_value_loss.item<double>() << std::endl;
+  std::cout << "Loss:              " << loss.item<double>() << std::endl;
 
   optimizer.zero_grad();
   loss.backward();
   optimizer.step();
+
+  if (disable_cuda) network_->to(torch::kCUDA);
 
   benchmark_.End("TrainNetwork");
 }
@@ -206,8 +221,14 @@ AZNode::AZNodePtr AlphaZero::DrawAction(AZNode::AZNodePtr start) {
   for (auto child : node->GetChildren()) {
     if (child->GetVisitCount() < max_visited) continue;
 
-    max_visited = child->GetVisitCount();
-    max_child = child;
+    if (child->GetVisitCount() == max_visited) {
+      double random = static_cast<double>(rand()) / RAND_MAX;
+
+      max_child = random > 0.5 ? max_child : child;
+    } else {
+      max_child = child;
+      max_visited = child->GetVisitCount();
+    }
   }
 
   benchmark_.End("DrawAction");
@@ -232,6 +253,8 @@ void AlphaZero::Simulate(AZNode::AZNodePtr start) {
 
   for (auto child : node->GetChildren()) child->SetPrior(GetNNOutput(action_values, child));
 
+  if (node->IsTerminal()) state_value = game_->GetStateResult(node->GetState());
+
   // If node's player is black, a positive state_value means moving into this node is bad for white. As backpass (first)
   // adds state_value to the node's action value, it must be negated to discourage white from moving into it.
   backpass_(node, -state_value);
@@ -242,6 +265,17 @@ void AlphaZero::Simulate(AZNode::AZNodePtr start) {
 void AlphaZero::SetSimulations(int simulations) { simulations_ = simulations; }
 
 void AlphaZero::SetBatchSize(int batch_size) { batch_size_ = batch_size; }
+
+void AlphaZero::SetUseCUDA(bool use_cuda) {
+  if (use_cuda)
+    network_->to(torch::kCUDA);
+  else
+    network_->to(torch::kCPU);
+}
+
+void AlphaZero::SetDirichletNoiseAlpha(double alpha) {
+  dirichlet_noise_ = dirichlet_distribution<std::mt19937>({alpha});
+}
 
 void AlphaZero::SetSelectPolicy(AZNode::AZNodePtr (*select_policy)(AZNode::AZNodePtr)) {
   select_policy_ = select_policy;
@@ -271,10 +305,16 @@ AZNode::AZNodePtr AlphaZero::PUCTSelect(AZNode::AZNodePtr node) {
   for (auto child : node->GetChildren()) {
     double value = PUCTValue(child);
 
-    if (value <= max_value) continue;
+    if (value < max_value) continue;
 
-    max_value = value;
-    max_node = child;
+    if (value == max_value) {
+      double random = static_cast<double>(rand()) / RAND_MAX;
+
+      max_node = random > 0.5 ? max_node : child;
+    } else {
+      max_node = child;
+      max_value = value;
+    }
   }
 
   return max_node;
@@ -312,11 +352,11 @@ void ReplayMemory::SetMinSize(int size) { min_size_ = size; }
 
 void ReplayMemory::SetMaxSize(int size) { max_size_ = size; }
 
-void ReplayMemory::AddSample(torch::Tensor input, torch::Tensor action_values, int state_value) {
+void ReplayMemory::AddSample(torch::Tensor input, torch::Tensor action_values, double state_value) {
   AddSample(std::make_tuple(input, std::make_tuple(action_values, state_value)));
 }
 
-void ReplayMemory::AddSample(std::tuple<torch::Tensor, std::tuple<torch::Tensor, int>> sample) {
+void ReplayMemory::AddSample(std::tuple<torch::Tensor, std::tuple<torch::Tensor, double>> sample) {
   while (max_size_ > 0 && samples_.size() >= static_cast<std::size_t>(max_size_))
     samples_.erase(samples_.begin() + GetRandomSampleIndex());
 
@@ -332,7 +372,7 @@ int ReplayMemory::GetRandomSampleIndex() {
   return dist(random_generator_);
 }
 
-std::tuple<torch::Tensor, std::tuple<torch::Tensor, int>> ReplayMemory::GetSample() {
+std::tuple<torch::Tensor, std::tuple<torch::Tensor, double>> ReplayMemory::GetSample() {
   auto sample = samples_.begin();
 
   std::advance(sample, GetRandomSampleIndex());

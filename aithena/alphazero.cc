@@ -22,6 +22,7 @@ enum GetOptOption : int {
   kOptSimulations,
   kOptSave,
   kOptLoad,
+  kOptNoCuda,
   kOptFEN,
   kOptMaxMoves,
   kOptMaxNoProgress
@@ -37,6 +38,7 @@ std::string GetAlphazeroUsageText() {
          "  --simulations <number>      Number of simulations (default: 800)\n"
          "  --save <path>               Path for saving NN (a suffix will be appended)\n"
          "  --load <path>               Path for loading NN (suffix will be appended)\n"
+         "  --no-cuda                   Disables using cuda if available\n"
          "## Chess Options ##\n"
          "  --fen <string>              Initial board (default: 8-by-8 Chess)\n"
          "  --max-moves <number>        Maximum moves per game (default: 1000)\n"
@@ -69,6 +71,7 @@ int RunAlphazero(int argc, char** argv) {
                                          {"simulations", required_argument, nullptr, kOptSimulations},
                                          {"save", required_argument, nullptr, kOptSave},
                                          {"load", required_argument, nullptr, kOptLoad},
+                                         {"no-cuda", no_argument, nullptr, kOptNoCuda},
                                          {"fen", required_argument, nullptr, kOptFEN},
                                          {"max-moves", required_argument, nullptr, kOptMaxMoves},
                                          {"max-no-progress", required_argument, nullptr, kOptMaxNoProgress},
@@ -84,6 +87,7 @@ int RunAlphazero(int argc, char** argv) {
   int max_moves{1000};
   std::string save_path{""};
   std::string load_path{""};
+  bool use_cuda{torch::cuda::cudnn_is_available()};
 
   int long_index = 0;
   int opt = 0;
@@ -120,6 +124,10 @@ int RunAlphazero(int argc, char** argv) {
         load_path = static_cast<std::string>(optarg);
         std::cout << "Load path: " << load_path << std::endl;
         break;
+      case kOptNoCuda:
+        use_cuda = false;
+        std::cout << "Disabled using CUDA" << std::endl;
+        break;
       case kOptFEN:
         fen = static_cast<std::string>(optarg);
         std::cout << "FEN: " << fen << std::endl;
@@ -144,7 +152,13 @@ int RunAlphazero(int argc, char** argv) {
                                                           {"board_height", state->GetBoard().GetHeight()},
                                                           {"max_move_count", max_moves},
                                                           {"max_no_progress", max_no_progress}}));
-  AlphaZero az{game};
+  AlphaZeroNet net = AlphaZeroNet(game);
+  AlphaZero az{game, net};
+
+  if (use_cuda) {
+    std::cout << "Running on GPU!" << std::endl;
+    az.SetUseCUDA(true);
+  }
 
   if (!load_path.empty()) az.GetNetwork()->Load(load_path);
 

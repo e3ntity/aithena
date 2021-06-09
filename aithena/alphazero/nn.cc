@@ -13,21 +13,8 @@
 
 namespace aithena {
 
-ResidualBlockImpl::ResidualBlockImpl(int index, torch::nn::Conv2dOptions conv_options, bool use_cuda)
-    : conv1_{conv_options},
-      conv2_{conv_options},
-      bn1_{conv_options.out_channels()},
-      bn2_{conv_options.out_channels()},
-      use_cuda_{use_cuda} {
-  if (use_cuda_) {
-    conv1_->to(torch::kCUDA);
-    conv2_->to(torch::kCUDA);
-    bn1_->to(torch::kCUDA);
-    bn2_->to(torch::kCUDA);
-    relu1_->to(torch::kCUDA);
-    relu2_->to(torch::kCUDA);
-  }
-
+ResidualBlockImpl::ResidualBlockImpl(int index, torch::nn::Conv2dOptions conv_options)
+    : conv1_{conv_options}, conv2_{conv_options}, bn1_{conv_options.out_channels()}, bn2_{conv_options.out_channels()} {
   register_module("resblock" + std::to_string(index) + "_conv1", conv1_);
   register_module("resblock" + std::to_string(index) + "_conv2", conv2_);
   register_module("resblock" + std::to_string(index) + "_bn1", bn1_);
@@ -43,7 +30,7 @@ torch::Tensor ResidualBlockImpl::forward(torch::Tensor x) {
   return x;
 }
 
-AlphaZeroNetImpl::AlphaZeroNetImpl(chess::Game::GamePtr game, bool use_cuda) : use_cuda_{use_cuda} {
+AlphaZeroNetImpl::AlphaZeroNetImpl(chess::Game::GamePtr game) {
   int width = game->GetOption("board_width");
   int height = game->GetOption("board_height");
 
@@ -55,7 +42,7 @@ AlphaZeroNetImpl::AlphaZeroNetImpl(chess::Game::GamePtr game, bool use_cuda) : u
   torch::nn::Conv2dOptions body_options =
       torch::nn::Conv2dOptions(256, 256, 3).stride(1).padding(1).padding_mode(torch::kZeros);
 
-  for (int i = 0; i < 19; ++i) body_->push_back(ResidualBlock(i, body_options, use_cuda_));
+  for (int i = 0; i < 19; ++i) body_->push_back(ResidualBlock(i, body_options));
 
   register_module("body", body_);
 
@@ -84,29 +71,25 @@ AlphaZeroNetImpl::AlphaZeroNetImpl(chess::Game::GamePtr game, bool use_cuda) : u
       // Layer 3 (tanh linear layer of size 1)
       torch::nn::Linear(256, 1), torch::nn::Tanh());
   register_module("value_head", value_head_);
-
-  if (use_cuda_) {
-    body_->to(torch::kCUDA);
-    policy_head_->to(torch::kCUDA);
-    value_head_->to(torch::kCUDA);
-  }
 }
 
 std::tuple<torch::Tensor, torch::Tensor> AlphaZeroNetImpl::forward(torch::Tensor x, bool keep_device) {
-  if (use_cuda_) x = x.to(torch::kCUDA);
+  if (UsesCUDA()) x = x.to(torch::kCUDA);
 
   torch::Tensor body_output = body_->forward(x);
 
   torch::Tensor action_values = policy_head_->forward(body_output);
   torch::Tensor state_value = value_head_->forward(body_output);
 
-  if (!keep_device && use_cuda_) {
+  if (!keep_device && UsesCUDA()) {
     action_values = action_values.to(torch::kCPU);
     state_value = state_value.to(torch::kCPU);
   }
 
   return std::make_tuple(action_values, state_value.reshape({-1}));
 }
+
+bool AlphaZeroNetImpl::UsesCUDA() { return this->parameters()[0].is_cuda(); }
 
 void AlphaZeroNetImpl::Save(std::string path) {
   torch::save(body_, path + "-body.pt");
@@ -130,16 +113,18 @@ torch::Tensor GetNNInput(AZNode::AZNodePtr node, int time_steps) {
   // Board history
   int time_steps_left = time_steps;
   while (node != nullptr && time_steps_left > 0) {
-    output = torch::cat({output, EncodeNodeState(node, state->GetPlayer())});
+    output = torch::cat({output, EncodeNodeState(node, state->GetPlayer())}, 0);
 
     node = node->GetParent();
-    --time_steps_left;
+    time_steps_left = time_steps_left - 1;
   }
 
   // Add remaining planes (one for each piece and two for a one-hot coding of
   // the number of repetitions)
-  torch::Tensor zeros = torch::zeros({time_steps_left * (plane_count + 2), width, height});
-  output = torch::cat({output, zeros}, 0);
+  if (time_steps_left > 0) {
+    torch::Tensor zeros = torch::zeros({time_steps_left * (plane_count + 2), width, height});
+    output = torch::cat({output, zeros}, 0);
+  }
 
   // Player colour
   if (state->GetPlayer() == chess::Player::kWhite)
