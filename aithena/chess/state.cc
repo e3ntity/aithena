@@ -401,7 +401,7 @@ std::string State::ToLAN() {
   Coord target = move_info_->GetTo();
   Piece piece = board_.GetField(target.x, target.y);
 
-  if (move_info_->IsPromotion() || piece.figure == static_cast<int>(Figure::kPawn)) output += GetPieceSymbol(piece);
+  if (!move_info_->IsPromotion() && piece.figure != static_cast<int>(Figure::kPawn)) output += GetPieceSymbol(piece);
 
   output += alphabet[source.x];
   output += std::to_string(source.y + 1);
@@ -414,8 +414,7 @@ std::string State::ToLAN() {
   output += alphabet[target.x];
   output += std::to_string(target.y + 1);
 
-  if (move_info_->IsPromotion())
-    output += GetPieceSymbol(make_piece(move_info_->GetPromotionFigure(), static_cast<Player>(piece.player)));
+  if (move_info_->IsPromotion()) output += GetPieceSymbol(piece);
 
   return output;
 }
