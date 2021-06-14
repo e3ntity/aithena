@@ -61,7 +61,7 @@ class AlphaZero {
   // Returns the state that is the result of the action estimated to be the best for the current player.
   chess::State::StatePtr DrawAction(chess::State::StatePtr);
   // Runs the algorithm on the given node and returns the best node, keeping all statistics that were built up during
-  // simulation.
+  // simulation. The node passed as argument must not have a parent node!
   AZNode::AZNodePtr DrawAction(AZNode::AZNodePtr);
 
   // Plays a game against itself and stores the result in the replay memory. Returns whether the network was updated.
@@ -106,7 +106,7 @@ class AlphaZero {
  private:
   // TODO: this flag disables using the GPU for updating the NN. This is required for my old PC but should normally be
   // disabled or completely removed from the code!
-  bool disable_cuda_update_{true};
+  bool disable_cuda_update_{false};
 
   std::shared_ptr<ReplayMemory> replay_memory_{nullptr};
   chess::Game::GamePtr game_{nullptr};

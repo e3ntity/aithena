@@ -31,28 +31,18 @@ void AlphaZero::SelfPlay(chess::State::StatePtr start) {
   benchmark_.Start("SelfPlay");
 
   chess::State::StatePtr state = start == nullptr ? game_->GetInitialState() : start;
-  AZNode::AZNodePtr root = std::make_shared<AZNode>(game_, state);
-
-  std::vector<AZNode::AZNodePtr> nodes = {root};
-  AZNode::AZNodePtr node = root;
+  AZNode::AZNodePtr node = std::make_shared<AZNode>(game_, state);
 
   // Run game
-
-  while (!node->IsTerminal() && node->GetStateRepetitions() < 3) {
-    node = DrawAction(node);
-    nodes.push_back(node);
-    node = std::make_shared<AZNode>(game_, node->GetState());
-  }
+  while (!node->IsTerminal() && node->GetStateRepetitions() < 3) node = DrawAction(node);
 
   int result = node->IsTerminal() ? game_->GetStateResult(node->GetState()) : 0;
 
   // Store samples in replay memory
 
-  std::reverse(nodes.begin(), nodes.end());
-
   bool negate = false;
   int i = 0;
-  for (auto node : nodes) {
+  while (node != nullptr) {
     double value = pow(discount_factor_, i) * static_cast<double>(negate ? -result : result);
     replay_memory_->AddSample(GetNNInput(node), GetNNOutput(node), value);
 
@@ -158,14 +148,18 @@ AZNode::AZNodePtr AlphaZero::DrawAction(AZNode::AZNodePtr start) {
     child->SetPrior(.75 * action_value + .25 * noise);
   }
 
-  AZNode::AZNodePtr node = start;
+  // Remove parent-connection from node that would be problematic during backpropagation.
+  AZNode::AZNodePtr parent = start->GetParent();
+  start->SetParent(nullptr);
 
-  for (int i = 0; i < simulations_; ++i) Simulate(node);
+  for (int i = 0; i < simulations_; ++i) Simulate(start);
+
+  start->SetParent(parent);
 
   int max_visited{0};
   AZNode::AZNodePtr max_child{nullptr};
 
-  for (auto child : node->GetChildren()) {
+  for (auto child : start->GetChildren()) {
     if (child->GetVisitCount() < max_visited) continue;
 
     if (child->GetVisitCount() == max_visited) {

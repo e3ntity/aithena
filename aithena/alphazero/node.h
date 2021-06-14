@@ -23,6 +23,7 @@ class AZNode : public std::enable_shared_from_this<AZNode> {
   chess::State::StatePtr GetState();
   AZNodePtr GetParent();
   std::vector<AZNodePtr> GetChildren();
+  void SetParent(AZNodePtr);
 
   int GetStateRepetitions();
 

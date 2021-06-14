@@ -19,6 +19,8 @@ AZNode::AZNodePtr AZNode::GetParent() { return parent_; }
 
 std::vector<AZNode::AZNodePtr> AZNode::GetChildren() { return children_; }
 
+void AZNode::SetParent(AZNodePtr parent) { parent_ = parent; }
+
 int AZNode::GetStateRepetitions() {
   int repetitions = 0;
 
