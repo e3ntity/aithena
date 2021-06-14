@@ -35,15 +35,15 @@ std::string GetAlphazeroUsageText() {
          "  --help -h                   Show the help menu\n"
          "  --train                     Puts the program in training mode\n"
          "## Training Options ##\n"
+         "  --batch-size <number>       Neural net. update batch size (default: 4096)\n"
          "  --epochs -e <number>        Number of epochs (default: 10)\n"
-         "  --rounds -r <number>        Number of training rounds (default: 100)\n"
          "  --evaluations <number>      Number of evaluations to run at the end of each epoch (default: 10)\n"
+         "  --rounds -r <number>        Number of training rounds (default: 100)\n"
          "  --save <path>               Path for saving NN (a suffix will be appended)\n"
          "## Alphazero Options ##\n"
-         "  --batch-size <number>       Neural net. update batch size (default: 4096)\n"
-         "  --simulations <number>      Number of simulations (default: 800)\n"
          "  --load <path>               Path for loading NN (suffix will be appended)\n"
-         "  --no-cuda                   Disables using cuda if available\n"
+         "  --no-cuda                   Disables using cuda\n"
+         "  --simulations <number>      Number of simulations (default: 800)\n"
          "## Chess Options ##\n"
          "  --fen <string>              Initial board (default: 8-by-8 Chess)\n"
          "  --max-moves <number>        Maximum moves per game (default: 1000)\n"
@@ -75,12 +75,12 @@ int RunAlphazero(int argc, char** argv) {
                                          {"train", no_argument, nullptr, kOptTrain},
                                          {"batch-size", required_argument, nullptr, kOptBatchSize},
                                          {"epochs", required_argument, nullptr, 'e'},
-                                         {"rounds", required_argument, nullptr, 'r'},
                                          {"evaluations", required_argument, nullptr, kOptEvaluations},
-                                         {"simulations", required_argument, nullptr, kOptSimulations},
+                                         {"rounds", required_argument, nullptr, 'r'},
                                          {"save", required_argument, nullptr, kOptSave},
                                          {"load", required_argument, nullptr, kOptLoad},
                                          {"no-cuda", no_argument, nullptr, kOptNoCuda},
+                                         {"simulations", required_argument, nullptr, kOptSimulations},
                                          {"fen", required_argument, nullptr, kOptFEN},
                                          {"max-moves", required_argument, nullptr, kOptMaxMoves},
                                          {"max-no-progress", required_argument, nullptr, kOptMaxNoProgress},
