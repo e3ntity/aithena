@@ -2,7 +2,7 @@
  * Copyright (C) 2020 All Right Reserved
  */
 
-#include "alphazero/alphazero.h"
+#include "alphazero.h"
 
 #include <getopt.h>
 #include <torch/torch.h>
@@ -11,14 +11,16 @@
 #include <iostream>
 #include <string>
 
-#include "./main.h"
+#include "alphazero/alphazero.h"
 #include "chess/game.h"
 #include "chess/util.h"
 
 using namespace aithena;
 
 enum GetOptOption : int {
-  kOptBatchSize = 1000,
+  kOptTrain = 1000,
+  kOptEvaluations,
+  kOptBatchSize,
   kOptSimulations,
   kOptSave,
   kOptLoad,
@@ -30,13 +32,16 @@ enum GetOptOption : int {
 
 std::string GetAlphazeroUsageText() {
   return "Usage: ./aithena alphazero <options>\n"
-         "  --help -h                       Show the help menu\n"
+         "  --help -h                   Show the help menu\n"
+         "  --train                     Puts the program in training mode\n"
+         "## Training Options ##\n"
+         "  --epochs -e <number>        Number of epochs (default: 10)\n"
+         "  --rounds -r <number>        Number of training rounds (default: 100)\n"
+         "  --evaluations <number>      Number of evaluations to run at the end of each epoch (default: 10)\n"
+         "  --save <path>               Path for saving NN (a suffix will be appended)\n"
          "## Alphazero Options ##\n"
          "  --batch-size <number>       Neural net. update batch size (default: 4096)\n"
-         "  --epochs -e <number>        Number of epochs (default: 10)"
-         "  --rounds -r <number>        Number of training rounds (default: 100)\n"
          "  --simulations <number>      Number of simulations (default: 800)\n"
-         "  --save <path>               Path for saving NN (a suffix will be appended)\n"
          "  --load <path>               Path for loading NN (suffix will be appended)\n"
          "  --no-cuda                   Disables using cuda if available\n"
          "## Chess Options ##\n"
@@ -45,13 +50,15 @@ std::string GetAlphazeroUsageText() {
          "  --max-no-progress <number>  Maximum moves without progress (default: 50)\n";
 }
 
-void PrintProgress(double progress = 0.0, int width = 80) {
-  int bar_width = width - 5;
+void ClearLine() { std::cout << std::string(100, ' ') << "\r"; }
+
+void PrintProgress(double progress = 0.0, int width = 80, std::string prefix = "", std::string suffix = "") {
+  int bar_width = std::max<int>(width - 8 - prefix.length() - suffix.length(), 10);
   int pos = static_cast<int>(round(bar_width * progress));
 
-  std::cout << std::string(100, ' ') << "\r";
+  ClearLine();
 
-  std::cout << "[";
+  std::cout << prefix << "[";
   for (int i = 0; i < bar_width; ++i) {
     if (i < pos)
       std::cout << "#";
@@ -59,15 +66,17 @@ void PrintProgress(double progress = 0.0, int width = 80) {
       std::cout << " ";
   }
 
-  std::cout << "] " << std::setw(4) << static_cast<int>(round(progress * 100.0)) << "%\r";
+  std::cout << "] " << std::setw(4) << static_cast<int>(round(progress * 100.0)) << "%" << suffix << "\r";
   std::cout.flush();
 }
 
 int RunAlphazero(int argc, char** argv) {
   static struct option long_options[] = {{"help", no_argument, nullptr, 'h'},
+                                         {"train", no_argument, nullptr, kOptTrain},
                                          {"batch-size", required_argument, nullptr, kOptBatchSize},
                                          {"epochs", required_argument, nullptr, 'e'},
                                          {"rounds", required_argument, nullptr, 'r'},
+                                         {"evaluations", required_argument, nullptr, kOptEvaluations},
                                          {"simulations", required_argument, nullptr, kOptSimulations},
                                          {"save", required_argument, nullptr, kOptSave},
                                          {"load", required_argument, nullptr, kOptLoad},
@@ -81,6 +90,7 @@ int RunAlphazero(int argc, char** argv) {
   int batch_size{4096};
   int epochs{10};
   int rounds{100};
+  int evaluations{10};
   int simulations{800};
   std::string fen{"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"};
   int max_no_progress{50};
@@ -88,6 +98,7 @@ int RunAlphazero(int argc, char** argv) {
   std::string save_path{""};
   std::string load_path{""};
   bool use_cuda{torch::cuda::cudnn_is_available()};
+  bool training_mode{false};
 
   int long_index = 0;
   int opt = 0;
@@ -100,6 +111,10 @@ int RunAlphazero(int argc, char** argv) {
       case 'h':
         std::cout << GetAlphazeroUsageText();
         return 0;
+      case kOptTrain:
+        training_mode = true;
+        std::cout << "Training mode enabled" << std::endl;
+        break;
       case kOptBatchSize:
         batch_size = atoi(optarg);
         std::cout << "Batch size: " << batch_size << std::endl;
@@ -111,6 +126,10 @@ int RunAlphazero(int argc, char** argv) {
       case 'r':
         rounds = atoi(optarg);
         std::cout << "Rounds: " << rounds << std::endl;
+        break;
+      case kOptEvaluations:
+        evaluations = atoi(optarg);
+        std::cout << "Evaluations: " << evaluations << std::endl;
         break;
       case kOptSimulations:
         simulations = atoi(optarg);
@@ -168,57 +187,67 @@ int RunAlphazero(int argc, char** argv) {
   az.SetBatchSize(batch_size);
   az.SetSimulations(simulations);
 
-  std::cout << "Running " << epochs << " epochs with " << rounds << " round on \"" << fen << "\"." << std::endl;
+  if (!training_mode) {
+    chess::State::StatePtr move = az.DrawAction(state);
+
+    std::cout << "Selected move: " << move->ToLAN() << " (" << az.EvaluateState(move, state->GetPlayer()) << ")"
+              << std::endl;
+
+    return 0;
+  }
 
   Benchmark bn;
 
+  while (!az.GetReplayMemory()->IsReady()) {
+    bn.Start();
+
+    double sample_count = static_cast<double>(az.GetReplayMemory()->GetSampleCount());
+    double min_sample_count = static_cast<double>(az.GetReplayMemory()->GetMinSize());
+
+    PrintProgress(sample_count / min_sample_count, 80, "Gathering Samples ");
+
+    az.SelfPlay(state);
+
+    bn.End();
+  }
+
   for (int j = 0; j < epochs; ++j) {
+    ClearLine();
     std::cout << "## Epoch " << j + 1 << "/" << epochs << " (at " << abs(bn.GetSum(Benchmark::UNIT_SEC)) << " sec) ##"
               << std::endl;
 
     bn.Start();
 
     for (int i = 0; i < rounds; ++i) {
-      // std::cout << (az.GetReplayMemory()->IsReady() ? "Training " : "Gathering Samples ") << std::flush;
+      PrintProgress(static_cast<double>(i) / static_cast<double>(rounds), 80, "Training ");
 
-      // PrintProgress(static_cast<double>(i) / static_cast<double>(rounds));
+      az.SelfPlay(state);
 
-      while (!az.SelfPlay(state)) ((void)0);
-
-      // PrintProgress(static_cast<double>(i + 1) / static_cast<double>(rounds));
+      az.TrainNetwork();
     }
 
-    chess::State::StatePtr current_state = state;
+    double total_evaluation = 0;
+    for (int i = 0; i < evaluations; ++i) {
+      chess::State::StatePtr current_state = state;
 
-    std::cout << "Evaluation: " << std::flush;
-    std::vector<double> evaluations;
-    while (!game->IsTerminalState(current_state)) {
-      evaluations.push_back(az.EvaluateState(current_state, chess::Player::kWhite));
-      current_state = az.DrawAction(current_state);
+      std::cout << "Evaluation: " << std::flush;
+      while (!game->IsTerminalState(current_state)) {
+        current_state = az.DrawAction(current_state);
 
-      std::cout << current_state->ToLAN() << " " << std::flush;
+        std::cout << current_state->ToLAN() << " " << std::flush;
+      }
+
+      int result = game->GetStateResult(current_state) * (current_state->GetPlayer() == state->GetPlayer() ? 1 : -1);
+      std::cout << "- " << result << std::endl;
+
+      total_evaluation += result;
     }
-    evaluations.push_back(az.EvaluateState(current_state, chess::Player::kWhite));
 
-    int result = game->GetStateResult(current_state) * (current_state->GetPlayer() == state->GetPlayer() ? 1 : -1);
-    std::cout << "- " << result << std::endl;
-
-    std::cout << "Val: " << std::flush;
-    for (auto evaluation : evaluations) std::cout << std::setw(4) << int(evaluation * 100) << "% " << std::flush;
-    std::cout << std::endl;
+    std::cout << "Evaluation average: " << total_evaluation / static_cast<double>(evaluations) << std::endl;
 
     if (!save_path.empty()) az.GetNetwork()->Save(save_path);
 
     bn.End();
-  }
-
-  std::cout << "## Benchmark ##" << std::endl;
-
-  for (auto entry : az.benchmark_.GetAvg(Benchmark::UNIT_MSEC)) {
-    std::string name = std::get<0>(entry);
-    int64_t time = std::get<1>(entry);
-
-    std::cout << name << ": " << time << " msec" << std::endl;
   }
 
   return 0;
