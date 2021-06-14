@@ -27,7 +27,7 @@ AlphaZero::AlphaZero(chess::Game::GamePtr game, AlphaZeroNet net, std::shared_pt
   srand(static_cast<unsigned>(time(NULL)));
 }
 
-bool AlphaZero::SelfPlay(chess::State::StatePtr start) {
+void AlphaZero::SelfPlay(chess::State::StatePtr start) {
   benchmark_.Start("SelfPlay");
 
   chess::State::StatePtr state = start == nullptr ? game_->GetInitialState() : start;
@@ -61,56 +61,7 @@ bool AlphaZero::SelfPlay(chess::State::StatePtr start) {
     ++i;
   }
 
-  if (!replay_memory_->IsReady()) {
-    benchmark_.End("SelfPlay");
-    return false;
-  }
-
-  auto input = GetNNInput(root);
-  auto output = network_->forward(input);
-
-  std::cout << "Root value: " << std::get<1>(output).item<double>() << std::endl << "Action:  ";
-  for (auto child : root->GetChildren()) {
-    std::cout << child->GetState()->ToLAN() << "  " << std::flush;
-  }
-  std::cout << std::endl << "S-Value: ";
-  for (auto child : root->GetChildren()) {
-    double value = EvaluateState(child->GetState(), root->GetState()->GetPlayer());
-    std::cout << std::fixed << std::setprecision(3) << std::setw(4) << value << " " << std::flush;
-    if (value >= 0) std::cout << " ";
-  }
-  std::cout << std::endl << "Mean Q:  ";
-  for (auto child : root->GetChildren()) {
-    double value = child->GetMeanActionValue();
-    std::cout << std::fixed << std::setprecision(3) << std::setw(4) << value << " " << std::flush;
-    if (value >= 0) std::cout << " ";
-  }
-  std::cout << std::endl << "Prior:   ";
-  for (auto child : root->GetChildren()) {
-    double value = child->GetPrior();
-    std::cout << std::fixed << std::setprecision(3) << std::setw(4) << value << " " << std::flush;
-    if (value >= 0) std::cout << " ";
-  }
-  std::cout << std::endl << "PUCT:    ";
-  for (auto child : root->GetChildren()) {
-    double value = PUCTValue(child) * .1;
-    std::cout << std::fixed << std::setprecision(3) << std::setw(4) << value << " " << std::flush;
-    if (value >= 0) std::cout << " ";
-  }
-  std::cout << std::endl << "Visits:  ";
-  for (auto child : root->GetChildren()) {
-    int value = child->GetVisitCount();
-    std::cout << std::fixed << std::setw(5) << value << " " << std::flush;
-    if (value >= 0) std::cout << " ";
-  }
-  std::cout << "total: " << root->GetVisitCount();
-  std::cout << std::endl << std::endl;
-
-  TrainNetwork();
-
   benchmark_.End("SelfPlay");
-
-  return true;
 }
 
 void AlphaZero::TrainNetwork() {
@@ -154,10 +105,6 @@ void AlphaZero::TrainNetwork() {
   torch::Tensor action_value_loss = torch::sum(true_action_value_batch * torch::log(predicted_action_value_batch));
 
   torch::Tensor loss = state_value_loss - action_value_loss;
-
-  std::cout << "State value loss:  " << state_value_loss.item<double>() << std::endl;
-  std::cout << "Action value loss: " << action_value_loss.item<double>() << std::endl;
-  std::cout << "Loss:              " << loss.item<double>() << std::endl;
 
   optimizer.zero_grad();
   loss.backward();

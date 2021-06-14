@@ -64,12 +64,8 @@ class AlphaZero {
   // simulation.
   AZNode::AZNodePtr DrawAction(AZNode::AZNodePtr);
 
-  // Plays games against itself whilst also updating the neural network.
-  // TODO: implement
-  void Train(chess::State::StatePtr start = nullptr);
-
   // Plays a game against itself and stores the result in the replay memory. Returns whether the network was updated.
-  bool SelfPlay(chess::State::StatePtr start = nullptr);
+  void SelfPlay(chess::State::StatePtr start = nullptr);
 
   // Samples a batch of samples from the replay memory and updates the neural network with it.
   void TrainNetwork();
