@@ -16,18 +16,31 @@ std::string GetBenchmarkUsageText() {
          "## Benchmark Options ##\n"
          "  --alphazero                     Run alphazero test\n"
          "  --perft <depth>                 Run perft test\n"
+         "## AlphaZero Options ##\n"
+         "  --no-cuda                       Disables using cuda\n"
+         "  --simulations <number>          Number of simulations (default: 800)\n"
          "## Chess Options ##\n"
          "  --fen -f <string>               Initial board (default: 8-by-8 Chess)\n"
          "  --max-moves -m <number>         Maximum moves per game (default: 1000)\n"
          "  --max-no-progress -p <number>   Maximum moves without progress (default: 50)\n";
 }
 
-enum GetOptOption : int { kOptAlphazero = 1000, kOptPerft, kOptFEN, kOptMaxMoves, kOptMaxNoProgress };
+enum GetOptOption : int {
+  kOptAlphazero = 1000,
+  kOptPerft,
+  kOptNoCuda,
+  kOptSimulations,
+  kOptFEN,
+  kOptMaxMoves,
+  kOptMaxNoProgress
+};
 
 int RunBenchmark(int argc, char** argv) {
   static struct option long_options[] = {{"help", no_argument, nullptr, 'h'},
                                          {"alphazero", no_argument, nullptr, kOptAlphazero},
                                          {"perft", required_argument, nullptr, kOptPerft},
+                                         {"no-cuda", no_argument, nullptr, kOptNoCuda},
+                                         {"simulations", required_argument, nullptr, kOptSimulations},
                                          {"fen", required_argument, nullptr, kOptFEN},
                                          {"max-moves", required_argument, nullptr, kOptMaxMoves},
                                          {"max-no-progress", required_argument, nullptr, kOptMaxNoProgress},
@@ -36,6 +49,9 @@ int RunBenchmark(int argc, char** argv) {
   // Configurable options
   std::string fen{"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"};
   bool alphazero{false};
+  int az_rounds{1};  // TODO: make configurable
+  bool az_no_cuda{false};
+  int az_simulations{800};
   int perft{-1};
   int max_no_progress{50};
   int max_moves{1000};
@@ -56,6 +72,12 @@ int RunBenchmark(int argc, char** argv) {
         break;
       case kOptPerft:
         perft = atoi(optarg);
+        break;
+      case kOptNoCuda:
+        az_no_cuda = true;
+        break;
+      case kOptSimulations:
+        az_simulations = atoi(optarg);
         break;
       case kOptFEN:
         fen = static_cast<std::string>(optarg);
@@ -85,7 +107,7 @@ int RunBenchmark(int argc, char** argv) {
 
   if (perft >= 0) RunPerftBenchmark(game, start, perft);
 
-  if (alphazero) RunAlphazeroBenchmark(game, start);
+  if (alphazero) RunAlphazeroBenchmark(game, start, az_simulations, az_rounds, az_no_cuda);
 
   bm_bm.End();
 
@@ -94,12 +116,18 @@ int RunBenchmark(int argc, char** argv) {
   return 0;
 }
 
-void RunAlphazeroBenchmark(chess::Game::GamePtr game, chess::State::StatePtr state, int evaluation_games) {
+void RunAlphazeroBenchmark(chess::Game::GamePtr game, chess::State::StatePtr state, int simulations,
+                           int evaluation_games, bool no_cuda) {
   Benchmark bm_alphazero;
 
   bm_alphazero.Start();
 
   AlphaZero az{game};
+
+  az.SetSimulations(simulations);
+
+  if (no_cuda) az.SetUseCUDA(false);
+
   chess::State::StatePtr current_state = state;
 
   int action_count = 0;
@@ -120,8 +148,8 @@ void RunAlphazeroBenchmark(chess::Game::GamePtr game, chess::State::StatePtr sta
   std::cout << "Drew " << action_count << " actions in " << bm_alphazero.GetLast(Benchmark::UNIT_SEC) << " seconds ("
             << aps << " actions per second)" << std::endl;
 
-  for (auto bm : az.benchmark_.GetAvg(Benchmark::UNIT_USEC))
-    std::cout << std::get<0>(bm) << ": " << std::get<1>(bm) << " usec" << std::endl;
+  for (auto bm : az.benchmark_.GetAvg(Benchmark::UNIT_MSEC))
+    std::cout << std::get<0>(bm) << ": " << std::get<1>(bm) << " msec" << std::endl;
 }
 
 void RunPerftBenchmark(chess::Game::GamePtr game, chess::State::StatePtr state, int perft_depth) {
