@@ -5,6 +5,10 @@
 #ifndef AITHENA_ALPHAZERO_ALPHAZERO_H_
 #define AITHENA_ALPHAZERO_ALPHAZERO_H_
 
+#ifndef AITHENA_DISABLE_CUDA_UPDATES
+#define AITHENA_DISABLE_CUDA_UPDATES false
+#endif
+
 #include <torch/torch.h>
 
 #include <memory>
@@ -106,7 +110,7 @@ class AlphaZero {
  private:
   // TODO: this flag disables using the GPU for updating the NN. This is required for my old PC but should normally be
   // disabled or completely removed from the code!
-  bool disable_cuda_update_{false};
+  bool disable_cuda_update_{AITHENA_DISABLE_CUDA_UPDATES};
 
   std::shared_ptr<ReplayMemory> replay_memory_{nullptr};
   chess::Game::GamePtr game_{nullptr};
