@@ -4,6 +4,7 @@
 
 #include <iostream>
 
+#include "alphazero/alphazero.h"
 #include "chess/game.h"
 #include "chess/util.h"
 
@@ -13,6 +14,7 @@ std::string GetBenchmarkUsageText() {
   return "Usage: ./aithena benchmark <options>\n"
          "  --help -h                       Show the help menu\n"
          "## Benchmark Options ##\n"
+         "  --alphazero                     Run alphazero test\n"
          "  --perft <depth>                 Run perft test\n"
          "## Chess Options ##\n"
          "  --fen -f <string>               Initial board (default: 8-by-8 Chess)\n"
@@ -20,10 +22,11 @@ std::string GetBenchmarkUsageText() {
          "  --max-no-progress -p <number>   Maximum moves without progress (default: 50)\n";
 }
 
-enum GetOptOption : int { kOptPerft = 1000, kOptFEN, kOptMaxMoves, kOptMaxNoProgress };
+enum GetOptOption : int { kOptAlphazero = 1000, kOptPerft, kOptFEN, kOptMaxMoves, kOptMaxNoProgress };
 
 int RunBenchmark(int argc, char** argv) {
   static struct option long_options[] = {{"help", no_argument, nullptr, 'h'},
+                                         {"alphazero", no_argument, nullptr, kOptAlphazero},
                                          {"perft", required_argument, nullptr, kOptPerft},
                                          {"fen", required_argument, nullptr, kOptFEN},
                                          {"max-moves", required_argument, nullptr, kOptMaxMoves},
@@ -32,6 +35,7 @@ int RunBenchmark(int argc, char** argv) {
 
   // Configurable options
   std::string fen{"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"};
+  bool alphazero{false};
   int perft{-1};
   int max_no_progress{50};
   int max_moves{1000};
@@ -47,6 +51,9 @@ int RunBenchmark(int argc, char** argv) {
       case 'h':
         std::cout << GetBenchmarkUsageText();
         return 0;
+      case kOptAlphazero:
+        alphazero = true;
+        break;
       case kOptPerft:
         perft = atoi(optarg);
         break;
@@ -78,11 +85,43 @@ int RunBenchmark(int argc, char** argv) {
 
   if (perft >= 0) RunPerftBenchmark(game, start, perft);
 
+  if (alphazero) RunAlphazeroBenchmark(game, start);
+
   bm_bm.End();
 
   std::cout << "Benchmark: completed in " << bm_bm.GetLast(Benchmark::UNIT_SEC) << " seconds" << std::endl;
 
   return 0;
+}
+
+void RunAlphazeroBenchmark(chess::Game::GamePtr game, chess::State::StatePtr state, int evaluation_games) {
+  Benchmark bm_alphazero;
+
+  bm_alphazero.Start();
+
+  AlphaZero az{game};
+  chess::State::StatePtr current_state = state;
+
+  int action_count = 0;
+
+  for (int i = 0; i < evaluation_games; ++i) {
+    while (!game->IsTerminalState(current_state)) {
+      current_state = az.DrawAction(current_state);
+      ++action_count;
+    }
+  }
+
+  bm_alphazero.End();
+
+  double aps =
+      1000000.0 * static_cast<double>(action_count) / static_cast<double>(bm_alphazero.GetLast(Benchmark::UNIT_USEC));
+
+  std::cout << "## Alphazero ##" << std::endl;
+  std::cout << "Drew " << action_count << " actions in " << bm_alphazero.GetLast(Benchmark::UNIT_SEC) << " seconds ("
+            << aps << " actions per second)" << std::endl;
+
+  for (auto bm : az.benchmark_.GetAvg(Benchmark::UNIT_USEC))
+    std::cout << std::get<0>(bm) << ": " << std::get<1>(bm) << " usec" << std::endl;
 }
 
 void RunPerftBenchmark(chess::Game::GamePtr game, chess::State::StatePtr state, int perft_depth) {
@@ -96,6 +135,7 @@ void RunPerftBenchmark(chess::Game::GamePtr game, chess::State::StatePtr state, 
 
   double nps = 1000000.0 * static_cast<double>(nodes) / static_cast<double>(bm_perft.GetLast(Benchmark::UNIT_USEC));
 
-  std::cout << "Perft(" << perft_depth << "): Searched " << nodes << " nodes in "
-            << bm_perft.GetLast(Benchmark::UNIT_SEC) << " seconds (" << nps << " nps)" << std::endl;
+  std::cout << "## Perft(" << perft_depth << ") ##" << std::endl;
+  std::cout << "Searched " << nodes << " nodes in " << bm_perft.GetLast(Benchmark::UNIT_SEC) << " seconds (" << nps
+            << " nps)" << std::endl;
 }
