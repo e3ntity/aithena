@@ -1,1 +1,1 @@
-- Add tests for moving pinned pieces
+-- Implement AlphaZero::DecodeNodeValue()
