@@ -88,6 +88,7 @@ class AlphaZero {
   void SetSimulations(int);
   void SetBatchSize(int);
   void SetUseCUDA(bool);
+  void SetDiscountFactor(int);
   void SetDirichletNoiseAlpha(double);
   void SetSelectPolicy(AZNode::AZNodePtr (*select_policy)(AZNode::AZNodePtr));
   void SetBackpass(void (*backpass)(AZNode::AZNodePtr, double));
@@ -102,7 +103,7 @@ class AlphaZero {
 
   static const int kDefaultSimulations = 800;
   static const int kDefaultBatchSize = 4096;
-  static constexpr double kDefaultDiscountFactor = 0.95;
+  static constexpr double kDefaultDiscountFactor = 0.99;
   static constexpr double kDefaultDirichletNoiseAlpha = 0.3;
 
   BenchmarkSet benchmark_;
