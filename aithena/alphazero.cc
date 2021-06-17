@@ -101,7 +101,7 @@ int RunAlphazero(int argc, char** argv) {
   int rounds{100};
   int evaluations{10};
   int simulations{AlphaZero::kDefaultSimulations};
-  int discount_factor{AlphaZero::kDefaultDiscountFactor};
+  double discount_factor{AlphaZero::kDefaultDiscountFactor};
   std::string fen{"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"};
   int max_no_progress{50};
   int max_moves{1000};
@@ -150,8 +150,9 @@ int RunAlphazero(int argc, char** argv) {
         std::cout << "Save path: " << save_path << std::endl;
         break;
       case kOptDiscountFactor:
-        discount_factor = atoi(optarg);
+        discount_factor = atof(optarg);
         std::cout << "Discount factor: " << discount_factor << std::endl;
+        break;
       case kOptLoad:
         load_path = static_cast<std::string>(optarg);
         std::cout << "Load path: " << load_path << std::endl;
