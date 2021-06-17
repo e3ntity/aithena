@@ -2,6 +2,10 @@ cmake_minimum_required(VERSION 3.10)
 
 project(aithena)
 
+if (AITHENA_DISABLE_CUDA_UPDATES)
+  ADD_DEFINITIONS(-DAITHENA_DISABLE_CUDA_UPDATES=true)
+endif()
+
 set(CMAKE_CXX_STANDARD 17)
 
 if(NOT CMAKE_BUILD_TYPE)
