@@ -877,6 +877,7 @@ std::vector<State::StatePtr> Game::GenMoves(State::StatePtr state) {
 
     pin_move_mask.clear(pinned.x, pinned.y);
     pin_move_mask.clear(king_x, king_y);
+    pin_move_mask &= (capture_mask | push_mask);
 
     auto pin_moves = GenPseudoMoves(state, pinned.x, pinned.y);
 

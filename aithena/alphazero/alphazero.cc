@@ -214,6 +214,8 @@ void AlphaZero::SetUseCUDA(bool use_cuda) {
     network_->to(torch::kCPU);
 }
 
+void AlphaZero::SetDiscountFactor(int discount_factor) { discount_factor_ = discount_factor; }
+
 void AlphaZero::SetDirichletNoiseAlpha(double alpha) {
   dirichlet_noise_ = dirichlet_distribution<std::mt19937>({alpha});
 }

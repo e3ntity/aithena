@@ -23,6 +23,7 @@ enum GetOptOption : int {
   kOptBatchSize,
   kOptSimulations,
   kOptSave,
+  kOptDiscountFactor,
   kOptLoad,
   kOptNoCuda,
   kOptFEN,
@@ -35,15 +36,22 @@ std::string GetAlphazeroUsageText() {
          "  --help -h                   Show the help menu\n"
          "  --train                     Puts the program in training mode\n"
          "## Training Options ##\n"
-         "  --batch-size <number>       Neural net. update batch size (default: 4096)\n"
+         "  --batch-size <number>       Neural net. update batch size (default: " +
+         std::to_string(AlphaZero::kDefaultBatchSize) +
+         ")\n"
          "  --epochs -e <number>        Number of epochs (default: 10)\n"
          "  --evaluations <number>      Number of evaluations to run at the end of each epoch (default: 10)\n"
          "  --rounds -r <number>        Number of training rounds (default: 100)\n"
          "  --save <path>               Path for saving NN (a suffix will be appended)\n"
          "## Alphazero Options ##\n"
+         "  --discount-factor <number>  Discount factor (default: " +
+         std::to_string(AlphaZero::kDefaultDiscountFactor) +
+         ")\n"
          "  --load <path>               Path for loading NN (suffix will be appended)\n"
          "  --no-cuda                   Disables using cuda\n"
-         "  --simulations <number>      Number of simulations (default: 800)\n"
+         "  --simulations <number>      Number of simulations (default: " +
+         std::to_string(AlphaZero::kDefaultSimulations) +
+         ")\n"
          "## Chess Options ##\n"
          "  --fen <string>              Initial board (default: 8-by-8 Chess)\n"
          "  --max-moves <number>        Maximum moves per game (default: 1000)\n"
@@ -78,6 +86,7 @@ int RunAlphazero(int argc, char** argv) {
                                          {"evaluations", required_argument, nullptr, kOptEvaluations},
                                          {"rounds", required_argument, nullptr, 'r'},
                                          {"save", required_argument, nullptr, kOptSave},
+                                         {"discount-factor", required_argument, nullptr, kOptDiscountFactor},
                                          {"load", required_argument, nullptr, kOptLoad},
                                          {"no-cuda", no_argument, nullptr, kOptNoCuda},
                                          {"simulations", required_argument, nullptr, kOptSimulations},
@@ -87,11 +96,12 @@ int RunAlphazero(int argc, char** argv) {
                                          {0, 0, 0, 0}};
 
   // Configurable options
-  int batch_size{4096};
+  int batch_size{AlphaZero::kDefaultBatchSize};
   int epochs{10};
   int rounds{100};
   int evaluations{10};
-  int simulations{800};
+  int simulations{AlphaZero::kDefaultSimulations};
+  double discount_factor{AlphaZero::kDefaultDiscountFactor};
   std::string fen{"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"};
   int max_no_progress{50};
   int max_moves{1000};
@@ -138,6 +148,10 @@ int RunAlphazero(int argc, char** argv) {
       case kOptSave:
         save_path = static_cast<std::string>(optarg);
         std::cout << "Save path: " << save_path << std::endl;
+        break;
+      case kOptDiscountFactor:
+        discount_factor = atof(optarg);
+        std::cout << "Discount factor: " << discount_factor << std::endl;
         break;
       case kOptLoad:
         load_path = static_cast<std::string>(optarg);
@@ -186,6 +200,7 @@ int RunAlphazero(int argc, char** argv) {
 
   az.SetBatchSize(batch_size);
   az.SetSimulations(simulations);
+  az.SetDiscountFactor(discount_factor);
 
   if (!training_mode) {
     chess::State::StatePtr move = az.DrawAction(state);
