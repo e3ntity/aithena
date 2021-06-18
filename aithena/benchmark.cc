@@ -198,5 +198,5 @@ void RunDivide(chess::Game::GamePtr game, chess::State::StatePtr state, int dept
   for (auto entry : divide) std::cout << std::get<0>(entry)->ToLAN() << ": " << std::get<1>(entry) << std::endl;
 
   std::cout << "Moves: " << divide.size() << std::endl;
-  std::cout << "Nodes: " << nodes << std::endl;
+  std::cout << "Nodes: " << nodes + divide.size() << std::endl;
 }
