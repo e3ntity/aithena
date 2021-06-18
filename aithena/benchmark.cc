@@ -178,9 +178,25 @@ void RunPerftBenchmark(chess::Game::GamePtr game, chess::State::StatePtr state, 
 }
 
 void RunDivide(chess::Game::GamePtr game, chess::State::StatePtr state, int depth) {
-  auto divide = chess::divide(game, state, depth);
+  Benchmark bm_divide;
+
+  bm_divide.Start();
+
+  auto divide = chess::divide(game, state, depth - 1);
+
+  bm_divide.End();
+
+  int nodes = 0;
+  for (auto entry : divide) nodes += std::get<1>(entry);
+
+  double nps = 1000000.0 * static_cast<double>(nodes) / static_cast<double>(bm_divide.GetLast(Benchmark::UNIT_USEC));
 
   std::cout << "## Divide(" << depth << ") ##" << std::endl;
+  std::cout << "Searched " << nodes << " nodes in " << bm_divide.GetLast(Benchmark::UNIT_SEC) << " seconds (" << nps
+            << " nps)" << std::endl;
 
   for (auto entry : divide) std::cout << std::get<0>(entry)->ToLAN() << ": " << std::get<1>(entry) << std::endl;
+
+  std::cout << "Moves: " << divide.size() << std::endl;
+  std::cout << "Nodes: " << nodes << std::endl;
 }
