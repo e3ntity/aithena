@@ -437,7 +437,8 @@ Game::StateList Game::GenCastlingMoves(State::StatePtr state, int x, int y) {
     // King side castle
     BoardPlane occupied_king(width, height);
 
-    occupied_king.ScanLine(x + 1, y, x_rook_right - 1, y);
+    occupied_king.ScanLine(x + 1, y, x_rook_right, y);
+    occupied_king.clear(x_rook_right, y);
     occupied_king &= player_plane;
 
     if (occupied_king.count() == 0) {
@@ -456,7 +457,8 @@ Game::StateList Game::GenCastlingMoves(State::StatePtr state, int x, int y) {
     // Queen side castle
     BoardPlane occupied_queen(width, height);
 
-    occupied_queen.ScanLine(x - 1, y, x_rook_left + 1, y);
+    occupied_queen.ScanLine(x - 1, y, x_rook_left, y);
+    occupied_queen.clear(x_rook_left, y);
     occupied_queen &= player_plane;
 
     if (occupied_queen.count() == 0) {
