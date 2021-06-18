@@ -15,6 +15,7 @@ std::string GetBenchmarkUsageText() {
          "  --help -h                       Show the help menu\n"
          "## Benchmark Options ##\n"
          "  --alphazero                     Run alphazero test\n"
+         "  --divide <depth>                Run divide test (for locating bugs)\n"
          "  --perft <depth>                 Run perft test\n"
          "## AlphaZero Options ##\n"
          "  --no-cuda                       Disables using cuda\n"
@@ -27,6 +28,7 @@ std::string GetBenchmarkUsageText() {
 
 enum GetOptOption : int {
   kOptAlphazero = 1000,
+  kOptDivide,
   kOptPerft,
   kOptNoCuda,
   kOptSimulations,
@@ -38,6 +40,7 @@ enum GetOptOption : int {
 int RunBenchmark(int argc, char** argv) {
   static struct option long_options[] = {{"help", no_argument, nullptr, 'h'},
                                          {"alphazero", no_argument, nullptr, kOptAlphazero},
+                                         {"divide", required_argument, nullptr, kOptDivide},
                                          {"perft", required_argument, nullptr, kOptPerft},
                                          {"no-cuda", no_argument, nullptr, kOptNoCuda},
                                          {"simulations", required_argument, nullptr, kOptSimulations},
@@ -49,6 +52,7 @@ int RunBenchmark(int argc, char** argv) {
   // Configurable options
   std::string fen{"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"};
   bool alphazero{false};
+  int divide{-1};
   int az_rounds{1};  // TODO: make configurable
   bool az_no_cuda{false};
   int az_simulations{800};
@@ -69,6 +73,9 @@ int RunBenchmark(int argc, char** argv) {
         return 0;
       case kOptAlphazero:
         alphazero = true;
+        break;
+      case kOptDivide:
+        divide = atoi(optarg);
         break;
       case kOptPerft:
         perft = atoi(optarg);
@@ -106,6 +113,8 @@ int RunBenchmark(int argc, char** argv) {
   bm_bm.Start();
 
   if (perft >= 0) RunPerftBenchmark(game, start, perft);
+
+  if (divide >= 0) RunDivide(game, start, divide);
 
   if (alphazero) RunAlphazeroBenchmark(game, start, az_simulations, az_rounds, az_no_cuda);
 
@@ -166,4 +175,12 @@ void RunPerftBenchmark(chess::Game::GamePtr game, chess::State::StatePtr state, 
   std::cout << "## Perft(" << perft_depth << ") ##" << std::endl;
   std::cout << "Searched " << nodes << " nodes in " << bm_perft.GetLast(Benchmark::UNIT_SEC) << " seconds (" << nps
             << " nps)" << std::endl;
+}
+
+void RunDivide(chess::Game::GamePtr game, chess::State::StatePtr state, int depth) {
+  auto divide = chess::divide(game, state, depth);
+
+  std::cout << "## Divide(" << depth << ") ##" << std::endl;
+
+  for (auto entry : divide) std::cout << std::get<0>(entry)->ToLAN() << ": " << std::get<1>(entry) << std::endl;
 }
