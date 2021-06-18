@@ -227,7 +227,8 @@ Game::StateList Game::GenRawPawnCaptures(State::StatePtr state, int x, int y) {
 
     Piece captured_piece = board.GetField(x + h, y + direction);
 
-    if (move_ep.x == x + h && move_ep.y == y + direction)
+    if (move_ep.x == x + h && move_ep.y == y + direction &&
+        board.GetField(move_ep.x, move_ep.y - direction).player == state->GetOpponent())
       // En passant, remove captured pawn
       move->GetBoard().ClearField(move_ep.x, move_ep.y - direction);
     else if (captured_piece.player == state->GetPlayer())
@@ -285,7 +286,8 @@ Game::StateList Game::GenPawnCaptures(State::StatePtr state, int x, int y) {
 
     Piece captured_piece = board.GetField(x + h, y + direction);
 
-    if (move_ep.x == x + h && move_ep.y == y + direction) {
+    if (move_ep.x == x + h && move_ep.y == y + direction &&
+        board.GetField(move_ep.x, move_ep.y - direction).player == state->GetOpponent()) {
       // En passant, remove captured pawn
       move->GetBoard().ClearField(move_ep.x, move_ep.y - direction);
       move->move_info_->SetSpecial(1);
