@@ -182,7 +182,7 @@ void RunDivide(chess::Game::GamePtr game, chess::State::StatePtr state, int dept
 
   bm_divide.Start();
 
-  auto divide = chess::divide(game, state, depth - 1);
+  auto divide = chess::divide(game, state, depth);
 
   bm_divide.End();
 
