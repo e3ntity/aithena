@@ -431,14 +431,14 @@ Game::StateList Game::GenCastlingMoves(State::StatePtr state, int x, int y) {
   int x_rook_left = std::get<0>(castle_rooks).x;
   int x_rook_right = std::get<1>(castle_rooks).x;
 
-  BoardPlane player_plane = board.GetPlayerPlane(state->GetPlayer());
+  BoardPlane plane = board.GetCompletePlane();
 
   if (x_rook_right >= 0) {
     // King side castle
     BoardPlane occupied_king(width, height);
 
-    occupied_king.ScanLine(x + 1, y, x_rook_right, y);
-    occupied_king &= player_plane;
+    occupied_king.ScanLine(x + 1, y, x_rook_right - 1, y);
+    occupied_king &= plane;
 
     if (occupied_king.count() == 0) {
       State::StatePtr move = std::make_shared<State>(State(*state));
@@ -457,12 +457,12 @@ Game::StateList Game::GenCastlingMoves(State::StatePtr state, int x, int y) {
     BoardPlane occupied_queen(width, height);
 
     occupied_queen.ScanLine(x - 1, y, x_rook_left, y);
-    occupied_queen &= player_plane;
+    occupied_queen &= plane;
 
     if (occupied_queen.count() == 0) {
       State::StatePtr move = std::make_shared<State>(State(*state));
       moves.push_back(move);
-      moves.back()->GetBoard().MoveField(x_rook_left, y, x - 1, y);
+      moves.back()->GetBoard().MoveField(x_rook_left + 1, y, x - 1, y);
       moves.back()->GetBoard().MoveField(x, y, x - 2, y);
       moves.back()->SetCastleKing(state->GetPlayer());
       moves.back()->SetCastleQueen(state->GetPlayer());
