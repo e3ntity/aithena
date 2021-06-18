@@ -431,14 +431,14 @@ Game::StateList Game::GenCastlingMoves(State::StatePtr state, int x, int y) {
   int x_rook_left = std::get<0>(castle_rooks).x;
   int x_rook_right = std::get<1>(castle_rooks).x;
 
-  BoardPlane plane = board.GetCompletePlane();
+  BoardPlane player_plane = board.GetPlayerPlane(state->GetPlayer());
 
   if (x_rook_right >= 0) {
     // King side castle
     BoardPlane occupied_king(width, height);
 
-    occupied_king.ScanLine(x + 1, y, x_rook_right - 1, y);
-    occupied_king &= plane;
+    occupied_king.ScanLine(x + 1, y, x_rook_right, y);
+    occupied_king &= player_plane;
 
     if (occupied_king.count() == 0) {
       State::StatePtr move = std::make_shared<State>(State(*state));
@@ -456,8 +456,8 @@ Game::StateList Game::GenCastlingMoves(State::StatePtr state, int x, int y) {
     // Queen side castle
     BoardPlane occupied_queen(width, height);
 
-    occupied_queen.ScanLine(x - 1, y, x_rook_left + 1, y);
-    occupied_queen &= plane;
+    occupied_queen.ScanLine(x - 1, y, x_rook_left, y);
+    occupied_queen &= player_plane;
 
     if (occupied_queen.count() == 0) {
       State::StatePtr move = std::make_shared<State>(State(*state));
