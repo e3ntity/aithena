@@ -143,6 +143,7 @@ TEST_F(ChessPerftTest, Custom14) {
   EXPECT_EQ(perft(game_, state, 4), 432070);
 }
 
+// Mirror of Custom14 with same result
 TEST_F(ChessPerftTest, Custom15) {
   auto state = chess::State::FromFEN("r2q1rk1/pP1p2pp/Q4n2/bbp1p3/Np6/1B3NBn/pPPP1PPP/R3K2R b KQ - 0 1");
 
