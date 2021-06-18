@@ -401,6 +401,15 @@ std::string State::ToLAN() {
   Coord target = move_info_->GetTo();
   Piece piece = board_.GetField(target.x, target.y);
 
+  if (move_info_->IsCastle()) {
+    if (target.x > source.x)
+      return "0-0";
+    else if (target.x < source.x)
+      return "0-0-0";
+    else
+      assert(false);
+  }
+
   if (!move_info_->IsPromotion() && piece.figure != static_cast<int>(Figure::kPawn)) output += GetPieceSymbol(piece);
 
   output += alphabet[source.x];

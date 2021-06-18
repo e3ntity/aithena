@@ -227,7 +227,8 @@ Game::StateList Game::GenRawPawnCaptures(State::StatePtr state, int x, int y) {
 
     Piece captured_piece = board.GetField(x + h, y + direction);
 
-    if (move_ep.x == x + h && move_ep.y == y + direction)
+    if (move_ep.x == x + h && move_ep.y == y + direction &&
+        board.GetField(move_ep.x, move_ep.y - direction).player == state->GetOpponent())
       // En passant, remove captured pawn
       move->GetBoard().ClearField(move_ep.x, move_ep.y - direction);
     else if (captured_piece.player == state->GetPlayer())
@@ -285,7 +286,8 @@ Game::StateList Game::GenPawnCaptures(State::StatePtr state, int x, int y) {
 
     Piece captured_piece = board.GetField(x + h, y + direction);
 
-    if (move_ep.x == x + h && move_ep.y == y + direction) {
+    if (move_ep.x == x + h && move_ep.y == y + direction &&
+        board.GetField(move_ep.x, move_ep.y - direction).player == state->GetOpponent()) {
       // En passant, remove captured pawn
       move->GetBoard().ClearField(move_ep.x, move_ep.y - direction);
       move->move_info_->SetSpecial(1);
@@ -319,6 +321,7 @@ Game::StateList Game::GenPawnCaptures(State::StatePtr state, int x, int y) {
       promo->SetDPushPawn({-1, -1});
 
       promo->move_info_ = std::make_shared<MoveInfo>(*move->move_info_);
+      promo->move_info_->SetPromotion(true);
 
       switch (figure) {
         case Figure::kKnight:
@@ -428,14 +431,15 @@ Game::StateList Game::GenCastlingMoves(State::StatePtr state, int x, int y) {
   int x_rook_left = std::get<0>(castle_rooks).x;
   int x_rook_right = std::get<1>(castle_rooks).x;
 
-  BoardPlane player_plane = board.GetPlayerPlane(state->GetPlayer());
+  BoardPlane plane = board.GetCompletePlane();
 
   if (x_rook_right >= 0) {
     // King side castle
     BoardPlane occupied_king(width, height);
 
     occupied_king.ScanLine(x + 1, y, x_rook_right, y);
-    occupied_king &= player_plane;
+    occupied_king.clear(x_rook_right, y);
+    occupied_king &= plane;
 
     if (occupied_king.count() == 0) {
       State::StatePtr move = std::make_shared<State>(State(*state));
@@ -445,6 +449,7 @@ Game::StateList Game::GenCastlingMoves(State::StatePtr state, int x, int y) {
       moves.back()->SetCastleKing(state->GetPlayer());
       moves.back()->SetCastleQueen(state->GetPlayer());
       moves.back()->move_info_ = std::make_shared<MoveInfo>(Coord({x, y}), Coord({x + 2, y}), 0, 0, 2);
+      moves.back()->SetDPushPawn({-1, -1});
     }
   }
 
@@ -453,7 +458,8 @@ Game::StateList Game::GenCastlingMoves(State::StatePtr state, int x, int y) {
     BoardPlane occupied_queen(width, height);
 
     occupied_queen.ScanLine(x - 1, y, x_rook_left, y);
-    occupied_queen &= player_plane;
+    occupied_queen.clear(x_rook_left, y);
+    occupied_queen &= plane;
 
     if (occupied_queen.count() == 0) {
       State::StatePtr move = std::make_shared<State>(State(*state));
@@ -462,7 +468,8 @@ Game::StateList Game::GenCastlingMoves(State::StatePtr state, int x, int y) {
       moves.back()->GetBoard().MoveField(x, y, x - 2, y);
       moves.back()->SetCastleKing(state->GetPlayer());
       moves.back()->SetCastleQueen(state->GetPlayer());
-      moves.back()->move_info_ = std::make_shared<MoveInfo>(Coord({x, y}), Coord({x + 2, y}), 0, 0, 3);
+      moves.back()->move_info_ = std::make_shared<MoveInfo>(Coord({x, y}), Coord({x - 2, y}), 0, 0, 3);
+      moves.back()->SetDPushPawn({-1, -1});
     }
   }
 
