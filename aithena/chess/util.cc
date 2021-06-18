@@ -85,15 +85,13 @@ std::string PrintBoard(State state) {
   return PrintMarkedBoard(state, marker);
 }
 
-int perft(std::shared_ptr<Game> game, chess::State::StatePtr state, int max_depth, int depth) {
-  if (depth >= max_depth) return 1;
+int perft(std::shared_ptr<Game> game, chess::State::StatePtr state, int depth) {
+  if (depth == 0) return 1;
 
   int counter = 0;
   auto moves = game->GetLegalActions(state);
 
-  for (auto move : moves) {
-    counter += perft(game, move, max_depth, depth + 1);
-  }
+  for (auto move : moves) counter += perft(game, move, depth - 1);
 
   return counter + moves.size();
 }
