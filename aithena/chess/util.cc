@@ -93,7 +93,9 @@ int perft(std::shared_ptr<Game> game, chess::State::StatePtr state, int depth) {
 
   for (auto move : moves) counter += perft(game, move, depth - 1);
 
-  return counter + moves.size();
+  if (depth > 1) counter += moves.size();
+
+  return counter;
 }
 
 std::vector<std::tuple<State::StatePtr, int>> divide(std::shared_ptr<Game> game, State::StatePtr state, int depth) {
