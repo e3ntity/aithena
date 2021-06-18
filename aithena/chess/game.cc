@@ -448,6 +448,7 @@ Game::StateList Game::GenCastlingMoves(State::StatePtr state, int x, int y) {
       moves.back()->SetCastleKing(state->GetPlayer());
       moves.back()->SetCastleQueen(state->GetPlayer());
       moves.back()->move_info_ = std::make_shared<MoveInfo>(Coord({x, y}), Coord({x + 2, y}), 0, 0, 2);
+      moves.back()->SetDPushPawn({-1, -1});
     }
   }
 
@@ -466,6 +467,7 @@ Game::StateList Game::GenCastlingMoves(State::StatePtr state, int x, int y) {
       moves.back()->SetCastleKing(state->GetPlayer());
       moves.back()->SetCastleQueen(state->GetPlayer());
       moves.back()->move_info_ = std::make_shared<MoveInfo>(Coord({x, y}), Coord({x - 2, y}), 0, 0, 3);
+      moves.back()->SetDPushPawn({-1, -1});
     }
   }
 
