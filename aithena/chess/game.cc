@@ -319,6 +319,7 @@ Game::StateList Game::GenPawnCaptures(State::StatePtr state, int x, int y) {
       promo->SetDPushPawn({-1, -1});
 
       promo->move_info_ = std::make_shared<MoveInfo>(*move->move_info_);
+      promo->move_info_->SetPromotion(true);
 
       switch (figure) {
         case Figure::kKnight:
