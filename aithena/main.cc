@@ -14,6 +14,8 @@
 
 #include "alphazero.h"
 #include "benchmark.h"
+#include "chess/game.h"
+#include "chess/util.h"
 
 std::string GetUsageText() {
   return "Usage: ./aithena <program> <options>\n"

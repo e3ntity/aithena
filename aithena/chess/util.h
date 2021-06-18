@@ -16,17 +16,13 @@
 namespace aithena {
 namespace chess {
 
-std::string PrintMarkedBoard(State state, BoardPlane marker,
-                             std::string marker_color = "\033[31m");
+std::string PrintMarkedBoard(State state, BoardPlane marker, std::string marker_color = "\033[31m");
 
 std::string PrintBoard(State state);
 
-int perft(std::shared_ptr<Game> game, chess::State::StatePtr state,
-          int max_depth, int depth = 0);
+int perft(std::shared_ptr<Game> game, chess::State::StatePtr state, int depth = 1);
 
-std::vector<std::tuple<State::StatePtr, int>> divide(std::shared_ptr<Game> game,
-                                                     State::StatePtr state,
-                                                     int depth = 1);
+std::vector<std::tuple<State::StatePtr, int>> divide(std::shared_ptr<Game> game, State::StatePtr state, int depth = 1);
 
 }  // namespace chess
 }  // namespace aithena

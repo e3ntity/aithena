@@ -12,4 +12,6 @@ void RunAlphazeroBenchmark(chess::Game::GamePtr, chess::State::StatePtr, int, in
 
 void RunPerftBenchmark(chess::Game::GamePtr, chess::State::StatePtr, int);
 
+void RunDivide(chess::Game::GamePtr, chess::State::StatePtr, int);
+
 #endif  // AITHENA_BENCHMARK_H_
