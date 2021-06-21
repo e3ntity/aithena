@@ -13,64 +13,40 @@ Copyright 2020 All rights reserved.
 namespace aithena {
 
 // Monte Carlo Tree Search
-template <typename Game>
 class MCTS {
  public:
-  using Node = MCTSNode<Game>;
+  MCTS(chess::Game::GamePtr game);
 
-  MCTS(std::shared_ptr<Game>);
+  chess::State::StatePtr DrawAction(chess::State::StatePtr);
+  MCTSNode::MCTSNodePtr DrawAction(MCTSNode::MCTSNodePtr);
 
-  // Runs the MCTS algorithm with a certain number of simulations each round,
-  // starting at the given node.
-  void Run(typename Node::NodePtr, int simulations = 1);
+  void Simulate(MCTSNode::MCTSNodePtr);
 
-  // MCTS Selection, starting at some node and selecting successive children
-  // according to the search strategy until a leaf node / terminal node is
-  // reached.
-  typename Node::NodePtr Select(
-      typename Node::NodePtr,
-      typename Node::NodePtr (*next)(typename Node::NodePtr));
+  // Selects the maximum child according to some evaluation function.
+  static MCTSNode::MCTSNodePtr SelectMax(MCTSNode::MCTSNodePtr node, double (*evaluate)(MCTSNode::MCTSNodePtr));
 
-  // Simulates a playout using some selection strategy, starting from some node.
-  // Returns the result of the playout from the perspective of the node from
-  // which it was started.
-  int Simulate(typename Node::NodePtr,
-               typename Node::NodePtr (*next)(typename Node::NodePtr));
+  // Selects child according to UCT.
+  static MCTSNode::MCTSNodePtr UCTSelect(MCTSNode::MCTSNodePtr);
+  // Selects a random child.
+  static MCTSNode::MCTSNodePtr RandomSelect(MCTSNode::MCTSNodePtr);
+  // Selects child with highest visit count.
+  static MCTSNode::MCTSNodePtr VisitSelect(MCTSNode::MCTSNodePtr);
 
-  // Backpropagates the result of a playout from the node where it was started
-  // to the root.
-  void Backpropagate(typename Node::NodePtr, int);
+  static void Backpass(MCTSNode::MCTSNodePtr, int);
 
-  // Strategies for selecting the next node.
+  void SetSimulations(int);
 
-  // Selects a random next node. Make sure to previously seed the prng with
-  // srand(). Assumes that the node has already been expanded.
-  static typename Node::NodePtr RandomSelect(typename Node::NodePtr);
+  const static int kDefaultSimulations = 1000;
 
-  // Selects the next node according to the upper confidence bound.
-  // Assumes that the node has already been expanded and that each child node
-  // has been visited at least once.
-  static typename Node::NodePtr UCTSelect(typename Node::NodePtr);
+ private:
+  chess::Game::GamePtr game_;
 
-  // Selects the next node greedily.
-  static typename Node::NodePtr GreedySelect(typename Node::NodePtr);
+  int simulations_{kDefaultSimulations};
 
-  // Returns the average time per select in seconds.
-  double BenchmarkSelect();
-  // Returns the average time per simulation in seconds.
-  double BenchmarkSimulate();
-  // Returns the average time per backpropagation in seconds.
-  double BenchmarkBackpropagate();
-  double BenchmarkRun();
-
-  // Benchmark set. Benchmarks are named after the functions. e.g. "Run"
-  BenchmarkSet bm_;
-
- protected:
-  std::shared_ptr<Game> game_;
+  MCTSNode::MCTSNodePtr (*select_policy_)(MCTSNode::MCTSNodePtr) = UCTSelect;
+  MCTSNode::MCTSNodePtr (*rollout_policy_)(MCTSNode::MCTSNodePtr) = RandomSelect;
+  void (*backpass_)(MCTSNode::MCTSNodePtr, int) = Backpass;
 };
-
-template class MCTS<::aithena::chess::Game>;
 
 }  // namespace aithena
 

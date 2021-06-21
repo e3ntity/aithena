@@ -10,179 +10,110 @@ Copyright 2020 All rights reserved.
 
 namespace aithena {
 
-// Constructors
+MCTS::MCTS(chess::Game::GamePtr game) : game_{game} {}
 
-template <typename Game>
-MCTS<Game>::MCTS(std::shared_ptr<Game> game) : game_{game} {}
+chess::State::StatePtr MCTS::DrawAction(chess::State::StatePtr state) {
+  MCTSNode::MCTSNodePtr node = std::make_shared<MCTSNode>(game_, state);
 
-template <typename Game>
-void MCTS<Game>::Run(typename MCTSNode<Game>::NodePtr root, int simulations) {
-  bm_.Start("Run");
+  node = DrawAction(node);
 
-  auto leaf = Select(root, UCTSelect);
-
-  if (leaf->IsTerminal()) {
-    Backpropagate(
-        leaf, game_->GetStateResult(std::make_shared<typename Game::GameState>(
-                  leaf->GetState())));
-
-    bm_.End("Run");
-    return;
-  }
-
-  auto child = RandomSelect(leaf);
-
-  for (int simulation = 0; simulation < simulations; ++simulation) {
-    int result = Simulate(child, RandomSelect);
-    Backpropagate(child, result);
-  }
-
-  bm_.End("Run");
+  return node->GetState();
 }
 
-template <typename Game>
-typename MCTSNode<Game>::NodePtr MCTS<Game>::Select(
-    typename MCTSNode<Game>::NodePtr start,
-    typename MCTSNode<Game>::NodePtr (*next)(
-        typename MCTSNode<Game>::NodePtr)) {
-  bm_.Start("Select");
+MCTSNode::MCTSNodePtr MCTS::DrawAction(MCTSNode::MCTSNodePtr start) {
+  for (int i = 0; i < simulations_; ++i) Simulate(start);
 
-  typename MCTSNode<Game>::NodePtr current = start;
+  MCTSNode::MCTSNodePtr max_child =
+      SelectMax(start, [](MCTSNode::MCTSNodePtr child) { return static_cast<double>(child->GetVisitCount()); });
 
-  while (!current->IsLeaf()) current = next(current);
-
-  bm_.End("Select");
-
-  return current;
+  return max_child;
 }
 
-template <typename Game>
-int MCTS<Game>::Simulate(typename MCTSNode<Game>::NodePtr start,
-                         typename MCTSNode<Game>::NodePtr (*next)(
-                             typename MCTSNode<Game>::NodePtr)) {
-  bm_.Start("Simulate");
+void MCTS::Simulate(MCTSNode::MCTSNodePtr start) {
+  MCTSNode::MCTSNodePtr node = start;
 
-  int i{0};
-  auto current = start;
-  while (!game_->IsTerminalState(
-      std::make_shared<typename Game::GameState>(current->GetState()))) {
-    if (!current->IsExpanded()) current->Expand();
+  // Selection
 
-    current = next(current);
-    ++i;
+  while (!node->IsLeaf() && !node->IsTerminal()) node = select_policy_(node);
+
+  // Expansion
+
+  node->Expand();
+  MCTSNode::MCTSNodePtr leaf = RandomSelect(node);
+
+  // Rollout
+
+  MCTSNode::MCTSNodePtr rollout_node = std::make_shared<MCTSNode>(game_, leaf->GetState());
+
+  while (true) {
+    rollout_node->Expand();
+
+    if (rollout_node->IsTerminal()) break;
+
+    rollout_node = rollout_policy_(rollout_node);
   }
 
-  int result = game_->GetStateResult(
-      std::make_shared<typename Game::GameState>(current->GetState()));
+  int result = game_->GetStateResult(rollout_node->GetState());
 
-  bm_.End("Simulate");
+  // Backpass
 
-  return i % 2 == 0 ? result : -result;
+  backpass_(leaf, -result);
 }
 
-template <typename Game>
-void MCTS<Game>::Backpropagate(typename MCTSNode<Game>::NodePtr start,
-                               int result) {
-  bm_.Start("Backpropagate");
+MCTSNode::MCTSNodePtr MCTS::SelectMax(MCTSNode::MCTSNodePtr node, double (*evaluate)(MCTSNode::MCTSNodePtr)) {
+  int max_value{INT_MIN};
+  MCTSNode::MCTSNodePtr max_child{nullptr};
 
-  auto current = start;
-  int i{0};
+  for (auto child : node->GetChildren()) {
+    int value = evaluate(child);
 
-  while (current != nullptr) {
-    if (result == 0) {
-      current->IncDraws();
-    } else if ((result > 0 && i % 2 == 0) || (result < 0 && i % 2 == 1)) {
-      current->IncLosses();
+    if (value < max_value) continue;
+
+    if (value == max_value) {
+      double random = static_cast<double>(rand()) / RAND_MAX;
+
+      max_child = random > 0.5 ? max_child : child;
     } else {
-      current->IncWins();
+      max_child = child;
+      max_value = value;
     }
+  }
 
-    current = current->GetParent();
+  return max_child;
+}
+
+MCTSNode::MCTSNodePtr MCTS::UCTSelect(MCTSNode::MCTSNodePtr node) {
+  assert(node->GetVisitCount() > 0);
+
+  return SelectMax(node, [](MCTSNode::MCTSNodePtr child) {
+    MCTSNode::MCTSNodePtr parent = child->GetParent();
+
+    assert(child->GetVisitCount() > 0);
+
+    double exploitation = child->GetMeanWinCount();
+    double exploration =
+        sqrt(log(static_cast<double>(parent->GetVisitCount())) / static_cast<double>(child->GetVisitCount()));
+
+    return exploitation + 1.41 * exploration;
+  });
+}
+
+MCTSNode::MCTSNodePtr MCTS::RandomSelect(MCTSNode::MCTSNodePtr node) {
+  return SelectMax(node, [](MCTSNode::MCTSNodePtr child) { return static_cast<double>(rand()) / RAND_MAX; });
+}
+
+void MCTS::Backpass(MCTSNode::MCTSNodePtr start, int value) {
+  MCTSNode::MCTSNodePtr node = start;
+
+  int i = 0;
+  while (node != nullptr) {
+    node->Update(i % 2 == 0 ? value : -value);
+
+    node = node->GetParent();
     ++i;
   }
-
-  bm_.End("Backpropagate");
 }
 
-// Select strategies
-
-template <typename Game>
-typename MCTSNode<Game>::NodePtr MCTS<Game>::RandomSelect(
-    typename MCTSNode<Game>::NodePtr node) {
-  if (!node->IsExpanded()) node->Expand();
-
-  auto children = node->GetChildren();
-
-  return children.at(rand() % children.size());
-}
-
-template <typename Game>
-typename MCTSNode<Game>::NodePtr MCTS<Game>::UCTSelect(
-    typename MCTSNode<Game>::NodePtr node) {
-  assert(!node->IsLeaf());
-  assert(node->GetVisits() > 0);
-
-  unsigned index{0};
-  double maximum{0};
-  double sum{0};
-
-  auto children = node->GetChildren();
-  std::vector<double> uct;
-
-  unsigned i{0};
-  for (; i < children.size(); ++i) {
-    auto child = children.at(i);
-
-    assert(child->GetVisits() > 0);
-
-    double exploitation = double(child->GetWins()) / double(child->GetVisits());
-    double exploration =
-        sqrt(log(double(node->GetVisits())) / double(child->GetVisits()));
-    double value = exploitation + M_SQRT2 * exploration;
-
-    uct.push_back(value);
-    sum += value;
-
-    if (value <= maximum) continue;
-
-    index = i;
-    maximum = value;
-  }
-
-  for (i = 0; i < children.size(); ++i)
-    children.at(i)->SetUCTConfidence(uct.at(i) / sum);
-
-  return children.at(index);
-}
-
-template <typename Game>
-typename MCTSNode<Game>::NodePtr MCTS<Game>::GreedySelect(
-    typename MCTSNode<Game>::NodePtr node) {
-  if (!node->IsExpanded()) return RandomSelect(node);
-
-  int index{-1};
-  double maximum{0};
-
-  auto children = node->GetChildren();
-
-  int i{0};
-  for (; i < int(children.size()); ++i) {
-    auto child = children.at(i);
-
-    if (child->GetVisits() == 0) continue;
-
-    double value = double(child->GetWins()) / double(child->GetVisits());
-
-    if (value <= maximum) continue;
-
-    index = i;
-    maximum = value;
-  }
-
-  // We dont want to always return the first node if none has been visited.
-  if (index < 0) return RandomSelect(node);
-
-  return children.at(index);
-}
+void MCTS::SetSimulations(int simulations) { simulations_ = simulations; }
 
 }  // namespace aithena
