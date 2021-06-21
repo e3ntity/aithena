@@ -82,8 +82,7 @@ class AlphaZero {
   // Evaluate the given state from the perspective of the given player.
   double EvaluateState(chess::State::StatePtr, chess::Player);
 
-  // Initializes a node by expanding it and setting all children's prior probabilities.
-  void Initialize(AZNode::AZNodePtr);
+  chess::Game::GamePtr GetGame();
 
   void SetSimulations(int);
   void SetBatchSize(int);
