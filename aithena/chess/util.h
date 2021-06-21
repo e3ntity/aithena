@@ -16,9 +16,9 @@
 namespace aithena {
 namespace chess {
 
-std::string PrintMarkedBoard(State state, BoardPlane marker, std::string marker_color = "\033[31m");
+std::string PrintMarkedBoard(State::StatePtr state, BoardPlane marker, std::string marker_color = "\033[31m");
 
-std::string PrintBoard(State state);
+std::string PrintBoard(State::StatePtr state);
 
 int perft(std::shared_ptr<Game> game, chess::State::StatePtr state, int depth = 1);
 
