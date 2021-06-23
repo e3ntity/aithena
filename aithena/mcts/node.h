@@ -13,77 +13,42 @@ Copyright 2020 All rights reserved.
 
 namespace aithena {
 
-template <typename Game>
-class MCTSNode : public std::enable_shared_from_this<MCTSNode<Game>> {
+class MCTSNode : public std::enable_shared_from_this<MCTSNode> {
  public:
-  using NodePtr = std::shared_ptr<MCTSNode<Game>>;
-  using NodePtrList = std::vector<NodePtr>;
+  using MCTSNodePtr = std::shared_ptr<MCTSNode>;
 
-  // Initialize with the default game state.
-  explicit MCTSNode(std::shared_ptr<Game>);
-  // Initialize with a specific state.
-  MCTSNode(std::shared_ptr<Game>, typename Game::GameState);
-  MCTSNode(std::shared_ptr<Game>, typename Game::GameState, NodePtr parent);
+  MCTSNode(chess::Game::GamePtr game, chess::State::StatePtr state, MCTSNodePtr parent = nullptr);
 
-  // Operators
-  MCTSNode<Game>& operator=(const MCTSNode& node);
+  chess::State::StatePtr GetState();
+  MCTSNodePtr GetParent();
+  std::vector<MCTSNodePtr> GetChildren();
+  void SetParent(MCTSNodePtr);
 
-  // Two nodes are considered the same if they represent the same state.
-  bool operator==(const MCTSNode& node);
-  bool operator!=(const MCTSNode& node);
-
-  // Getter
-  typename Game::GameState& GetState();
-  NodePtrList GetChildren();
-  NodePtr GetParent();
-
-  // Generates child nodes.
+  void Update(int);
   void Expand();
-  // Returns whether the node has all child nodes generated.
-  // children_ may have members without the node being expanded if e.g. a
-  // garbage collector is used to remove untouched nodes.
   bool IsExpanded();
-  // Returns true if any of the node's children have not been visited or if the
-  // node is terminal.
   bool IsLeaf();
-  // Returns whether this node is a terminal node.
   bool IsTerminal();
 
-  // Increments the win count and visit count by one.
-  void IncWins();
-  // Increments the draw count and visit count by one.
-  void IncDraws();
-  // Increments the loss count and visit count by one.
-  void IncLosses();
+  double GetMeanWinCount();
+  int GetTotalWinCount();
+  int GetVisitCount();
 
-  unsigned GetWins();
-  unsigned GetDraws();
-  unsigned GetLosses();
-  unsigned GetVisits();
-
-  void SetUCTConfidence(double confidence);
-  double GetUCTConfidence();
-
- protected:
-  // This node's child nodes.
-  NodePtrList children_;
-  // This node's parent.
-  NodePtr parent_;
-  // An object capturing the rules of the game.
-  std::shared_ptr<Game> game_;
-  // The state of the game that this node captures.
-  typename Game::GameState state_;
-  // Whether this node has all possible child nodes in children_.
+ private:
+  // The game rules for chess
+  chess::Game::GamePtr game_;
+  // The children nodes of this node.
+  std::vector<MCTSNodePtr> children_{};
+  // The parent node of this node.
+  std::weak_ptr<MCTSNode> parent_;
+  // The state encapsulated by this node.
+  chess::State::StatePtr state_;
+  // Whether the node has been expanded
   bool expanded_{false};
 
-  unsigned wins_{0};
-  unsigned draws_{0};
-  unsigned visits_{0};
-
-  double UCTConfidence_{0};
+  int win_count_{0};
+  int visit_count_{0};
 };
-
-template class MCTSNode<::aithena::chess::Game>;
 
 }  // namespace aithena
 

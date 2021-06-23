@@ -12,148 +12,54 @@ namespace aithena {
 
 // Constructors
 
-template <typename Game>
-MCTSNode<Game>::MCTSNode(std::shared_ptr<Game> game)
-    : children_{},
-      parent_{nullptr},
-      game_{game},
-      state_{*game_->GetInitialState()} {}
+MCTSNode::MCTSNode(chess::Game::GamePtr game, chess::State::StatePtr state, MCTSNode::MCTSNodePtr parent)
+    : game_{game}, state_{state}, parent_{parent} {}
 
-template <typename Game>
-MCTSNode<Game>::MCTSNode(std::shared_ptr<Game> game,
-                         typename Game::GameState state)
-    : children_{}, parent_{nullptr}, game_{game}, state_{state} {}
+chess::State::StatePtr MCTSNode::GetState() { return state_; }
+MCTSNode::MCTSNodePtr MCTSNode::GetParent() { return parent_.lock(); }
+std::vector<MCTSNode::MCTSNodePtr> MCTSNode::GetChildren() { return children_; }
+void MCTSNode::SetParent(MCTSNode::MCTSNodePtr parent) { parent_ = parent; }
 
-template <typename Game>
-MCTSNode<Game>::MCTSNode(std::shared_ptr<Game> game,
-                         typename Game::GameState state, NodePtr parent)
-    : children_{}, parent_{parent}, game_{game}, state_{state} {}
-
-// Operators
-
-template <typename Game>
-MCTSNode<Game>& MCTSNode<Game>::operator=(const MCTSNode& node) {
-  children_ = node.children_;
-  game_ = node.game_;
-  state_ = node.state_;
-  expanded_ = node.expanded_;
-
-  return *this;
+void MCTSNode::Update(int value) {
+  win_count_ += value;
+  visit_count_ += 1;
 }
 
-template <typename Game>
-bool MCTSNode<Game>::operator==(const MCTSNode<Game>& other) {
-  return state_ == other.state_;
-}
+void MCTSNode::Expand() {
+  if (IsExpanded()) return;
 
-template <typename Game>
-bool MCTSNode<Game>::operator!=(const MCTSNode<Game>& other) {
-  return !operator==(other);
-}
+  MCTSNode::MCTSNodePtr node;
 
-// Getters
+  auto moves = game_->GetLegalActions(state_);
+  for (auto move : moves) {
+    node = std::make_shared<MCTSNode>(game_, move, shared_from_this());
 
-template <typename Game>
-typename Game::GameState& MCTSNode<Game>::GetState() {
-  return state_;
-}
-
-template <typename Game>
-std::vector<std::shared_ptr<MCTSNode<Game>>> MCTSNode<Game>::GetChildren() {
-  return children_;
-}
-
-template <typename Game>
-std::shared_ptr<MCTSNode<Game>> MCTSNode<Game>::GetParent() {
-  return parent_;
-}
-
-// Tree operations
-
-template <typename Game>
-void MCTSNode<Game>::Expand() {
-  auto moves = game_->GetLegalActions(
-      std::make_shared<typename Game::GameState>(state_));
-
-  for (auto state : moves) {
-    children_.push_back(std::shared_ptr<MCTSNode<Game>>(
-        new MCTSNode<Game>(game_, *state, this->shared_from_this())));
+    children_.push_back(node);
   }
-
-  for (auto child : children_) child->SetUCTConfidence(1 / children_.size());
 
   expanded_ = true;
 }
 
-template <typename Game>
-bool MCTSNode<Game>::IsExpanded() {
-  return expanded_;
-}
+bool MCTSNode::IsExpanded() { return expanded_; }
 
-template <typename Game>
-bool MCTSNode<Game>::IsLeaf() {
-  if (!IsExpanded() || IsTerminal()) return true;
+bool MCTSNode::IsLeaf() {
+  if (!IsExpanded()) return true;
 
-  for (auto child : GetChildren()) {
-    if (child->GetVisits() == 0) return true;
+  for (auto child : children_) {
+    if (child->GetVisitCount() <= 0) return true;
   }
 
   return false;
 }
 
-template <typename Game>
-bool MCTSNode<Game>::IsTerminal() {
-  // if (IsExpanded()) return children_.size() == 0;  // Cheap check
+bool MCTSNode::IsTerminal() {
+  if (IsExpanded()) return children_.size() <= 0;
 
-  return game_->IsTerminalState(
-      std::make_shared<typename Game::GameState>(state_));
+  return game_->IsTerminalState(GetState());
 }
 
-template <typename Game>
-void MCTSNode<Game>::IncWins() {
-  wins_++;
-  visits_++;
-}
-
-template <typename Game>
-void MCTSNode<Game>::IncDraws() {
-  draws_++;
-  visits_++;
-}
-
-template <typename Game>
-void MCTSNode<Game>::IncLosses() {
-  visits_++;
-}
-
-template <typename Game>
-unsigned MCTSNode<Game>::GetWins() {
-  return wins_;
-}
-
-template <typename Game>
-unsigned MCTSNode<Game>::GetDraws() {
-  return draws_;
-}
-
-template <typename Game>
-unsigned MCTSNode<Game>::GetLosses() {
-  return GetVisits() - GetDraws() - GetWins();
-}
-
-template <typename Game>
-unsigned MCTSNode<Game>::GetVisits() {
-  return visits_;
-}
-
-template <typename Game>
-void MCTSNode<Game>::SetUCTConfidence(double confidence) {
-  UCTConfidence_ = confidence;
-}
-
-template <typename Game>
-double MCTSNode<Game>::GetUCTConfidence() {
-  return UCTConfidence_;
-}
+double MCTSNode::GetMeanWinCount() { return static_cast<double>(win_count_) / static_cast<double>(visit_count_); }
+int MCTSNode::GetTotalWinCount() { return win_count_; }
+int MCTSNode::GetVisitCount() { return visit_count_; }
 
 }  // namespace aithena

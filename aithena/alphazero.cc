@@ -14,12 +14,15 @@
 #include "alphazero/alphazero.h"
 #include "chess/game.h"
 #include "chess/util.h"
+#include "mcts/mcts.h"
 
 using namespace aithena;
 
 enum GetOptOption : int {
-  kOptTrain = 1000,
+  kOptEvaluate = 1000,
+  kOptTrain,
   kOptEvaluations,
+  kOptMCTSSimulations,
   kOptBatchSize,
   kOptSimulations,
   kOptSave,
@@ -33,14 +36,19 @@ enum GetOptOption : int {
 
 std::string GetAlphazeroUsageText() {
   return "Usage: ./aithena alphazero <options>\n"
+         "  --evaluate                  Evaluate agent against MCTS (mutually exclusive with --train)\n"
          "  --help -h                   Show the help menu\n"
          "  --train                     Puts the program in training mode\n"
+         "## Evaluation Options ##\n"
+         "  --evaluations <number>      Number of evaluations to run (default: 10)\n"
+         "  --mcts-simulations <number> Number of MCTS simulations (default: " +
+         std::to_string(MCTS::kDefaultSimulations) +
+         ")\n"
          "## Training Options ##\n"
          "  --batch-size <number>       Neural net. update batch size (default: " +
          std::to_string(AlphaZero::kDefaultBatchSize) +
          ")\n"
          "  --epochs -e <number>        Number of epochs (default: 10)\n"
-         "  --evaluations <number>      Number of evaluations to run at the end of each epoch (default: 10)\n"
          "  --rounds -r <number>        Number of training rounds (default: 100)\n"
          "  --save <path>               Path for saving NN (a suffix will be appended)\n"
          "## Alphazero Options ##\n"
@@ -78,9 +86,34 @@ void PrintProgress(double progress = 0.0, int width = 80, std::string prefix = "
   std::cout.flush();
 }
 
+int Evaluate(std::shared_ptr<AlphaZero> az, chess::State::StatePtr state,
+             int mcts_simulations = MCTS::kDefaultSimulations) {
+  chess::Game::GamePtr game = az->GetGame();
+  MCTS mcts(game);
+  mcts.SetSimulations(mcts_simulations);
+  chess::State::StatePtr current_state = state;
+
+  std::cout << "Evaluation: " << std::flush;
+  while (!game->IsTerminalState(current_state)) {
+    if (current_state->GetPlayer() == state->GetPlayer())
+      current_state = az->DrawAction(current_state);
+    else
+      current_state = mcts.DrawAction(current_state);
+
+    std::cout << current_state->ToLAN() << " " << std::flush;
+  }
+
+  int result = game->GetStateResult(current_state) * (current_state->GetPlayer() == state->GetPlayer() ? 1 : -1);
+  std::cout << "- " << result << std::endl;
+
+  return result;
+}
+
 int RunAlphazero(int argc, char** argv) {
-  static struct option long_options[] = {{"help", no_argument, nullptr, 'h'},
+  static struct option long_options[] = {{"evaluate", no_argument, nullptr, kOptEvaluate},
+                                         {"help", no_argument, nullptr, 'h'},
                                          {"train", no_argument, nullptr, kOptTrain},
+                                         {"mcts-simulations", required_argument, nullptr, kOptMCTSSimulations},
                                          {"batch-size", required_argument, nullptr, kOptBatchSize},
                                          {"epochs", required_argument, nullptr, 'e'},
                                          {"evaluations", required_argument, nullptr, kOptEvaluations},
@@ -108,7 +141,9 @@ int RunAlphazero(int argc, char** argv) {
   std::string save_path{""};
   std::string load_path{""};
   bool use_cuda{torch::cuda::cudnn_is_available()};
+  bool evaluate_mode{false};
   bool training_mode{false};
+  int mcts_simulations{MCTS::kDefaultSimulations};
 
   int long_index = 0;
   int opt = 0;
@@ -118,12 +153,28 @@ int RunAlphazero(int argc, char** argv) {
     if (opt == -1) break;
 
     switch (opt) {
+      case kOptEvaluate:
+        if (training_mode) {
+          std::cout << "--train and --full are mutually exclusive" << std::endl;
+          return 2;
+        }
+        evaluate_mode = true;
+        std::cout << "Full mode enabled" << std::endl;
+        break;
       case 'h':
         std::cout << GetAlphazeroUsageText();
         return 0;
       case kOptTrain:
+        if (evaluate_mode) {
+          std::cout << "--train and --full are mutually exclusive" << std::endl;
+          return 2;
+        }
         training_mode = true;
         std::cout << "Training mode enabled" << std::endl;
+        break;
+      case kOptMCTSSimulations:
+        mcts_simulations = atoi(optarg);
+        std::cout << "MCTS simulations: " << mcts_simulations << std::endl;
         break;
       case kOptBatchSize:
         batch_size = atoi(optarg);
@@ -202,11 +253,20 @@ int RunAlphazero(int argc, char** argv) {
   az.SetSimulations(simulations);
   az.SetDiscountFactor(discount_factor);
 
+  if (evaluate_mode) {
+    chess::State::StatePtr current_state = state;
+
+    for (int i = 0; i < evaluations; ++i) Evaluate(std::make_shared<AlphaZero>(az), state, mcts_simulations);
+
+    return 0;
+  }
+
   if (!training_mode) {
     chess::State::StatePtr move = az.DrawAction(state);
 
     std::cout << "Selected move: " << move->ToLAN() << " (" << az.EvaluateState(move, state->GetPlayer()) << ")"
               << std::endl;
+    std::cout << "Resulting in: " << move->ToFEN() << std::endl;
 
     return 0;
   }
@@ -243,17 +303,7 @@ int RunAlphazero(int argc, char** argv) {
 
     double total_evaluation = 0;
     for (int i = 0; i < evaluations; ++i) {
-      chess::State::StatePtr current_state = state;
-
-      std::cout << "Evaluation: " << std::flush;
-      while (!game->IsTerminalState(current_state)) {
-        current_state = az.DrawAction(current_state);
-
-        std::cout << current_state->ToLAN() << " " << std::flush;
-      }
-
-      int result = game->GetStateResult(current_state) * (current_state->GetPlayer() == state->GetPlayer() ? 1 : -1);
-      std::cout << "- " << result << std::endl;
+      int result = Evaluate(std::make_shared<AlphaZero>(az), state, mcts_simulations);
 
       total_evaluation += result;
     }

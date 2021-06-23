@@ -124,6 +124,8 @@ double AlphaZero::EvaluateState(chess::State::StatePtr state, chess::Player play
   return state_value;
 }
 
+chess::Game::GamePtr AlphaZero::GetGame() { return game_; }
+
 chess::State::StatePtr AlphaZero::DrawAction(chess::State::StatePtr state) {
   AZNode::AZNodePtr node = std::make_shared<AZNode>(game_, state);
   AZNode::AZNodePtr next_node = DrawAction(node);
