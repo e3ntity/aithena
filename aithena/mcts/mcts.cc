@@ -39,6 +39,14 @@ void MCTS::Simulate(MCTSNode::MCTSNodePtr start) {
   // Expansion
 
   node->Expand();
+
+  if (node->IsTerminal()) {
+    int result = game_->GetStateResult(node->GetState());
+    backpass_(node, -result);
+
+    return;
+  }
+
   MCTSNode::MCTSNodePtr leaf = RandomSelect(node);
 
   // Rollout
