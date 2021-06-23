@@ -46,7 +46,7 @@ class AZNode : public std::enable_shared_from_this<AZNode> {
   // The children nodes of this node.
   std::vector<AZNodePtr> children_{};
   // The parent node of this node.
-  AZNodePtr parent_;
+  std::weak_ptr<AZNode> parent_;
   // The state encapsulated by this node.
   chess::State::StatePtr state_;
   // Whether the node has been expanded

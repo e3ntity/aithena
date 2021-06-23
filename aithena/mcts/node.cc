@@ -16,7 +16,7 @@ MCTSNode::MCTSNode(chess::Game::GamePtr game, chess::State::StatePtr state, MCTS
     : game_{game}, state_{state}, parent_{parent} {}
 
 chess::State::StatePtr MCTSNode::GetState() { return state_; }
-MCTSNode::MCTSNodePtr MCTSNode::GetParent() { return parent_; }
+MCTSNode::MCTSNodePtr MCTSNode::GetParent() { return parent_.lock(); }
 std::vector<MCTSNode::MCTSNodePtr> MCTSNode::GetChildren() { return children_; }
 void MCTSNode::SetParent(MCTSNode::MCTSNodePtr parent) { parent_ = parent; }
 

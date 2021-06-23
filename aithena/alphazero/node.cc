@@ -15,7 +15,7 @@ AZNode::AZNode(chess::Game::GamePtr game, chess::State::StatePtr state, AZNode::
 
 chess::State::StatePtr AZNode::GetState() { return state_; }
 
-AZNode::AZNodePtr AZNode::GetParent() { return parent_; }
+AZNode::AZNodePtr AZNode::GetParent() { return parent_.lock(); }
 
 std::vector<AZNode::AZNodePtr> AZNode::GetChildren() { return children_; }
 

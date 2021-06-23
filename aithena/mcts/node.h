@@ -40,7 +40,7 @@ class MCTSNode : public std::enable_shared_from_this<MCTSNode> {
   // The children nodes of this node.
   std::vector<MCTSNodePtr> children_{};
   // The parent node of this node.
-  MCTSNodePtr parent_;
+  std::weak_ptr<MCTSNode> parent_;
   // The state encapsulated by this node.
   chess::State::StatePtr state_;
   // Whether the node has been expanded
