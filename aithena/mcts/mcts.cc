@@ -4,9 +4,14 @@ Copyright 2020 All rights reserved.
 
 #include "mcts/mcts.h"
 
+#include <float.h>
+
 #include <chrono>
 #include <cmath>
 #include <memory>
+
+#include "chess/game.h"
+#include "chess/util.h"
 
 namespace aithena {
 
@@ -53,41 +58,45 @@ void MCTS::Simulate(MCTSNode::MCTSNodePtr start) {
 
   MCTSNode::MCTSNodePtr rollout_node = std::make_shared<MCTSNode>(game_, leaf->GetState());
 
+  bool negate = true;
   while (true) {
     rollout_node->Expand();
 
     if (rollout_node->IsTerminal()) break;
 
     rollout_node = rollout_policy_(rollout_node);
+    negate = !negate;
   }
 
-  int result = game_->GetStateResult(rollout_node->GetState());
+  int result = (negate ? -1 : 1) * game_->GetStateResult(rollout_node->GetState());
 
   // Backpass
 
-  backpass_(leaf, -result);
+  backpass_(leaf, result);
 }
 
 MCTSNode::MCTSNodePtr MCTS::SelectMax(MCTSNode::MCTSNodePtr node, double (*evaluate)(MCTSNode::MCTSNodePtr)) {
-  int max_value{INT_MIN};
-  MCTSNode::MCTSNodePtr max_child{nullptr};
+  double max_value{-DBL_MAX};
+  std::vector<MCTSNode::MCTSNodePtr> max_children;
 
   for (auto child : node->GetChildren()) {
-    int value = evaluate(child);
+    double value = evaluate(child);
 
     if (value < max_value) continue;
 
-    if (value == max_value) {
-      double random = static_cast<double>(rand()) / RAND_MAX;
+    if (value > max_value) max_children.clear();
 
-      max_child = random > 0.5 ? max_child : child;
-    } else {
-      max_child = child;
-      max_value = value;
-    }
+    max_children.push_back(child);
+    max_value = value;
   }
 
-  return max_child;
+  assert(max_children.size() > 0);  // TODO: remove
+
+  if (max_children.size() == 1) return max_children.at(0);
+
+  int random = rand() % max_children.size();
+
+  return max_children.at(random);
 }
 
 MCTSNode::MCTSNodePtr MCTS::UCTSelect(MCTSNode::MCTSNodePtr node) {
@@ -98,11 +107,13 @@ MCTSNode::MCTSNodePtr MCTS::UCTSelect(MCTSNode::MCTSNodePtr node) {
 
     assert(child->GetVisitCount() > 0);
 
-    double exploitation = child->GetMeanWinCount();
+    double exploitation = child->GetMeanValue();
     double exploration =
         sqrt(log(static_cast<double>(parent->GetVisitCount())) / static_cast<double>(child->GetVisitCount()));
 
-    return exploitation + 1.41 * exploration;
+    double value = exploitation + 1.41 * exploration;
+
+    return value;
   });
 }
 
@@ -113,12 +124,14 @@ MCTSNode::MCTSNodePtr MCTS::RandomSelect(MCTSNode::MCTSNodePtr node) {
 void MCTS::Backpass(MCTSNode::MCTSNodePtr start, int value) {
   MCTSNode::MCTSNodePtr node = start;
 
-  int i = 0;
+  bool negate = false;
+  double discount = 1;
   while (node != nullptr) {
-    node->Update(i % 2 == 0 ? value : -value);
+    node->Update(discount * static_cast<double>(negate ? -value : value));
 
     node = node->GetParent();
-    ++i;
+    negate = !negate;
+    discount = discount * 0.99;  // TODO: make discount factor modifiable
   }
 }
 
