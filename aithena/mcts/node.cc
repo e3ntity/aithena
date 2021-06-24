@@ -20,8 +20,8 @@ MCTSNode::MCTSNodePtr MCTSNode::GetParent() { return parent_.lock(); }
 std::vector<MCTSNode::MCTSNodePtr> MCTSNode::GetChildren() { return children_; }
 void MCTSNode::SetParent(MCTSNode::MCTSNodePtr parent) { parent_ = parent; }
 
-void MCTSNode::Update(int value) {
-  win_count_ += value;
+void MCTSNode::Update(double value) {
+  total_value_ += value;
   visit_count_ += 1;
 }
 
@@ -58,8 +58,12 @@ bool MCTSNode::IsTerminal() {
   return game_->IsTerminalState(GetState());
 }
 
-double MCTSNode::GetMeanWinCount() { return static_cast<double>(win_count_) / static_cast<double>(visit_count_); }
-int MCTSNode::GetTotalWinCount() { return win_count_; }
+double MCTSNode::GetMeanValue() {
+  if (visit_count_ == 0) return 0;
+
+  return total_value_ / static_cast<double>(visit_count_);
+}
+double MCTSNode::GetTotalValue() { return total_value_; }
 int MCTSNode::GetVisitCount() { return visit_count_; }
 
 }  // namespace aithena

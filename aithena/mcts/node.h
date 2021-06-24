@@ -24,14 +24,14 @@ class MCTSNode : public std::enable_shared_from_this<MCTSNode> {
   std::vector<MCTSNodePtr> GetChildren();
   void SetParent(MCTSNodePtr);
 
-  void Update(int);
+  void Update(double);
   void Expand();
   bool IsExpanded();
   bool IsLeaf();
   bool IsTerminal();
 
-  double GetMeanWinCount();
-  int GetTotalWinCount();
+  double GetMeanValue();
+  double GetTotalValue();
   int GetVisitCount();
 
  private:
@@ -46,7 +46,7 @@ class MCTSNode : public std::enable_shared_from_this<MCTSNode> {
   // Whether the node has been expanded
   bool expanded_{false};
 
-  int win_count_{0};
+  double total_value_{0};
   int visit_count_{0};
 };
 
