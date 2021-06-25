@@ -24,6 +24,7 @@ enum GetOptOption : int {
   kOptEvaluations,
   kOptMCTSSimulations,
   kOptBatchSize,
+  kOptReplaySize,
   kOptSimulations,
   kOptSave,
   kOptDiscountFactor,
@@ -49,6 +50,7 @@ std::string GetAlphazeroUsageText() {
          std::to_string(AlphaZero::kDefaultBatchSize) +
          ")\n"
          "  --epochs -e <number>        Number of epochs (default: 10)\n"
+         "  --replay-size <number>      Size of the replay memory (0 = infinite, default: infinite)\n"
          "  --rounds -r <number>        Number of training rounds (default: 100)\n"
          "  --save <path>               Path for saving NN (a suffix will be appended)\n"
          "## Alphazero Options ##\n"
@@ -117,6 +119,7 @@ int RunAlphazero(int argc, char** argv) {
                                          {"batch-size", required_argument, nullptr, kOptBatchSize},
                                          {"epochs", required_argument, nullptr, 'e'},
                                          {"evaluations", required_argument, nullptr, kOptEvaluations},
+                                         {"replay-size", required_argument, nullptr, kOptReplaySize},
                                          {"rounds", required_argument, nullptr, 'r'},
                                          {"save", required_argument, nullptr, kOptSave},
                                          {"discount-factor", required_argument, nullptr, kOptDiscountFactor},
@@ -144,6 +147,7 @@ int RunAlphazero(int argc, char** argv) {
   bool evaluate_mode{false};
   bool training_mode{false};
   int mcts_simulations{MCTS::kDefaultSimulations};
+  int replay_memory_size{0};
 
   int long_index = 0;
   int opt = 0;
@@ -183,6 +187,10 @@ int RunAlphazero(int argc, char** argv) {
       case 'e':
         epochs = atoi(optarg);
         std::cout << "Epochs: " << epochs << std::endl;
+        break;
+      case kOptReplaySize:
+        replay_memory_size = atoi(optarg);
+        std::cout << "Replay size: " << replay_memory_size << std::endl;
         break;
       case 'r':
         rounds = atoi(optarg);
@@ -246,8 +254,8 @@ int RunAlphazero(int argc, char** argv) {
 
   if (!load_path.empty()) az.GetNetwork()->Load(load_path);
 
-  az.GetReplayMemory()->SetMinSize(batch_size);
-  az.GetReplayMemory()->SetMaxSize(batch_size + 5000);
+  az.GetReplayMemory()->SetMinSize(std::min(replay_memory_size, batch_size));
+  az.GetReplayMemory()->SetMaxSize(replay_memory_size);
 
   az.SetBatchSize(batch_size);
   az.SetSimulations(simulations);
