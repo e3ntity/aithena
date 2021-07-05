@@ -26,6 +26,7 @@ enum GetOptOption : int {
   kOptBatchSize,
   kOptReplaySize,
   kOptSimulations,
+  kOptUpdate,
   kOptSave,
   kOptDiscountFactor,
   kOptLoad,
@@ -62,6 +63,7 @@ std::string GetAlphazeroUsageText() {
          "  --simulations <number>      Number of simulations (default: " +
          std::to_string(AlphaZero::kDefaultSimulations) +
          ")\n"
+         "  --update <puct|poweruct>    The update strategy to use (default: puct)\n"
          "## Chess Options ##\n"
          "  --fen <string>              Initial board (default: 8-by-8 Chess)\n"
          "  --max-moves <number>        Maximum moves per game (default: 1000)\n"
@@ -126,6 +128,7 @@ int RunAlphazero(int argc, char** argv) {
                                          {"load", required_argument, nullptr, kOptLoad},
                                          {"no-cuda", no_argument, nullptr, kOptNoCuda},
                                          {"simulations", required_argument, nullptr, kOptSimulations},
+                                         {"update", required_argument, nullptr, kOptUpdate},
                                          {"fen", required_argument, nullptr, kOptFEN},
                                          {"max-moves", required_argument, nullptr, kOptMaxMoves},
                                          {"max-no-progress", required_argument, nullptr, kOptMaxNoProgress},
@@ -148,6 +151,7 @@ int RunAlphazero(int argc, char** argv) {
   bool training_mode{false};
   int mcts_simulations{MCTS::kDefaultSimulations};
   int replay_memory_size{0};
+  std::string update{"puct"};
 
   int long_index = 0;
   int opt = 0;
@@ -204,6 +208,10 @@ int RunAlphazero(int argc, char** argv) {
         simulations = atoi(optarg);
         std::cout << "Simulations: " << simulations << std::endl;
         break;
+      case kOptUpdate:
+        update = static_cast<std::string>(optarg);
+        std::cout << "Update strategy: " << update << std::endl;
+        break;
       case kOptSave:
         save_path = static_cast<std::string>(optarg);
         std::cout << "Save path: " << save_path << std::endl;
@@ -239,6 +247,13 @@ int RunAlphazero(int argc, char** argv) {
   }
 
   chess::State::StatePtr state = chess::State::FromFEN(fen);
+
+  if (state == nullptr) {
+    std::cout << "Invalid FEN: " << fen << std::endl;
+    return -1;
+  }
+
+  state->GetBoard();
   chess::Game::GamePtr game =
       std::make_shared<chess::Game>(chess::Game::Options({{"board_width", state->GetBoard().GetWidth()},
                                                           {"board_height", state->GetBoard().GetHeight()},
@@ -260,6 +275,17 @@ int RunAlphazero(int argc, char** argv) {
   az.SetBatchSize(batch_size);
   az.SetSimulations(simulations);
   az.SetDiscountFactor(discount_factor);
+
+  if (update == "puct") {
+    az.SetBackpass(AlphaZero::AlphaZeroBackpass);
+    az.SetSelectPolicy(AlphaZero::PUCTSelect);
+  } else if (update == "poweruct") {
+    az.SetBackpass(AlphaZero::PowerUCTBackpass);
+    az.SetSelectPolicy(AlphaZero::PUCTSelect);
+  } else {
+    std::cout << "Invalid update strategy: " << update << std::endl;
+    return -1;
+  }
 
   if (evaluate_mode) {
     chess::State::StatePtr current_state = state;
