@@ -31,10 +31,16 @@ void AlphaZero::SelfPlay(chess::State::StatePtr start) {
   benchmark_.Start("SelfPlay");
 
   chess::State::StatePtr state = start == nullptr ? game_->GetInitialState() : start;
-  AZNode::AZNodePtr node = std::make_shared<AZNode>(game_, state);
+  std::vector<AZNode::AZNodePtr> nodes = {std::make_shared<AZNode>(game_, state)};  // Required to keep weak_ptrs alive
+  AZNode::AZNodePtr node = nodes.back();
 
   // Run game
-  while (!node->IsTerminal() && node->GetStateRepetitions() < 3) node = DrawAction(node);
+  while (!nodes.back()->IsTerminal() && nodes.back()->GetStateRepetitions() < 3) {
+    node = DrawAction(node);
+
+    node->SetParent(nodes.back());
+    nodes.push_back(node);
+  }
 
   int result = node->IsTerminal() ? game_->GetStateResult(node->GetState()) : 0;
 
@@ -43,7 +49,7 @@ void AlphaZero::SelfPlay(chess::State::StatePtr start) {
   bool negate = false;
   int i = 0;
   while (node != nullptr) {
-    double value = pow(discount_factor_, i) * static_cast<double>(negate ? -result : result);
+    double value = pow(discount_factor_, static_cast<double>(i)) * static_cast<double>(negate ? -result : result);
     replay_memory_->AddSample(GetNNInput(node), GetNNOutput(node), value);
 
     node = node->GetParent();
@@ -200,7 +206,7 @@ void AlphaZero::Simulate(AZNode::AZNodePtr start) {
 
   // If node's player is black, a positive state_value means moving into this node is bad for white. As backpass (first)
   // adds state_value to the node's action value, it must be negated to discourage white from moving into it.
-  backpass_(node, -state_value);
+  backpass_(node, -state_value, discount_factor_);
 
   benchmark_.End("Simulate");
 }
@@ -216,7 +222,7 @@ void AlphaZero::SetUseCUDA(bool use_cuda) {
     network_->to(torch::kCPU);
 }
 
-void AlphaZero::SetDiscountFactor(int discount_factor) { discount_factor_ = discount_factor; }
+void AlphaZero::SetDiscountFactor(double discount_factor) { discount_factor_ = discount_factor; }
 
 void AlphaZero::SetDirichletNoiseAlpha(double alpha) {
   dirichlet_noise_ = dirichlet_distribution<std::mt19937>({alpha});
@@ -226,7 +232,31 @@ void AlphaZero::SetSelectPolicy(AZNode::AZNodePtr (*select_policy)(AZNode::AZNod
   select_policy_ = select_policy;
 }
 
-void AlphaZero::SetBackpass(void (*backpass)(AZNode::AZNodePtr, double)) { backpass_ = backpass; }
+void AlphaZero::SetBackpass(void (*backpass)(AZNode::AZNodePtr, double, double)) { backpass_ = backpass; }
+
+AZNode::AZNodePtr AlphaZero::SelectMax(AZNode::AZNodePtr node, double (*evaluate)(AZNode::AZNodePtr)) {
+  double max_value{-DBL_MAX};
+  std::vector<AZNode::AZNodePtr> max_children;
+
+  for (auto child : node->GetChildren()) {
+    double value = evaluate(child);
+
+    if (value < max_value) continue;
+
+    if (value > max_value) max_children.clear();
+
+    max_children.push_back(child);
+    max_value = value;
+  }
+
+  assert(max_children.size() > 0);  // TODO(*): remove
+
+  if (max_children.size() == 1) return max_children.at(0);
+
+  int random = rand() % max_children.size();  // TODO(*): use better random number generator
+
+  return max_children.at(random);
+}
 
 double AlphaZero::PUCTValue(AZNode::AZNodePtr child) {
   AZNode::AZNodePtr parent = child->GetParent();
@@ -244,33 +274,42 @@ double AlphaZero::PUCTValue(AZNode::AZNodePtr child) {
 }
 
 AZNode::AZNodePtr AlphaZero::PUCTSelect(AZNode::AZNodePtr node) {
-  double max_value = -DBL_MAX;
-  AZNode::AZNodePtr max_node = nullptr;
-
-  for (auto child : node->GetChildren()) {
-    double value = PUCTValue(child);
-
-    if (value < max_value) continue;
-
-    if (value == max_value) {
-      double random = static_cast<double>(rand()) / RAND_MAX;
-
-      max_node = random > 0.5 ? max_node : child;
-    } else {
-      max_node = child;
-      max_value = value;
-    }
-  }
+  AZNode::AZNodePtr max_node = SelectMax(node, PUCTValue);
 
   return max_node;
 }
 
-void AlphaZero::AlphaZeroBackpass(AZNode::AZNodePtr start, double state_value) {
+void AlphaZero::AlphaZeroBackpass(AZNode::AZNodePtr start, double state_value, double discount_factor) {
   AZNode::AZNodePtr node = start;
 
+  double discount = 1.0;
   int i = 0;
   while (node != nullptr) {
-    node->Update(i % 2 == 0 ? state_value : -state_value);
+    double return_value = static_cast<double>(i % 2 == 0 ? state_value : -state_value);
+    double value = discount * return_value;
+
+    node->Update(value);
+
+    node = node->GetParent();
+    discount *= discount_factor;
+    ++i;
+  }
+}
+
+void AlphaZero::PowerUCTBackpass(AZNode::AZNodePtr start, double state_value, double discount_factor) {
+  AZNode::AZNodePtr node = start;
+
+  double p = 1.0;  // TODO(*): make configurable.
+
+  double v_value = 0.0;
+  int i = 0;
+  while (node != nullptr) {
+    double return_value = static_cast<double>(i % 2 == 0 ? state_value : -state_value);
+    double value =
+        pow((node->GetVisitCount() * pow(node->GetMeanActionValue(), p) + return_value) / (node->GetVisitCount() + 1),
+            1.0 / p);
+
+    node->Update(value, true);
 
     node = node->GetParent();
     ++i;

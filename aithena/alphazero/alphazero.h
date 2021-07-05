@@ -87,15 +87,18 @@ class AlphaZero {
   void SetSimulations(int);
   void SetBatchSize(int);
   void SetUseCUDA(bool);
-  void SetDiscountFactor(int);
+  void SetDiscountFactor(double);
   void SetDirichletNoiseAlpha(double);
   void SetSelectPolicy(AZNode::AZNodePtr (*select_policy)(AZNode::AZNodePtr));
-  void SetBackpass(void (*backpass)(AZNode::AZNodePtr, double));
+  void SetBackpass(void (*backpass)(AZNode::AZNodePtr, double, double));
+
+  static AZNode::AZNodePtr SelectMax(AZNode::AZNodePtr, double (*evaluate)(AZNode::AZNodePtr));
 
   static AZNode::AZNodePtr PUCTSelect(AZNode::AZNodePtr);
   static double PUCTValue(AZNode::AZNodePtr);
 
-  static void AlphaZeroBackpass(AZNode::AZNodePtr, double);
+  static void AlphaZeroBackpass(AZNode::AZNodePtr, double, double);
+  static void PowerUCTBackpass(AZNode::AZNodePtr, double, double);
 
   std::shared_ptr<ReplayMemory> GetReplayMemory();
   AlphaZeroNet GetNetwork();
@@ -125,7 +128,7 @@ class AlphaZero {
   int batch_size_{kDefaultBatchSize};
   double discount_factor_{kDefaultDiscountFactor};
   AZNode::AZNodePtr (*select_policy_)(AZNode::AZNodePtr) = PUCTSelect;
-  void (*backpass_)(AZNode::AZNodePtr, double) = AlphaZeroBackpass;
+  void (*backpass_)(AZNode::AZNodePtr, double, double) = AlphaZeroBackpass;
 };  // namespace aithena
 
 }  // namespace aithena

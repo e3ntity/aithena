@@ -28,7 +28,9 @@ class AZNode : public std::enable_shared_from_this<AZNode> {
   int GetStateRepetitions();
 
   void SetPrior(double);
-  void Update(double);
+  // Updated the node's action value with the given value. If override is set to false, it is incorporated into the
+  // current mean action value. If override is true, the current mean action value is set to the given value.
+  void Update(double, bool override = false);
 
   void Expand();
   bool IsExpanded();
