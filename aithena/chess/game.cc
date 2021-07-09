@@ -899,19 +899,6 @@ std::vector<State::StatePtr> Game::GenMoves(State::StatePtr state) {
     pin_mask.set(pinned.x, pinned.y);
   }
 
-  /*
-  std::cout << "king danger squares" << std::endl;
-  std::cout << PrintMarkedBoard(state, king_danger_squares) << std::endl;
-  std::cout << "king checks" << std::endl;
-  std::cout << PrintMarkedBoard(state, king_checks) << std::endl;
-  std::cout << "pin mask" << std::endl;
-  std::cout << PrintMarkedBoard(state, pin_mask) << std::endl;
-  std::cout << "capture mask" << std::endl;
-  std::cout << PrintMarkedBoard(state, capture_mask) << std::endl;
-  std::cout << "push mask" << std::endl;
-  std::cout << PrintMarkedBoard(state, push_mask) << std::endl;
-  */
-
   // Generate all other moves
   for (int y = 0; y < height; ++y) {
     for (int x = 0; x < width; ++x) {
