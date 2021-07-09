@@ -7,8 +7,11 @@
 #include <getopt.h>
 #include <torch/torch.h>
 
+#include <algorithm>
+#include <ctime>
 #include <iomanip>
 #include <iostream>
+#include <memory>
 #include <string>
 
 #include "alphazero/alphazero.h"
@@ -26,10 +29,13 @@ enum GetOptOption : int {
   kOptBatchSize,
   kOptReplaySize,
   kOptSimulations,
+  kOptUpdate,
   kOptSave,
+  kOptSaveTimestamp,
   kOptDiscountFactor,
   kOptLoad,
   kOptNoCuda,
+  kOptPowerUCTP,
   kOptFEN,
   kOptMaxMoves,
   kOptMaxNoProgress
@@ -53,15 +59,20 @@ std::string GetAlphazeroUsageText() {
          "  --replay-size <number>      Size of the replay memory (0 = infinite, default: infinite)\n"
          "  --rounds -r <number>        Number of training rounds (default: 100)\n"
          "  --save <path>               Path for saving NN (a suffix will be appended)\n"
+         "  --save-timestamp            Whether to additionally save a timestamped network file (default: false)\n"
          "## Alphazero Options ##\n"
          "  --discount-factor <number>  Discount factor (default: " +
          std::to_string(AlphaZero::kDefaultDiscountFactor) +
          ")\n"
          "  --load <path>               Path for loading NN (suffix will be appended)\n"
          "  --no-cuda                   Disables using cuda\n"
+         "  --poweruct-p <number>       The p-value for PowerUCT (default: " +
+         std::to_string(AlphaZero::kDefaultPowerUCTP) +
+         ")\n"
          "  --simulations <number>      Number of simulations (default: " +
          std::to_string(AlphaZero::kDefaultSimulations) +
          ")\n"
+         "  --update <puct|poweruct>    The update strategy to use (default: puct)\n"
          "## Chess Options ##\n"
          "  --fen <string>              Initial board (default: 8-by-8 Chess)\n"
          "  --max-moves <number>        Maximum moves per game (default: 1000)\n"
@@ -111,7 +122,21 @@ int Evaluate(std::shared_ptr<AlphaZero> az, chess::State::StatePtr state,
   return result;
 }
 
+std::string GetTimestamp() {
+  time_t now = time(0);
+  tm* ltm = localtime(&now);
+  std::ostringstream snow;
+
+  snow << (1900 + ltm->tm_year) << std::setw(2) << std::setfill('0') << (1 + ltm->tm_mon) << std::setw(2)
+       << std::setfill('0') << ltm->tm_mday << std::setw(2) << std::setfill('0') << ltm->tm_hour << std::setw(2)
+       << std::setfill('0') << ltm->tm_min << std::setw(2) << std::setfill('0') << ltm->tm_sec;
+
+  return snow.str();
+}
+
 int RunAlphazero(int argc, char** argv) {
+  aithena_start_timestamp = GetTimestamp();
+
   static struct option long_options[] = {{"evaluate", no_argument, nullptr, kOptEvaluate},
                                          {"help", no_argument, nullptr, 'h'},
                                          {"train", no_argument, nullptr, kOptTrain},
@@ -122,10 +147,13 @@ int RunAlphazero(int argc, char** argv) {
                                          {"replay-size", required_argument, nullptr, kOptReplaySize},
                                          {"rounds", required_argument, nullptr, 'r'},
                                          {"save", required_argument, nullptr, kOptSave},
+                                         {"save-timestamp", no_argument, nullptr, kOptSaveTimestamp},
                                          {"discount-factor", required_argument, nullptr, kOptDiscountFactor},
                                          {"load", required_argument, nullptr, kOptLoad},
                                          {"no-cuda", no_argument, nullptr, kOptNoCuda},
+                                         {"poweruct-p", required_argument, nullptr, kOptPowerUCTP},
                                          {"simulations", required_argument, nullptr, kOptSimulations},
+                                         {"update", required_argument, nullptr, kOptUpdate},
                                          {"fen", required_argument, nullptr, kOptFEN},
                                          {"max-moves", required_argument, nullptr, kOptMaxMoves},
                                          {"max-no-progress", required_argument, nullptr, kOptMaxNoProgress},
@@ -144,10 +172,13 @@ int RunAlphazero(int argc, char** argv) {
   std::string save_path{""};
   std::string load_path{""};
   bool use_cuda{torch::cuda::cudnn_is_available()};
+  double power_uct_p{AlphaZero::kDefaultPowerUCTP};
   bool evaluate_mode{false};
   bool training_mode{false};
   int mcts_simulations{MCTS::kDefaultSimulations};
   int replay_memory_size{0};
+  std::string update{"puct"};
+  bool save_timestamp{false};
 
   int long_index = 0;
   int opt = 0;
@@ -204,9 +235,17 @@ int RunAlphazero(int argc, char** argv) {
         simulations = atoi(optarg);
         std::cout << "Simulations: " << simulations << std::endl;
         break;
+      case kOptUpdate:
+        update = static_cast<std::string>(optarg);
+        std::cout << "Update strategy: " << update << std::endl;
+        break;
       case kOptSave:
         save_path = static_cast<std::string>(optarg);
         std::cout << "Save path: " << save_path << std::endl;
+        break;
+      case kOptSaveTimestamp:
+        save_timestamp = true;
+        std::cout << "Saving with timestamp enabled" << std::endl;
         break;
       case kOptDiscountFactor:
         discount_factor = atof(optarg);
@@ -219,6 +258,10 @@ int RunAlphazero(int argc, char** argv) {
       case kOptNoCuda:
         use_cuda = false;
         std::cout << "Disabled using CUDA" << std::endl;
+        break;
+      case kOptPowerUCTP:
+        power_uct_p = atof(optarg);
+        std::cout << "PowerUCT p: " << power_uct_p << std::endl;
         break;
       case kOptFEN:
         fen = static_cast<std::string>(optarg);
@@ -239,6 +282,13 @@ int RunAlphazero(int argc, char** argv) {
   }
 
   chess::State::StatePtr state = chess::State::FromFEN(fen);
+
+  if (state == nullptr) {
+    std::cout << "Invalid FEN: " << fen << std::endl;
+    return -1;
+  }
+
+  state->GetBoard();
   chess::Game::GamePtr game =
       std::make_shared<chess::Game>(chess::Game::Options({{"board_width", state->GetBoard().GetWidth()},
                                                           {"board_height", state->GetBoard().GetHeight()},
@@ -260,6 +310,15 @@ int RunAlphazero(int argc, char** argv) {
   az.SetBatchSize(batch_size);
   az.SetSimulations(simulations);
   az.SetDiscountFactor(discount_factor);
+
+  if (update == "puct") {
+    az.UseDefaultUpdate();
+  } else if (update == "poweruct") {
+    az.UsePowerUCTUpdate(power_uct_p);
+  } else {
+    std::cout << "Invalid update strategy: " << update << std::endl;
+    return -1;
+  }
 
   if (evaluate_mode) {
     chess::State::StatePtr current_state = state;
@@ -316,9 +375,14 @@ int RunAlphazero(int argc, char** argv) {
       total_evaluation += result;
     }
 
-    std::cout << "Evaluation average: " << total_evaluation / static_cast<double>(evaluations) << std::endl;
+    if (evaluations > 0)
+      std::cout << "Evaluation average: " << total_evaluation / static_cast<double>(evaluations) << std::endl;
 
-    if (!save_path.empty()) az.GetNetwork()->Save(save_path);
+    if (!save_path.empty()) {
+      az.GetNetwork()->Save(save_path);
+
+      if (save_timestamp) az.GetNetwork()->Save(save_path + "-" + GetTimestamp());
+    }
 
     bn.End();
   }

@@ -29,33 +29,30 @@ class AlphaZeroTest : public ::testing::Test {
 
 TEST_F(AlphaZeroTest, TestNNInput) {
   auto state = chess::State::FromFEN("7k/8/8/8/8/8/8/K7 w - - 0 1");
-  auto node = std::make_shared<AZNode>(game_, state);
+  std::vector<AZNode::AZNodePtr> nodes = {std::make_shared<AZNode>(game_, state)};
   AZNode::AZNodePtr next_node;
 
-  int i = 0;
-  for (; i < 10; ++i) {
-    next_node = az_->DrawAction(std::make_shared<AZNode>(game_, node->GetState()));
-    next_node->SetParent(node);
+  for (int i = 0; i < 10; ++i) {
+    next_node = az_->DrawAction(std::make_shared<AZNode>(game_, nodes.back()->GetState()));
+    next_node->SetParent(nodes.back());
+    nodes.push_back(next_node);
 
-    node = next_node;
-
-    if (node->IsTerminal()) break;
+    EXPECT_FALSE(nodes.back()->IsTerminal());
   }
 
-  EXPECT_EQ(i, 10);
+  EXPECT_EQ(nodes.size(), 11);
 
-  auto player = node->GetState()->GetPlayer();
-  torch::Tensor input = GetNNInput(node);
+  auto player = nodes.back()->GetState()->GetPlayer();
+  torch::Tensor input = GetNNInput(nodes.back());
 
   EXPECT_EQ(input.sizes(), std::vector<int64_t>({1, 119, 8, 8}));
 
+  std::reverse(nodes.begin(), nodes.end());
   for (int i = 0; i < 8; ++i) {
-    torch::Tensor true_state_tensor = EncodeNodeState(node, player);
+    torch::Tensor true_state_tensor = EncodeNodeState(nodes.at(i), player);
     torch::Tensor state_tensor = input[0].slice(0, i * 14, (i + 1) * 14);
 
     EXPECT_TRUE(state_tensor.equal(true_state_tensor));
-
-    node = node->GetParent();
   }
 }
 

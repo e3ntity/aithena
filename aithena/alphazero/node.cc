@@ -36,9 +36,13 @@ int AZNode::GetStateRepetitions() {
 
 void AZNode::SetPrior(double prior) { prior_ = prior; }
 
-void AZNode::Update(double value) {
-  action_value_ += value;
+void AZNode::Update(double value, bool override) {
   ++visit_count_;
+
+  if (override)
+    action_value_ = static_cast<double>(visit_count_) * value;
+  else
+    action_value_ += value;
 }
 
 void AZNode::Expand() {

@@ -87,15 +87,22 @@ class AlphaZero {
   void SetSimulations(int);
   void SetBatchSize(int);
   void SetUseCUDA(bool);
-  void SetDiscountFactor(int);
+  void SetDiscountFactor(double);
   void SetDirichletNoiseAlpha(double);
-  void SetSelectPolicy(AZNode::AZNodePtr (*select_policy)(AZNode::AZNodePtr));
-  void SetBackpass(void (*backpass)(AZNode::AZNodePtr, double));
+  void SetPowerUCTP(double);
+  void SetSelectPolicy(AZNode::AZNodePtr (AlphaZero::*select_policy)(AZNode::AZNodePtr));
+  void SetBackpass(void (AlphaZero::*backpass)(AZNode::AZNodePtr, double));
 
-  static AZNode::AZNodePtr PUCTSelect(AZNode::AZNodePtr);
-  static double PUCTValue(AZNode::AZNodePtr);
+  void UseDefaultUpdate();
+  void UsePowerUCTUpdate(double p = kDefaultPowerUCTP);
 
-  static void AlphaZeroBackpass(AZNode::AZNodePtr, double);
+  AZNode::AZNodePtr SelectMax(AZNode::AZNodePtr, double (AlphaZero::*evaluate)(AZNode::AZNodePtr));
+
+  AZNode::AZNodePtr PUCTSelect(AZNode::AZNodePtr);
+  double PUCTValue(AZNode::AZNodePtr);
+
+  void AlphaZeroBackpass(AZNode::AZNodePtr, double);
+  void PowerUCTBackpass(AZNode::AZNodePtr, double);
 
   std::shared_ptr<ReplayMemory> GetReplayMemory();
   AlphaZeroNet GetNetwork();
@@ -104,6 +111,7 @@ class AlphaZero {
   static const int kDefaultBatchSize = 4096;
   static constexpr double kDefaultDiscountFactor = 0.99;
   static constexpr double kDefaultDirichletNoiseAlpha = 0.3;
+  static constexpr double kDefaultPowerUCTP = 100.0;
 
   BenchmarkSet benchmark_;
 
@@ -124,8 +132,9 @@ class AlphaZero {
   int simulations_{kDefaultSimulations};
   int batch_size_{kDefaultBatchSize};
   double discount_factor_{kDefaultDiscountFactor};
-  AZNode::AZNodePtr (*select_policy_)(AZNode::AZNodePtr) = PUCTSelect;
-  void (*backpass_)(AZNode::AZNodePtr, double) = AlphaZeroBackpass;
+  double poweruct_p_{kDefaultPowerUCTP};
+  AZNode::AZNodePtr (AlphaZero::*select_policy_)(AZNode::AZNodePtr) = &AlphaZero::PUCTSelect;
+  void (AlphaZero::*backpass_)(AZNode::AZNodePtr, double) = &AlphaZero::AlphaZeroBackpass;
 };  // namespace aithena
 
 }  // namespace aithena

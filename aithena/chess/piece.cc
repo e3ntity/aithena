@@ -38,7 +38,6 @@ char GetPieceSymbol(Piece piece) {
       symbol = 'p';
       break;
     default:
-      std::cout << "Figure: " << piece.figure << std::endl;
       assert(false);  // Invalid figure, should never reach here.
   }
 
