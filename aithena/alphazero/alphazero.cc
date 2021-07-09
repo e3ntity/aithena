@@ -244,7 +244,7 @@ void AlphaZero::UseDefaultUpdate() {
 
 void AlphaZero::UsePowerUCTUpdate(double p) {
   SetPowerUCTP(p);
-  SetBackpass(&AlphaZero::AlphaZeroBackpass);
+  SetBackpass(&AlphaZero::PowerUCTBackpass);
   SetSelectPolicy(&AlphaZero::PUCTSelect);
 }
 
@@ -313,15 +313,14 @@ void AlphaZero::AlphaZeroBackpass(AZNode::AZNodePtr start, double state_value) {
 void AlphaZero::PowerUCTBackpass(AZNode::AZNodePtr start, double state_value) {
   AZNode::AZNodePtr node = start;
 
-  double p = poweruct_p_;
-
   double discount = 1.0;
   int i = 0;
   while (node != nullptr) {
-    double return_value = discount * static_cast<double>(i % 2 == 0 ? state_value : -state_value);
-    double value =
-        pow((node->GetVisitCount() * pow(node->GetMeanActionValue(), p) + return_value) / (node->GetVisitCount() + 1),
-            1.0 / p);
+    double return_value = static_cast<double>(i % 2 == 0 ? state_value : -state_value);
+
+    double p_return = pow(discount * return_value, poweruct_p_);
+    double p_return_sum = node->GetVisitCount() * pow(node->GetMeanActionValue(), poweruct_p_) + p_return;
+    double value = pow(p_return_sum / (node->GetVisitCount() + 1), 1.0 / poweruct_p_);
 
     node->Update(value, true);
 
