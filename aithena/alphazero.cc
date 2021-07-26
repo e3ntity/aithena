@@ -9,6 +9,7 @@
 
 #include <algorithm>
 #include <ctime>
+#include <fstream>
 #include <iomanip>
 #include <iostream>
 #include <memory>
@@ -25,6 +26,8 @@ enum GetOptOption : int {
   kOptEvaluate = 1000,
   kOptTrain,
   kOptEvaluations,
+  kOptEvalLogPath,
+  kOptEvalLogType,
   kOptMCTSSimulations,
   kOptBatchSize,
   kOptReplaySize,
@@ -48,6 +51,8 @@ std::string GetAlphazeroUsageText() {
          "  --train                     Puts the program in training mode\n"
          "## Evaluation Options ##\n"
          "  --evaluations <number>      Number of evaluations to run (default: 10)\n"
+         "  --eval-log-path <path>      Path for logging evaluation results\n"
+         "  --eval-log-type <A|J>       Whether to log the average return or the average discounted return (default: J)"
          "  --mcts-simulations <number> Number of MCTS simulations (default: " +
          std::to_string(MCTS::kDefaultSimulations) +
          ")\n"
@@ -99,27 +104,29 @@ void PrintProgress(double progress = 0.0, int width = 80, std::string prefix = "
   std::cout.flush();
 }
 
-int Evaluate(std::shared_ptr<AlphaZero> az, chess::State::StatePtr state,
-             int mcts_simulations = MCTS::kDefaultSimulations) {
+std::tuple<int, int> Evaluate(std::shared_ptr<AlphaZero> az, chess::State::StatePtr state,
+                              int mcts_simulations = MCTS::kDefaultSimulations) {
   chess::Game::GamePtr game = az->GetGame();
   MCTS mcts(game);
   mcts.SetSimulations(mcts_simulations);
   chess::State::StatePtr current_state = state;
+  int steps = 0;
 
   std::cout << "Evaluation: " << std::flush;
   while (!game->IsTerminalState(current_state)) {
-    if (current_state->GetPlayer() == state->GetPlayer())
+    if (current_state->GetPlayer() == state->GetPlayer()) {
       current_state = az->DrawAction(current_state);
-    else
+      steps += 1;
+    } else {
       current_state = mcts.DrawAction(current_state);
-
+    }
     std::cout << current_state->ToLAN() << " " << std::flush;
   }
 
   int result = game->GetStateResult(current_state) * (current_state->GetPlayer() == state->GetPlayer() ? 1 : -1);
   std::cout << "- " << result << std::endl;
 
-  return result;
+  return std::make_tuple(result, steps);
 }
 
 std::string GetTimestamp() {
@@ -144,6 +151,8 @@ int RunAlphazero(int argc, char** argv) {
                                          {"batch-size", required_argument, nullptr, kOptBatchSize},
                                          {"epochs", required_argument, nullptr, 'e'},
                                          {"evaluations", required_argument, nullptr, kOptEvaluations},
+                                         {"eval-log-path", required_argument, nullptr, kOptEvalLogPath},
+                                         {"eval-log-type", required_argument, nullptr, kOptEvalLogType},
                                          {"replay-size", required_argument, nullptr, kOptReplaySize},
                                          {"rounds", required_argument, nullptr, 'r'},
                                          {"save", required_argument, nullptr, kOptSave},
@@ -164,6 +173,8 @@ int RunAlphazero(int argc, char** argv) {
   int epochs{10};
   int rounds{100};
   int evaluations{10};
+  std::string eval_log_path{""};
+  char eval_log_type = 'j';
   int simulations{AlphaZero::kDefaultSimulations};
   double discount_factor{AlphaZero::kDefaultDiscountFactor};
   std::string fen{"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"};
@@ -230,6 +241,18 @@ int RunAlphazero(int argc, char** argv) {
       case kOptEvaluations:
         evaluations = atoi(optarg);
         std::cout << "Evaluations: " << evaluations << std::endl;
+        break;
+      case kOptEvalLogPath:
+        eval_log_path = static_cast<std::string>(optarg);
+        std::cout << "Evaluation log path: " << eval_log_path << std::endl;
+        break;
+      case kOptEvalLogType:
+        eval_log_type = static_cast<char>(tolower(static_cast<int>(*optarg)));
+        if (eval_log_type != 'a' && eval_log_type == 'k') {
+          std::cout << "Invalid value for --eval-log-type: " << eval_log_type << std::endl;
+          return 2;
+        }
+        std::cout << "Evaluation log type: " << eval_log_type << std::endl;
         break;
       case kOptSimulations:
         simulations = atoi(optarg);
@@ -368,15 +391,36 @@ int RunAlphazero(int argc, char** argv) {
       az.TrainNetwork();
     }
 
+    double total_j = 0;
     double total_evaluation = 0;
     for (int i = 0; i < evaluations; ++i) {
-      int result = Evaluate(std::make_shared<AlphaZero>(az), state, mcts_simulations);
+      auto evaluation = Evaluate(std::make_shared<AlphaZero>(az), state, mcts_simulations);
+      int result = std::get<0>(evaluation);
+      int steps = std::get<1>(evaluation);
 
+      total_j += std::pow(discount_factor, static_cast<double>(std::max(steps - 1, 0))) * result;
       total_evaluation += result;
     }
 
-    if (evaluations > 0)
-      std::cout << "Evaluation average: " << total_evaluation / static_cast<double>(evaluations) << std::endl;
+    if (evaluations > 0) {
+      std::cout << "Evaluation average: " << total_evaluation / static_cast<double>(evaluations)
+                << " (discounted: " << total_j / static_cast<double>(evaluations) << ")" << std::endl;
+
+      std::ofstream eval_file;
+
+      eval_file.open(eval_log_path, std::ios::app);
+
+      eval_file << std::fixed;
+
+      if (eval_log_type == 'a')
+        eval_file << total_evaluation / static_cast<double>(evaluations);
+      else if (eval_log_type == 'j')
+        eval_file << total_j / static_cast<double>(evaluations);
+
+      eval_file << " ";
+
+      eval_file.close();
+    }
 
     if (!save_path.empty()) {
       az.GetNetwork()->Save(save_path);
