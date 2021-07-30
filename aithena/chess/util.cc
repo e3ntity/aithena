@@ -26,7 +26,9 @@ std::string PrintMarkedBoard(State::StatePtr state, BoardPlane marker, std::stri
 
       bool marked = marker.get(x, y);
 
-      repr << piece_symbol << " ";
+      if (marked) repr << marker_color;
+
+      repr << piece_symbol << " \033[0m";
     }
   }
 
