@@ -30,30 +30,31 @@ torch::Tensor ResidualBlockImpl::forward(torch::Tensor x) {
   return x;
 }
 
-AlphaZeroNetImpl::AlphaZeroNetImpl(chess::Game::GamePtr game) {
+AlphaZeroNetImpl::AlphaZeroNetImpl(chess::Game::GamePtr game, int neuron_count, int residual_layer_count) {
   int width = game->GetOption("board_width");
   int height = game->GetOption("board_height");
 
   body_ = torch::nn::Sequential(
       // Layer 1 (rectified, batch-normalized convolution)
-      torch::nn::Conv2d(torch::nn::Conv2dOptions(kInputSize, 256, 3).stride(1).padding(1).padding_mode(torch::kZeros)),
-      torch::nn::BatchNorm2d(256), torch::nn::ReLU());
+      torch::nn::Conv2d(
+          torch::nn::Conv2dOptions(kInputSize, neuron_count, 3).stride(1).padding(1).padding_mode(torch::kZeros)),
+      torch::nn::BatchNorm2d(neuron_count), torch::nn::ReLU());
 
   torch::nn::Conv2dOptions body_options =
-      torch::nn::Conv2dOptions(256, 256, 3).stride(1).padding(1).padding_mode(torch::kZeros);
+      torch::nn::Conv2dOptions(neuron_count, neuron_count, 3).stride(1).padding(1).padding_mode(torch::kZeros);
 
-  for (int i = 0; i < 19; ++i) body_->push_back(ResidualBlock(i, body_options));
+  for (int i = 0; i < residual_layer_count; ++i) body_->push_back(ResidualBlock(i, body_options));
 
   register_module("body", body_);
 
   torch::nn::Conv2dOptions policy_head_l1_options =
-      torch::nn::Conv2dOptions(256, 256, 3).stride(1).padding(1).padding_mode(torch::kZeros);
+      torch::nn::Conv2dOptions(neuron_count, neuron_count, 3).stride(1).padding(1).padding_mode(torch::kZeros);
   torch::nn::Conv2dOptions policy_head_l2_options =
-      torch::nn::Conv2dOptions(256, GetNNOutputSize(game), 3).stride(1).padding(1).padding_mode(torch::kZeros);
+      torch::nn::Conv2dOptions(neuron_count, GetNNOutputSize(game), 3).stride(1).padding(1).padding_mode(torch::kZeros);
 
   policy_head_ = torch::nn::Sequential(
       // Layer 1 (rectified, batch-nomalized convolution)
-      torch::nn::Conv2d(policy_head_l1_options), torch::nn::BatchNorm2d(256), torch::nn::ReLU(),
+      torch::nn::Conv2d(policy_head_l1_options), torch::nn::BatchNorm2d(neuron_count), torch::nn::ReLU(),
       // Layer 2 (final convolution)
       // TODO(*): The final ReLU is not explicitly stated in the alphazero paper
       // but required for computing the loss (ln(x) = undefined for x < 0).
@@ -61,15 +62,15 @@ AlphaZeroNetImpl::AlphaZeroNetImpl(chess::Game::GamePtr game) {
   register_module("policy_head", policy_head_);
 
   torch::nn::Conv2dOptions value_head_l1_options =
-      torch::nn::Conv2dOptions(256, 1, 1).stride(1).padding(1).padding_mode(torch::kZeros);
+      torch::nn::Conv2dOptions(neuron_count, 1, 1).stride(1).padding(1).padding_mode(torch::kZeros);
 
   value_head_ = torch::nn::Sequential(
       // Layer 1 (rectified, batch-norm. conv. 1 filter, 1x1 kern., stride 1)
       torch::nn::Conv2d(value_head_l1_options), torch::nn::BatchNorm2d(1), torch::nn::ReLU(),
-      // Layer 2 (rectified linear layer of size 256)
-      torch::nn::Flatten(), torch::nn::Linear((width + 2) * (height + 2), 256), torch::nn::ReLU(),
+      // Layer 2 (rectified linear layer of size neuron_count)
+      torch::nn::Flatten(), torch::nn::Linear((width + 2) * (height + 2), neuron_count), torch::nn::ReLU(),
       // Layer 3 (tanh linear layer of size 1)
-      torch::nn::Linear(256, 1), torch::nn::Tanh());
+      torch::nn::Linear(neuron_count, 1), torch::nn::Tanh());
   register_module("value_head", value_head_);
 }
 

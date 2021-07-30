@@ -30,7 +30,7 @@ struct ResidualBlockImpl : torch::nn::Module {
 TORCH_MODULE(ResidualBlock);
 
 struct AlphaZeroNetImpl : torch::nn::Module {
-  explicit AlphaZeroNetImpl(chess::Game::GamePtr game);
+  explicit AlphaZeroNetImpl(chess::Game::GamePtr game, int neuron_count = 256, int residual_layer_count = 19);
 
   // Returns the action value tensor and a state value double.
   std::tuple<torch::Tensor, torch::Tensor> forward(torch::Tensor, bool keep_device = false);

@@ -35,6 +35,8 @@ enum GetOptOption : int {
   kOptUpdate,
   kOptSave,
   kOptSaveTimestamp,
+  kOptAZNeurons,
+  kOptAZResLayers,
   kOptDiscountFactor,
   kOptLoad,
   kOptNoCuda,
@@ -66,6 +68,8 @@ std::string GetAlphazeroUsageText() {
          "  --save <path>               Path for saving NN (a suffix will be appended)\n"
          "  --save-timestamp            Whether to additionally save a timestamped network file (default: false)\n"
          "## Alphazero Options ##\n"
+         "  --az-neurons <number>       Number of neurons per layer in the AZ neural network (default: 256)\n"
+         "  --az-res-layers <number>    Number of residual layers in the AZ neural network (default: 19)\n"
          "  --discount-factor <number>  Discount factor (default: " +
          std::to_string(AlphaZero::kDefaultDiscountFactor) +
          ")\n"
@@ -157,6 +161,8 @@ int RunAlphazero(int argc, char** argv) {
                                          {"rounds", required_argument, nullptr, 'r'},
                                          {"save", required_argument, nullptr, kOptSave},
                                          {"save-timestamp", no_argument, nullptr, kOptSaveTimestamp},
+                                         {"az-neurons", required_argument, nullptr, kOptAZNeurons},
+                                         {"az-res-layers", required_argument, nullptr, kOptAZResLayers},
                                          {"discount-factor", required_argument, nullptr, kOptDiscountFactor},
                                          {"load", required_argument, nullptr, kOptLoad},
                                          {"no-cuda", no_argument, nullptr, kOptNoCuda},
@@ -176,6 +182,8 @@ int RunAlphazero(int argc, char** argv) {
   std::string eval_log_path{""};
   char eval_log_type = 'j';
   int simulations{AlphaZero::kDefaultSimulations};
+  int az_neurons{256};
+  int az_res_layers{19};
   double discount_factor{AlphaZero::kDefaultDiscountFactor};
   std::string fen{"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"};
   int max_no_progress{50};
@@ -270,6 +278,14 @@ int RunAlphazero(int argc, char** argv) {
         save_timestamp = true;
         std::cout << "Saving with timestamp enabled" << std::endl;
         break;
+      case kOptAZNeurons:
+        az_neurons = atoi(optarg);
+        std::cout << "AlphaZero neuron count: " << az_neurons << std::endl;
+        break;
+      case kOptAZResLayers:
+        az_res_layers = atoi(optarg);
+        std::cout << "AlphaZero residual layer count: " << az_res_layers << std::endl;
+        break;
       case kOptDiscountFactor:
         discount_factor = atof(optarg);
         std::cout << "Discount factor: " << discount_factor << std::endl;
@@ -317,7 +333,7 @@ int RunAlphazero(int argc, char** argv) {
                                                           {"board_height", state->GetBoard().GetHeight()},
                                                           {"max_move_count", max_moves},
                                                           {"max_no_progress", max_no_progress}}));
-  AlphaZeroNet net = AlphaZeroNet(game);
+  AlphaZeroNet net = AlphaZeroNet(game, az_neurons, az_res_layers);
   AlphaZero az{game, net};
 
   if (use_cuda) {
