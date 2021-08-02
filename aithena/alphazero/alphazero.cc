@@ -355,8 +355,7 @@ void ReplayMemory::AddSample(torch::Tensor input, torch::Tensor action_values, d
 }
 
 void ReplayMemory::AddSample(std::tuple<torch::Tensor, std::tuple<torch::Tensor, double>> sample) {
-  while (max_size_ > 0 && samples_.size() >= static_cast<std::size_t>(max_size_))
-    samples_.erase(samples_.begin() + GetRandomSampleIndex());
+  while (max_size_ > 0 && samples_.size() >= static_cast<std::size_t>(max_size_)) samples_.erase(samples_.begin());
 
   samples_.push_back(sample);
 }
