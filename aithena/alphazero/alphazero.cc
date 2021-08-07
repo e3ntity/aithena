@@ -67,7 +67,8 @@ void AlphaZero::TrainNetwork() {
   int width = game_->GetOption("board_width");
   int height = game_->GetOption("board_height");
 
-  torch::optim::Adam optimizer(network_->parameters(), torch::optim::AdamOptions(1e-4).weight_decay(1e-6));
+  torch::optim::Adam optimizer(network_->parameters(),
+                               torch::optim::AdamOptions(adam_learning_rate_).weight_decay(adam_weight_decay_));
 
   torch::Tensor input_batch = torch::empty({0, network_->kInputSize, width, height});
   torch::Tensor true_action_value_batch = torch::empty({0, GetNNOutputSize(game_), width, height});
@@ -236,6 +237,9 @@ void AlphaZero::SetSelectPolicy(AZNode::AZNodePtr (AlphaZero::*select_policy)(AZ
 }
 
 void AlphaZero::SetBackpass(void (AlphaZero::*backpass)(AZNode::AZNodePtr, double)) { backpass_ = backpass; }
+
+void AlphaZero::SetAdamLearningRate(double learning_rate) { adam_learning_rate_ = learning_rate; }
+void AlphaZero::SetAdamWeightDecay(double weight_decay) { adam_weight_decay_ = weight_decay; }
 
 void AlphaZero::UseDefaultUpdate() {
   SetBackpass(&AlphaZero::AlphaZeroBackpass);

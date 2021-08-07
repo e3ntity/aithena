@@ -35,8 +35,10 @@ enum GetOptOption : int {
   kOptUpdate,
   kOptSave,
   kOptSaveTimestamp,
+  kOptAZLearningRate,
   kOptAZNeurons,
   kOptAZResLayers,
+  kOptAZWeightDecay,
   kOptDiscountFactor,
   kOptLoad,
   kOptNoCuda,
@@ -66,10 +68,16 @@ std::string GetAlphazeroUsageText() {
          "  --replay-size <number>      Size of the replay memory (0 = infinite, default: infinite)\n"
          "  --rounds -r <number>        Number of training rounds (default: 100)\n"
          "  --save <path>               Path for saving NN (a suffix will be appended)\n"
-         "  --save-timestamp            Whether to additionally save a timestamped network file (default: false)\n"
+         "  --save-timestamp            Save a timestamped network file (default: false)\n"
          "## Alphazero Options ##\n"
-         "  --az-neurons <number>       Number of neurons per layer in the AZ neural network (default: 256)\n"
-         "  --az-res-layers <number>    Number of residual layers in the AZ neural network (default: 19)\n"
+         "  --az-learning-rate <number> Learning rate for ADAM optimizer (default: " +
+         std::to_string(AlphaZero::kDefaultAdamLearningRate) +
+         ")\n"
+         "  --az-neurons <number>       Neurons per layer in AZ NN (default: 256)\n"
+         "  --az-res-layers <number>    Residual layer count in AZ NN (default: 19)\n"
+         "  --az-weight-decay <number>  L2 regularization for ADAM optim. (default: " +
+         std::to_string(AlphaZero::kDefaultAdamWeightDecay) +
+         ")\n"
          "  --discount-factor <number>  Discount factor (default: " +
          std::to_string(AlphaZero::kDefaultDiscountFactor) +
          ")\n"
@@ -161,8 +169,10 @@ int RunAlphazero(int argc, char** argv) {
                                          {"rounds", required_argument, nullptr, 'r'},
                                          {"save", required_argument, nullptr, kOptSave},
                                          {"save-timestamp", no_argument, nullptr, kOptSaveTimestamp},
+                                         {"az-learning-rate", required_argument, nullptr, kOptAZLearningRate},
                                          {"az-neurons", required_argument, nullptr, kOptAZNeurons},
                                          {"az-res-layers", required_argument, nullptr, kOptAZResLayers},
+                                         {"az-weight-decay", required_argument, nullptr, kOptAZWeightDecay},
                                          {"discount-factor", required_argument, nullptr, kOptDiscountFactor},
                                          {"load", required_argument, nullptr, kOptLoad},
                                          {"no-cuda", no_argument, nullptr, kOptNoCuda},
@@ -182,8 +192,10 @@ int RunAlphazero(int argc, char** argv) {
   std::string eval_log_path{""};
   char eval_log_type = 'j';
   int simulations{AlphaZero::kDefaultSimulations};
+  double az_learning_rate{AlphaZero::kDefaultAdamLearningRate};
   int az_neurons{256};
   int az_res_layers{19};
+  double az_weight_decay{AlphaZero::kDefaultAdamWeightDecay};
   double discount_factor{AlphaZero::kDefaultDiscountFactor};
   std::string fen{"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"};
   int max_no_progress{50};
@@ -278,6 +290,10 @@ int RunAlphazero(int argc, char** argv) {
         save_timestamp = true;
         std::cout << "Saving with timestamp enabled" << std::endl;
         break;
+      case kOptAZLearningRate:
+        az_learning_rate = atof(optarg);
+        std::cout << "AlphaZero learning rate: " << az_learning_rate << std::endl;
+        break;
       case kOptAZNeurons:
         az_neurons = atoi(optarg);
         std::cout << "AlphaZero neuron count: " << az_neurons << std::endl;
@@ -285,6 +301,10 @@ int RunAlphazero(int argc, char** argv) {
       case kOptAZResLayers:
         az_res_layers = atoi(optarg);
         std::cout << "AlphaZero residual layer count: " << az_res_layers << std::endl;
+        break;
+      case kOptAZWeightDecay:
+        az_weight_decay = atof(optarg);
+        std::cout << "AlphaZero weight decay: " << az_weight_decay << std::endl;
         break;
       case kOptDiscountFactor:
         discount_factor = atof(optarg);
@@ -349,6 +369,9 @@ int RunAlphazero(int argc, char** argv) {
   az.SetBatchSize(batch_size);
   az.SetSimulations(simulations);
   az.SetDiscountFactor(discount_factor);
+
+  az.SetAdamLearningRate(az_learning_rate);
+  az.SetAdamWeightDecay(az_weight_decay);
 
   if (update == "puct") {
     az.UseDefaultUpdate();

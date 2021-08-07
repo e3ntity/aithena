@@ -92,6 +92,8 @@ class AlphaZero {
   void SetPowerUCTP(double);
   void SetSelectPolicy(AZNode::AZNodePtr (AlphaZero::*select_policy)(AZNode::AZNodePtr));
   void SetBackpass(void (AlphaZero::*backpass)(AZNode::AZNodePtr, double));
+  void SetAdamLearningRate(double);
+  void SetAdamWeightDecay(double);
 
   void UseDefaultUpdate();
   void UsePowerUCTUpdate(double p = kDefaultPowerUCTP);
@@ -112,6 +114,8 @@ class AlphaZero {
   static constexpr double kDefaultDiscountFactor = 0.99;
   static constexpr double kDefaultDirichletNoiseAlpha = 0.3;
   static constexpr double kDefaultPowerUCTP = 100.0;
+  static constexpr double kDefaultAdamLearningRate = 1e-4;
+  static constexpr double kDefaultAdamWeightDecay = 1e-6;
 
   BenchmarkSet benchmark_;
 
@@ -135,6 +139,10 @@ class AlphaZero {
   double poweruct_p_{kDefaultPowerUCTP};
   AZNode::AZNodePtr (AlphaZero::*select_policy_)(AZNode::AZNodePtr) = &AlphaZero::PUCTSelect;
   void (AlphaZero::*backpass_)(AZNode::AZNodePtr, double) = &AlphaZero::AlphaZeroBackpass;
+
+  // Training settings
+  double adam_learning_rate_{kDefaultAdamLearningRate};
+  double adam_weight_decay_{kDefaultAdamWeightDecay};
 };  // namespace aithena
 
 }  // namespace aithena
