@@ -28,6 +28,7 @@ enum GetOptOption : int {
   kOptEvaluations,
   kOptEvalLogPath,
   kOptEvalLogType,
+  kOptEvalOpponent,
   kOptMCTSSimulations,
   kOptBatchSize,
   kOptReplaySize,
@@ -56,7 +57,9 @@ std::string GetAlphazeroUsageText() {
          "## Evaluation Options ##\n"
          "  --evaluations <number>      Number of evaluations to run (default: 10)\n"
          "  --eval-log-path <path>      Path for logging evaluation results\n"
-         "  --eval-log-type <A|J>       Whether to log the average return or the average discounted return (default: J)"
+         "  --eval-log-type <A|J>       Whether to log the average return or the average discounted return (default: "
+         "J)\n"
+         "  --eval-opponent <A|M>       Evaluate against (A)lphazero or (M)CTS (default: M)\n"
          "  --mcts-simulations <number> Number of MCTS simulations (default: " +
          std::to_string(MCTS::kDefaultSimulations) +
          ")\n"
@@ -117,7 +120,7 @@ void PrintProgress(double progress = 0.0, int width = 80, std::string prefix = "
 }
 
 std::tuple<int, int> Evaluate(std::shared_ptr<AlphaZero> az, chess::State::StatePtr state,
-                              int mcts_simulations = MCTS::kDefaultSimulations) {
+                              int mcts_simulations = MCTS::kDefaultSimulations, char opponent = 'm') {
   chess::Game::GamePtr game = az->GetGame();
   MCTS mcts(game);
   mcts.SetSimulations(mcts_simulations);
@@ -130,7 +133,12 @@ std::tuple<int, int> Evaluate(std::shared_ptr<AlphaZero> az, chess::State::State
       current_state = az->DrawAction(current_state);
       steps += 1;
     } else {
-      current_state = mcts.DrawAction(current_state);
+      if (opponent == 'm')
+        current_state = mcts.DrawAction(current_state);
+      else if (opponent == 'a')
+        current_state = az->DrawAction(current_state);
+      else
+        assert(false);
     }
     std::cout << current_state->ToLAN() << " " << std::flush;
   }
@@ -165,6 +173,7 @@ int RunAlphazero(int argc, char** argv) {
                                          {"evaluations", required_argument, nullptr, kOptEvaluations},
                                          {"eval-log-path", required_argument, nullptr, kOptEvalLogPath},
                                          {"eval-log-type", required_argument, nullptr, kOptEvalLogType},
+                                         {"eval-opponent", required_argument, nullptr, kOptEvalOpponent},
                                          {"replay-size", required_argument, nullptr, kOptReplaySize},
                                          {"rounds", required_argument, nullptr, 'r'},
                                          {"save", required_argument, nullptr, kOptSave},
@@ -191,6 +200,7 @@ int RunAlphazero(int argc, char** argv) {
   int evaluations{10};
   std::string eval_log_path{""};
   char eval_log_type = 'j';
+  char eval_opponent = 'm';
   int simulations{AlphaZero::kDefaultSimulations};
   double az_learning_rate{AlphaZero::kDefaultAdamLearningRate};
   int az_neurons{256};
@@ -268,11 +278,19 @@ int RunAlphazero(int argc, char** argv) {
         break;
       case kOptEvalLogType:
         eval_log_type = static_cast<char>(tolower(static_cast<int>(*optarg)));
-        if (eval_log_type != 'a' && eval_log_type == 'k') {
+        if (eval_log_type != 'a' && eval_log_type != 'j') {
           std::cout << "Invalid value for --eval-log-type: " << eval_log_type << std::endl;
           return 2;
         }
         std::cout << "Evaluation log type: " << eval_log_type << std::endl;
+        break;
+      case kOptEvalOpponent:
+        eval_opponent = static_cast<char>(tolower(static_cast<int>(*optarg)));
+        if (eval_opponent != 'a' && eval_opponent != 'm') {
+          std::cout << "Invalid value for --eval-opponent: " << eval_opponent << std::endl;
+          return 2;
+        }
+        std::cout << "Evaluation opponent: " << eval_opponent << std::endl;
         break;
       case kOptSimulations:
         simulations = atoi(optarg);
@@ -385,7 +403,8 @@ int RunAlphazero(int argc, char** argv) {
   if (evaluate_mode) {
     chess::State::StatePtr current_state = state;
 
-    for (int i = 0; i < evaluations; ++i) Evaluate(std::make_shared<AlphaZero>(az), state, mcts_simulations);
+    for (int i = 0; i < evaluations; ++i)
+      Evaluate(std::make_shared<AlphaZero>(az), state, mcts_simulations, eval_opponent);
 
     return 0;
   }
@@ -433,7 +452,7 @@ int RunAlphazero(int argc, char** argv) {
     double total_j = 0;
     double total_evaluation = 0;
     for (int i = 0; i < evaluations; ++i) {
-      auto evaluation = Evaluate(std::make_shared<AlphaZero>(az), state, mcts_simulations);
+      auto evaluation = Evaluate(std::make_shared<AlphaZero>(az), state, mcts_simulations, eval_opponent);
       int result = std::get<0>(evaluation);
       int steps = std::get<1>(evaluation);
 
